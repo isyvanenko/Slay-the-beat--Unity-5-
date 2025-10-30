@@ -29,10 +29,10 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _DotSize: 0.196
-    - _GridScale: 10
-    - _RandomSeed: 8
-    - _Speed: 6.5
+    - _DotSize: 0.163
+    - _GridScale: 14
+    - _RandomSeed: 5.9
+    - _Speed: 5.2
     m_Colors:
     - _ColorA: {r: 1, g: 0.39999998, b: 0.8, a: 1}
     - _ColorB: {r: 0, g: 1, b: 1, a: 1}
