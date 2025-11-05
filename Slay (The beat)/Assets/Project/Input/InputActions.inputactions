@@ -1,0 +1,77 @@
+{
+    "version": 1,
+    "name": "InputActions",
+    "maps": [
+        {
+            "name": "UI",
+            "id": "d3e7d520-e412-41d3-9c59-d8187c3d9656",
+            "actions": [
+                {
+                    "name": "Start",
+                    "type": "Button",
+                    "id": "bf9acccf-e6fc-4974-b59c-a42960951761",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Select",
+                    "type": "Button",
+                    "id": "755ca0f1-8cc7-452a-a014-99f93e00f109",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "2987c980-59b9-42ea-8d2c-f6e070b2067b",
+                    "path": "<HID::USB Gamepad >/button10",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Start",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "957452fb-185a-4daf-95d6-547fb486a063",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Start",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "6662300a-f9af-4e84-a0ea-587db2ad59e3",
+                    "path": "<HID::USB Gamepad >/button9",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Select",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "df83c726-7f1e-4c15-bb23-b4e8be8bcfae",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Select",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
