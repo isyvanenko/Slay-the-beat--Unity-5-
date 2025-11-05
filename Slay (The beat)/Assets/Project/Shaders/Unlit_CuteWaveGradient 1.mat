@@ -25,15 +25,15 @@ Material:
     m_TexEnvs:
     - _MainTex:
         m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
+        m_Scale: {x: 0.78, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Intensity: 0.6
-    - _Scale: 5
-    - _Speed: 1
+    - _Intensity: 1
+    - _Scale: 1.28
+    - _Speed: 1.46
     m_Colors:
-    - _ColorA: {r: 1, g: 0.8, b: 0.9, a: 1}
-    - _ColorB: {r: 0.7, g: 0.9, b: 1, a: 1}
+    - _ColorA: {r: 0.11320752, g: 0.11320752, b: 0.11320752, a: 1}
+    - _ColorB: {r: 0, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
