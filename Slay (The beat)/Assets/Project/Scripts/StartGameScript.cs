@@ -64,6 +64,13 @@ public class StartGameScript : MonoBehaviour
     }
     private IEnumerator CallNextLevel()
     {
+
+        if (SFXManager.instance != null)
+        {
+            SFXManager.instance.PlayTransitionSound();
+        }
+
+
         anim.SetTrigger("EndScene");
 
         
@@ -74,7 +81,7 @@ public class StartGameScript : MonoBehaviour
         // 1. Tell MusicManager to change
         if (MusicManager.instance != null)
         {
-            MusicManager.instance.SetMusicToClub(3f);
+            MusicManager.instance.SetMusicToClub(1.8f);
         }
         yield return new WaitForSeconds(0.8f);
 
