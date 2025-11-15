@@ -1,52 +1,95 @@
 using UnityEngine;
 using UnityEngine.Audio;
+using System.Collections;
 
 public class MusicManager : MonoBehaviour
 {
-    // This 'static' variable is the key. 
-    // It lets any other script find this manager easily.
-    public static MusicManager instance;
+    public static MusicManager Instance;
 
-    // Drag your snapshots here in the Inspector
+    [Header("One AudioSource for everything")]
+    public AudioSource musicSource;
+
+    [Header("Music Clips")]
+    public AudioClip menuMusic;
+    public AudioClip gameplayMusic;
+    public AudioClip resultsMusic;
+
+    [Header("Mixer Snapshots")]
     public AudioMixerSnapshot normalSnapshot;
     public AudioMixerSnapshot clubSnapshot;
 
-    void Awake()
+    private void Awake()
     {
-        // --- This is the Singleton pattern ---
-        if (instance == null)
+        if (Instance == null)
         {
-            // If 'instance' is empty, this is the first
-            // MusicManager. Let's keep it.
-            instance = this;
+            Instance = this;
             DontDestroyOnLoad(gameObject);
         }
         else
         {
-            // If 'instance' is NOT empty, a MusicManager
-            // already exists. Destroy this new, duplicate one.
             Destroy(gameObject);
         }
-        // -------------------------------------
     }
 
-    // --- Public Functions for Other Scripts ---
+    // -----------------------------
+    //   MUSIC PLAYBACK (ONE AUDIO)
+    // -----------------------------
 
-    // Call this to get the "club" sound
-    public void SetMusicToClub(float transitionTime = 3f)
+    public void PlayMenu()     => PlayMusic(menuMusic, 0.75f);
+    public void PlayGameplay() => PlayMusic(gameplayMusic, 0.75f);
+    public void PlayResults()  => PlayMusic(resultsMusic, 0.75f);
+
+    private void PlayMusic(AudioClip clip, float fade)
     {
-        if (clubSnapshot != null)
+        if (clip == null) return;
+        StopAllCoroutines();
+        StartCoroutine(FadeToClip(clip, fade));
+    }
+
+    private IEnumerator FadeToClip(AudioClip newClip, float fade)
+    {
+        float startVol = musicSource.volume;
+
+        // --- Fade Out ---
+        for (float t = 0; t < fade; t += Time.deltaTime)
         {
-            clubSnapshot.TransitionTo(transitionTime);
+            musicSource.volume = Mathf.Lerp(startVol, 0f, t / fade);
+            yield return null;
+        }
+
+        musicSource.Stop();
+        musicSource.clip = newClip;
+        musicSource.Play();
+
+        // --- Fade In ---
+        for (float t = 0; t < fade; t += Time.deltaTime)
+        {
+            musicSource.volume = Mathf.Lerp(0f, 1f, t / fade);
+            yield return null;
         }
     }
 
-    // Call this to get the "normal" sound
-    public void SetMusicToNormal(float transitionTime = 1.5f)
+    // -----------------------------
+    //      MIXER CONTROL
+    // -----------------------------
+
+    public void SetNormal(float time = 1f)
     {
         if (normalSnapshot != null)
-        {
-            normalSnapshot.TransitionTo(transitionTime);
-        }
+            normalSnapshot.TransitionTo(time);
+    }
+
+    public void SetClub(float time = 1f)
+    {
+        if (clubSnapshot != null)
+            clubSnapshot.TransitionTo(time);
+    }
+
+    // -----------------------------
+    //      QUIET MODE (optional)
+    // -----------------------------
+    public void SetQuiet(bool quiet)
+    {
+        musicSource.volume = quiet ? 0.15f : 1f;
     }
 }

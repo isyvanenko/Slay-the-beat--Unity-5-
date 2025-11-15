@@ -24,8 +24,8 @@ public class SpireMusicPulse : MonoBehaviour
 
         baseScale = spireObject.localScale.x;
 
-        if (musicSource == null && MusicManager.instance != null)
-            musicSource = MusicManager.instance.GetComponent<AudioSource>();
+        if (musicSource == null && MusicManager.Instance != null)
+            musicSource = MusicManager.Instance.GetComponent<AudioSource>();
     }
 
     void Update()

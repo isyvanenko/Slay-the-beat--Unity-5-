@@ -7,9 +7,9 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Unlit_BackGroundGradient
-  m_Shader: {fileID: 4800000, guid: 22001fcc19b027b43a778450b449cccb, type: 3}
-  m_Parent: {fileID: 0}
+  m_Name: Unlit_CuteWaveTiles_RandomBlendBorder 8
+  m_Shader: {fileID: 4800000, guid: c4e173ad632b949b1a7eb4e84ed227cf, type: 3}
+  m_Parent: {fileID: 2100000, guid: b0bcd08e1bd1e2745a6577264e9dfee4, type: 2}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords: []
@@ -25,11 +25,11 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _Speed: -0.68
+    - _BorderSoftness: 0.184
+    - _BorderWidth: 0.071
+    - _Scale: 40
     m_Colors:
-    - _Color1: {r: 1, g: 0.672043, b: 0, a: 1}
-    - _Color2: {r: 0.2784314, g: 1, b: 0.16862746, a: 1}
-    - _Color3: {r: 0.28235295, g: 0, b: 1, a: 1}
-    - _Color4: {r: 1, g: 0, b: 0.007843138, a: 1}
+    - _ColorA: {r: 0.07066631, g: 0, b: 1, a: 1}
+    - _ColorB: {r: 0, g: 0.6753247, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
