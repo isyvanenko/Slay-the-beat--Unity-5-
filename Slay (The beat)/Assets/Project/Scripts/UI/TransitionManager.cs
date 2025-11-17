@@ -2,52 +2,44 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
 
-
-public class TransitionManager : MonoBehaviour
+public class TransitionManager : PersistentSingleton<TransitionManager>
 {
-   
-    public static TransitionManager Instance;
-
     [Header("Animator handling fade in/out")]
     public Animator fadeAnimator;
 
     private bool isTransitioning = false;
 
-    void Awake()
-    {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
+    // ⭐ NEW EVENT: UI elements subscribe to this
+    public static event System.Action OnSceneLoadStarted;
 
-        Instance = this;
-        DontDestroyOnLoad(gameObject);
-    }
-
-       public void LoadScene(string sceneName, float fadeTime = 0.5f)
+    public void LoadScene(string sceneName, float fadeTime = 0.5f)
     {
         if (!isTransitioning)
+        {
+            // ⭐ Trigger the fade event BEFORE transition starts
+            OnSceneLoadStarted?.Invoke();
+
             StartCoroutine(LoadRoutine(sceneName, fadeTime));
+        }
     }
 
     private IEnumerator LoadRoutine(string sceneName, float fadeTime)
     {
         isTransitioning = true;
 
-        // Play your original fade out animation
+        // Play fade-out animation
         fadeAnimator.SetTrigger("EndScene");
 
-        // optional sound
-        SFXManager.instance?.PlayTransitionSound();
+        // Play SFX if available
+        SFXManager.Instance?.PlayTransitionSound();
 
-        // wait until fade-out finishes
+        // Wait for fade-out
         yield return new WaitForSeconds(fadeTime);
 
-        // load next scene
+        // Load next scene
         SceneManager.LoadScene(sceneName);
 
-        // animator will fade in automatically because your transitions handle it
+        // Fade-in occurs automatically from your animator
         isTransitioning = false;
     }
 }

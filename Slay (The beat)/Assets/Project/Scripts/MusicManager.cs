@@ -2,9 +2,11 @@ using UnityEngine;
 using UnityEngine.Audio;
 using System.Collections;
 
-public class MusicManager : MonoBehaviour
+// 1. CHANGE THIS: Inherit from PersistentSingleton<MusicManager>
+public class MusicManager : PersistentSingleton<MusicManager>
 {
-    public static MusicManager Instance;
+    // 2. DELETE THIS: The base class already has a public "Instance" property.
+    // public static MusicManager Instance; 
 
     [Header("One AudioSource for everything")]
     public AudioSource musicSource;
@@ -18,6 +20,13 @@ public class MusicManager : MonoBehaviour
     public AudioMixerSnapshot normalSnapshot;
     public AudioMixerSnapshot clubSnapshot;
 
+    // --- NEW VARIABLE ---
+    // This will store what our "target" volume should be (1f normally, 0.15f when quiet)
+    private float targetVolume = 1f;
+
+    // 3. DELETE THIS: The PersistentSingleton base class
+    //    handles all of this logic for you!
+    /*
     private void Awake()
     {
         if (Instance == null)
@@ -30,6 +39,7 @@ public class MusicManager : MonoBehaviour
             Destroy(gameObject);
         }
     }
+    */
 
     // -----------------------------
     //   MUSIC PLAYBACK (ONE AUDIO)
@@ -42,6 +52,20 @@ public class MusicManager : MonoBehaviour
     private void PlayMusic(AudioClip clip, float fade)
     {
         if (clip == null) return;
+
+        // --- THIS IS THE FIX ---
+        // If we are already playing this exact clip,
+        // just return and let it keep playing.
+        if (musicSource.clip == clip && musicSource.isPlaying)
+        {
+            // --- FIX ---
+            // If we're already playing, we should still
+            // make sure the volume matches the target (in case SetQuiet was called)
+            musicSource.volume = targetVolume;
+            return;
+        }
+        // --- END FIX ---
+
         StopAllCoroutines();
         StartCoroutine(FadeToClip(clip, fade));
     }
@@ -61,12 +85,16 @@ public class MusicManager : MonoBehaviour
         musicSource.clip = newClip;
         musicSource.Play();
 
-        // --- Fade In ---
+        // --- Fade In (MODIFIED) ---
+        // We now fade from 0f up to our 'targetVolume'
         for (float t = 0; t < fade; t += Time.deltaTime)
         {
-            musicSource.volume = Mathf.Lerp(0f, 1f, t / fade);
+            musicSource.volume = Mathf.Lerp(0f, targetVolume, t / fade);
             yield return null;
         }
+
+        // Ensure the volume is exactly the target at the end
+        musicSource.volume = targetVolume;
     }
 
     // -----------------------------
@@ -90,6 +118,10 @@ public class MusicManager : MonoBehaviour
     // -----------------------------
     public void SetQuiet(bool quiet)
     {
-        musicSource.volume = quiet ? 0.15f : 1f;
+        // --- MODIFIED ---
+        // Instead of setting the volume directly, we set our target...
+        targetVolume = quiet ? 0f : 1f;
+        // ...and then apply that target to the current volume.
+        musicSource.volume = targetVolume;
     }
 }

@@ -109,6 +109,24 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""NavigateLeft"",
+                    ""type"": ""Button"",
+                    ""id"": ""40567c0e-3460-48f9-836d-3500c69b3be8"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""NavigateRight"",
+                    ""type"": ""Button"",
+                    ""id"": ""6f4f63dd-bad5-4438-81e6-7b588c10a10c"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -155,6 +173,28 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                     ""action"": ""Select"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""e8f4609a-9a64-4d95-acf9-5d891e166044"",
+                    ""path"": ""<Keyboard>/leftArrow"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""NavigateLeft"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""433c1d75-0517-4597-803b-25b7351ff4d9"",
+                    ""path"": ""<Keyboard>/rightArrow"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""NavigateRight"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -165,6 +205,8 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Start = m_UI.FindAction("Start", throwIfNotFound: true);
         m_UI_Select = m_UI.FindAction("Select", throwIfNotFound: true);
+        m_UI_NavigateLeft = m_UI.FindAction("NavigateLeft", throwIfNotFound: true);
+        m_UI_NavigateRight = m_UI.FindAction("NavigateRight", throwIfNotFound: true);
     }
 
     ~@InputActions()
@@ -247,6 +289,8 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
     private List<IUIActions> m_UIActionsCallbackInterfaces = new List<IUIActions>();
     private readonly InputAction m_UI_Start;
     private readonly InputAction m_UI_Select;
+    private readonly InputAction m_UI_NavigateLeft;
+    private readonly InputAction m_UI_NavigateRight;
     /// <summary>
     /// Provides access to input actions defined in input action map "UI".
     /// </summary>
@@ -266,6 +310,14 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "UI/Select".
         /// </summary>
         public InputAction @Select => m_Wrapper.m_UI_Select;
+        /// <summary>
+        /// Provides access to the underlying input action "UI/NavigateLeft".
+        /// </summary>
+        public InputAction @NavigateLeft => m_Wrapper.m_UI_NavigateLeft;
+        /// <summary>
+        /// Provides access to the underlying input action "UI/NavigateRight".
+        /// </summary>
+        public InputAction @NavigateRight => m_Wrapper.m_UI_NavigateRight;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -298,6 +350,12 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
             @Select.started += instance.OnSelect;
             @Select.performed += instance.OnSelect;
             @Select.canceled += instance.OnSelect;
+            @NavigateLeft.started += instance.OnNavigateLeft;
+            @NavigateLeft.performed += instance.OnNavigateLeft;
+            @NavigateLeft.canceled += instance.OnNavigateLeft;
+            @NavigateRight.started += instance.OnNavigateRight;
+            @NavigateRight.performed += instance.OnNavigateRight;
+            @NavigateRight.canceled += instance.OnNavigateRight;
         }
 
         /// <summary>
@@ -315,6 +373,12 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
             @Select.started -= instance.OnSelect;
             @Select.performed -= instance.OnSelect;
             @Select.canceled -= instance.OnSelect;
+            @NavigateLeft.started -= instance.OnNavigateLeft;
+            @NavigateLeft.performed -= instance.OnNavigateLeft;
+            @NavigateLeft.canceled -= instance.OnNavigateLeft;
+            @NavigateRight.started -= instance.OnNavigateRight;
+            @NavigateRight.performed -= instance.OnNavigateRight;
+            @NavigateRight.canceled -= instance.OnNavigateRight;
         }
 
         /// <summary>
@@ -369,5 +433,19 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnSelect(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "NavigateLeft" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnNavigateLeft(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "NavigateRight" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnNavigateRight(InputAction.CallbackContext context);
     }
 }

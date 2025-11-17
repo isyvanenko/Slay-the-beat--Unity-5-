@@ -6,6 +6,7 @@ public class NormalBackgroundMusic : MonoBehaviour
 {
     MusicManager.Instance.PlayMenu();
     MusicManager.Instance.SetNormal();
+    MusicManager.Instance.SetQuiet(false); 
 }
 
 }

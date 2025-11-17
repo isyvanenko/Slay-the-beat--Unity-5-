@@ -29,7 +29,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _BlendSpeed: 1
+    - _BlendSpeed: 10
     - _BorderSoftness: 0.16
     - _BorderWidth: 0.065
     - _Scale: 28.2
