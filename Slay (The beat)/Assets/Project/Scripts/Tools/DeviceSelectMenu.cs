@@ -9,7 +9,7 @@ public class DeviceSetupMenu : MonoBehaviour
     public int playerIndexToAssign = 0;
 
     [Header("Timing")]
-    public float confirmationDelay = 0.5f; // Prevents accidental double-clicks
+    public float confirmationDelay = 0.5f;
 
     [Header("UI Feedback")]
     public TextMeshProUGUI statusText;
@@ -24,54 +24,60 @@ public class DeviceSetupMenu : MonoBehaviour
     private InputAction joinAction;
     private InputDevice pendingDevice;
     private bool isWaitingForConfirmation = false;
-    private float lastInteractionTime; // Tracks when we last pressed a button
+    private float lastInteractionTime;
 
-    private void OnEnable()
+    // --- FIX: Setup input ONCE in Awake ---
+    private void Awake()
     {
-        if (statusText != null) statusText.text = defaultPrompt;
-        
-        isWaitingForConfirmation = false;
-        pendingDevice = null;
-        lastInteractionTime = 0f; // Reset timer
-
-        // Listen for ANY button
         joinAction = new InputAction(binding: "/*/<button>", type: InputActionType.PassThrough);
         joinAction.AddBinding("<Joystick>/trigger");
         joinAction.AddBinding("<Gamepad>/start");
-        
+
+        // Subscribe here, but don't enable yet
         joinAction.performed += OnInputDetected;
+    }
+
+    private void OnEnable()
+    {
+        // Reset state
+        if (statusText != null) statusText.text = defaultPrompt;
+        isWaitingForConfirmation = false;
+        pendingDevice = null;
+        lastInteractionTime = 0f;
+
+        // SAFE: Just turn it on
         joinAction.Enable();
     }
 
     private void OnDisable()
     {
-        joinAction.performed -= OnInputDetected;
+        // SAFE: Just turn it off (Do NOT Dispose here)
         joinAction.Disable();
+    }
+
+    private void OnDestroy()
+    {
+        // SAFE: Only destroy when the object is truly gone
         joinAction.Dispose();
     }
+    // --------------------------------------
 
     private void OnInputDetected(InputAction.CallbackContext ctx)
     {
-        // 1. GLOBAL COOLDOWN
-        // If we just pressed a button, ignore everything for a split second
         if (Time.unscaledTime < lastInteractionTime + confirmationDelay)
             return;
 
         InputDevice inputDev = ctx.control.device;
 
-        // 2. IGNORE IF ALREADY TAKEN (Unless it's this player re-confirming)
         if (SessionConfig.IsDeviceUsed(inputDev) && inputDev != pendingDevice)
             return;
 
-        // 3. LOGIC BRANCH
         if (isWaitingForConfirmation && pendingDevice == inputDev)
         {
-            // --- STEP 2: CONFIRMATION ---
             ConfirmSelection(inputDev);
         }
         else
         {
-            // --- STEP 1: DETECTION ---
             StartConfirmationPhase(inputDev);
         }
     }
@@ -80,22 +86,18 @@ public class DeviceSetupMenu : MonoBehaviour
     {
         pendingDevice = device;
         isWaitingForConfirmation = true;
-        lastInteractionTime = Time.unscaledTime; // Start the cooldown timer
+        lastInteractionTime = Time.unscaledTime;
 
-        // Update UI
         if (statusText != null)
         {
             string cleanName = device.name.Replace("InputDevice", "").Trim();
             statusText.text = $"<color=yellow>{cleanName} Detected!</color>\n{confirmPrompt}";
         }
-        
-        // Optional: Play a sound here if you have an AudioSource
-        // GetComponent<AudioSource>()?.PlayOneShot(detectSound);
     }
 
     private void ConfirmSelection(InputDevice device)
     {
-        lastInteractionTime = Time.unscaledTime; // Update timer just in case
+        lastInteractionTime = Time.unscaledTime;
 
         string deviceType = "Controller";
         if (device.name.ToLower().Contains("mat") || device is Joystick)
@@ -105,7 +107,7 @@ public class DeviceSetupMenu : MonoBehaviour
 
         SessionConfig.SetPlayerDevice(playerIndexToAssign, device, deviceType);
 
-        joinAction.Disable();
+        // Disabling the action is safe here, but we rely on OnDisable doing it for us
         GoToNextStep();
     }
 
@@ -116,7 +118,7 @@ public class DeviceSetupMenu : MonoBehaviour
             if (nextMenuForPlayer2 != null)
             {
                 nextMenuForPlayer2.SetActive(true);
-                gameObject.SetActive(false);
+                gameObject.SetActive(false); // Triggers OnDisable()
             }
         }
         else
