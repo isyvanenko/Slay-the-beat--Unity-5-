@@ -1,18 +1,13 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement;
-using System.Collections; // Required for Coroutines
+using UnityEngine.Events;
+using System.Collections;
 
-/// <summary>
-/// This component is required to fade the entire menu.
-/// Add this script to your main menu Canvas, and Unity
-/// will automatically add the CanvasGroup component.
-/// </summary>
 [RequireComponent(typeof(CanvasGroup))]
 public class MenuSelector : MonoBehaviour
 {
-    [Header("Buttons (0 = Settings, 1 = Play, 2 = Reset)")]
+    [Header("Buttons")]
     public RectTransform[] buttons;
     public Image[] outlines;
     public Image[] backgrounds;
@@ -22,7 +17,7 @@ public class MenuSelector : MonoBehaviour
     public float normalScale = 1f;
     public float animSpeed = 8f;
     public float bgSpeed = 6f;
-    public float fadeSpeed = 2f; // Speed for the new fade-in
+    public float fadeSpeed = 2f;
 
     public Color outlineGold = new Color(1f, 0.85f, 0f);
     public Color outlineBlack = Color.black;
@@ -33,8 +28,15 @@ public class MenuSelector : MonoBehaviour
     public float moveCooldown = 0.15f;
 
     [Header("Audio")]
-    public AudioSource audioSource; // Assign your UI AudioSource here
-    public AudioClip switchSound;   // Assign the button switch sound here
+    public AudioSource audioSource;
+    public AudioClip switchSound;
+
+    [Header("Selection Event")]
+    public UnityEvent<int> onSelectIndex;
+
+    [Header("Selection Effects")]
+    public GameObject[] selectionParticles;
+    public GameObject[] selectionSprites;
 
     // Input
     private InputActions input;
@@ -44,10 +46,10 @@ public class MenuSelector : MonoBehaviour
     private InputAction startBtn;
 
     // State
-    private int index = 1;       // start on Play
+    private int index = 0;
     private float lastMoveTime;
     private float pulseTime;
-    private bool isFading = true; // Flag to block update/input during fade
+    private bool isFading = true;
     private CanvasGroup canvasGroup;
 
     void Awake()
@@ -59,18 +61,10 @@ public class MenuSelector : MonoBehaviour
         select = input.UI.Select;
         startBtn = input.UI.Start;
 
-        // Get the CanvasGroup component
         canvasGroup = GetComponent<CanvasGroup>();
 
-        // Try to get AudioSource if not assigned
         if (audioSource == null)
-        {
             audioSource = GetComponent<AudioSource>();
-            if (audioSource == null)
-            {
-                Debug.LogWarning("MenuSelector: No AudioSource found or assigned. Add one to this GameObject to play sounds.");
-            }
-        }
     }
 
     void OnEnable()
@@ -85,62 +79,44 @@ public class MenuSelector : MonoBehaviour
         select.Enable();
         startBtn.Enable();
 
-        // --- NEW FADE-IN LOGIC ---
-        // 1. Set all buttons to their NORMAL state (instead of pre-selecting one)
-        SetInitialVisuals(); 
-        
-        // 2. Prepare canvas for fade-in
+        SetInitialVisuals();
+
         canvasGroup.alpha = 0f;
         canvasGroup.interactable = false;
         canvasGroup.blocksRaycasts = false;
         isFading = true;
 
-        // 3. Start the fade-in coroutine
         StartCoroutine(FadeInCanvas());
-    }
-
-    /// <summary>
-    /// Coroutine to fade the canvas alpha from 0 to 1.
-    /// </summary>
-    IEnumerator FadeInCanvas()
-    {
-        float alpha = 0f;
-        while (alpha < 1f)
-        {
-            // Move alpha towards 1, independent of game time
-            alpha = Mathf.MoveTowards(alpha, 1f, fadeSpeed * Time.unscaledDeltaTime);
-            canvasGroup.alpha = alpha;
-            yield return null; // Wait for the next frame
-        }
-
-        // Ensure it's fully opaque and intractable
-        canvasGroup.alpha = 1f;
-        canvasGroup.interactable = true;
-        canvasGroup.blocksRaycasts = true;
-        isFading = false; // Allow updates and input
     }
 
     void OnDisable()
     {
-        left.performed -= ctx => Move(-1);
-        right.performed -= ctx => Move(+1);
-        select.performed -= ctx => ActivateIndex(index);
-        startBtn.performed -= ctx => ActivateIndex(index);
-
         left.Disable();
         right.Disable();
         select.Disable();
         startBtn.Disable();
 
-        // Stop any running coroutines on this object
         StopAllCoroutines();
     }
 
-    // ----------------------- UPDATE LOOP -----------------------
+    IEnumerator FadeInCanvas()
+    {
+        float alpha = 0f;
+        while (alpha < 1f)
+        {
+            alpha = Mathf.MoveTowards(alpha, 1f, fadeSpeed * Time.unscaledDeltaTime);
+            canvasGroup.alpha = alpha;
+            yield return null;
+        }
+
+        canvasGroup.alpha = 1f;
+        canvasGroup.interactable = true;
+        canvasGroup.blocksRaycasts = true;
+        isFading = false;
+    }
+
     void Update()
     {
-        // --- NEW ---
-        // Don't run any visual updates while fading in
         if (isFading)
             return;
 
@@ -150,7 +126,7 @@ public class MenuSelector : MonoBehaviour
         {
             bool selected = (i == index);
 
-            // Smooth scale
+            // -------- SCALE --------
             float targetScale = selected ? selectedScale : normalScale;
             buttons[i].localScale = Vector3.Lerp(
                 buttons[i].localScale,
@@ -158,7 +134,7 @@ public class MenuSelector : MonoBehaviour
                 Time.unscaledDeltaTime * animSpeed
             );
 
-            // Smooth background fade
+            // -------- BACKGROUND --------
             if (i < backgrounds.Length && backgrounds[i] != null)
             {
                 Color target = selected ? bgWhite : bgGrey;
@@ -169,7 +145,7 @@ public class MenuSelector : MonoBehaviour
                 );
             }
 
-            // Outline smooth pulse
+            // -------- OUTLINE --------
             if (i < outlines.Length && outlines[i] != null)
             {
                 if (selected)
@@ -182,14 +158,23 @@ public class MenuSelector : MonoBehaviour
                     outlines[i].color = outlineBlack;
                 }
             }
+
+            // -------- PARTICLES --------
+            if (i < selectionParticles.Length && selectionParticles[i] != null)
+            {
+                selectionParticles[i].SetActive(selected);
+            }
+
+            // -------- SPRITES --------
+            if (i < selectionSprites.Length && selectionSprites[i] != null)
+            {
+                selectionSprites[i].SetActive(selected);
+            }
         }
     }
 
-    // ----------------------- MOVEMENT -----------------------
     private void Move(int direction)
     {
-        // --- NEW ---
-        // Don't allow movement while fading
         if (isFading)
             return;
 
@@ -198,52 +183,39 @@ public class MenuSelector : MonoBehaviour
 
         lastMoveTime = Time.unscaledTime;
 
-        // --- NEW: Play Sound ---
         if (audioSource != null && switchSound != null)
-        {
             audioSource.PlayOneShot(switchSound);
-        }
 
         index = (index + direction + buttons.Length) % buttons.Length;
     }
 
-    // Snap everything instantly to a NEUTRAL state
     private void SetInitialVisuals()
     {
-        pulseTime = 0; // Reset pulse time so it starts consistently
+        pulseTime = 0f;
+
         for (int i = 0; i < buttons.Length; i++)
         {
-            // Set ALL buttons to the unselected state
             buttons[i].localScale = Vector3.one * normalScale;
 
-            if (i < backgrounds.Length)
+            if (i < backgrounds.Length && backgrounds[i] != null)
                 backgrounds[i].color = bgGrey;
 
-            if (i < outlines.Length)
+            if (i < outlines.Length && outlines[i] != null)
                 outlines[i].color = outlineBlack;
+
+            if (i < selectionParticles.Length && selectionParticles[i] != null)
+                selectionParticles[i].SetActive(false);
+
+            if (i < selectionSprites.Length && selectionSprites[i] != null)
+                selectionSprites[i].SetActive(false);
         }
     }
 
-    // ----------------------- ACTIVATION -----------------------
     private void ActivateIndex(int idx)
     {
-        // --- NEW ---
-        // Don't allow activation while fading
         if (isFading)
             return;
 
-        switch (idx)
-        {
-            case 0: OpenSettings(); break;
-            case 1: StartGame(); break;
-            case 2: ResetGame(); break;
-        }
-    }
-
-    private void OpenSettings() => Debug.Log("Open Settings");
-    private void StartGame() => Debug.Log("Start Game");
-    private void ResetGame()
-    {
-         SceneManager.LoadScene("PromoScene");
+        onSelectIndex?.Invoke(idx);
     }
 }

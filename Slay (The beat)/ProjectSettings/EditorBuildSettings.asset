@@ -12,6 +12,9 @@ EditorBuildSettings:
     path: Assets/Project/Scenes/PreLaunch.unity
     guid: f0809b30a76f3354ca9cb26cc2518d9b
   - enabled: 1
+    path: Assets/Project/Scenes/PlayerSelection.unity
+    guid: ec393415eba9b476785341bbbe6f1468
+  - enabled: 1
     path: Assets/Project/Scenes/Menu.unity
     guid: fbce9c1ced6634413a0638752db18afb
   m_configObjects:
