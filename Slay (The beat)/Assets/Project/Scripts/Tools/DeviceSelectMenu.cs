@@ -2,16 +2,17 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using TMPro;
+using System.Collections;
 
+[RequireComponent(typeof(CanvasGroup))]
 public class DeviceSetupMenu : MonoBehaviour
 {
     [Header("Configuration")]
     public int playerIndexToAssign = 0;
-
-    [Header("Timing")]
     public float confirmationDelay = 0.5f;
 
-    [Header("UI Feedback")]
+    [Header("Visuals")]
+    public float fadeDuration = 0.5f;
     public TextMeshProUGUI statusText;
     public string defaultPrompt = "Press any button to join";
     public string confirmPrompt = "Press again to confirm!";
@@ -20,57 +21,71 @@ public class DeviceSetupMenu : MonoBehaviour
     public GameObject nextMenuForPlayer2;
     public string gameSceneName = "GameScene";
 
-    // Internal State
+    // Internal
     private InputAction joinAction;
     private InputDevice pendingDevice;
     private bool isWaitingForConfirmation = false;
     private float lastInteractionTime;
+    private CanvasGroup canvasGroup;
+    private bool isTransitioning = false;
 
-    // --- FIX: Setup input ONCE in Awake ---
     private void Awake()
     {
-        joinAction = new InputAction(binding: "/*/<button>", type: InputActionType.PassThrough);
-        joinAction.AddBinding("<Joystick>/trigger");
-        joinAction.AddBinding("<Gamepad>/start");
-
-        // Subscribe here, but don't enable yet
-        joinAction.performed += OnInputDetected;
+        canvasGroup = GetComponent<CanvasGroup>();
     }
 
     private void OnEnable()
     {
-        // Reset state
         if (statusText != null) statusText.text = defaultPrompt;
+        
+        // Reset State
         isWaitingForConfirmation = false;
         pendingDevice = null;
         lastInteractionTime = 0f;
+        isTransitioning = false;
 
-        // SAFE: Just turn it on
+        // Start Input
+        joinAction = new InputAction(binding: "/*/<button>", type: InputActionType.PassThrough);
+        joinAction.AddBinding("<Joystick>/trigger");
+        joinAction.AddBinding("<Gamepad>/start");
+        joinAction.performed += OnInputDetected;
         joinAction.Enable();
+
+        // FADE IN START
+        canvasGroup.alpha = 0f;
+        StartCoroutine(FadeIn());
     }
 
     private void OnDisable()
     {
-        // SAFE: Just turn it off (Do NOT Dispose here)
+        joinAction.performed -= OnInputDetected;
         joinAction.Disable();
-    }
-
-    private void OnDestroy()
-    {
-        // SAFE: Only destroy when the object is truly gone
         joinAction.Dispose();
     }
-    // --------------------------------------
+
+    // --- FADE IN LOGIC ---
+    IEnumerator FadeIn()
+    {
+        float timer = 0f;
+        while (timer < fadeDuration)
+        {
+            timer += Time.unscaledDeltaTime;
+            canvasGroup.alpha = Mathf.Lerp(0f, 1f, timer / fadeDuration);
+            yield return null;
+        }
+        canvasGroup.alpha = 1f;
+    }
 
     private void OnInputDetected(InputAction.CallbackContext ctx)
     {
-        if (Time.unscaledTime < lastInteractionTime + confirmationDelay)
-            return;
+        // Don't accept input if we are fading out
+        if (isTransitioning) return;
+
+        if (Time.unscaledTime < lastInteractionTime + confirmationDelay) return;
 
         InputDevice inputDev = ctx.control.device;
 
-        if (SessionConfig.IsDeviceUsed(inputDev) && inputDev != pendingDevice)
-            return;
+        if (SessionConfig.IsDeviceUsed(inputDev) && inputDev != pendingDevice) return;
 
         if (isWaitingForConfirmation && pendingDevice == inputDev)
         {
@@ -98,27 +113,40 @@ public class DeviceSetupMenu : MonoBehaviour
     private void ConfirmSelection(InputDevice device)
     {
         lastInteractionTime = Time.unscaledTime;
-
+        
         string deviceType = "Controller";
         if (device.name.ToLower().Contains("mat") || device is Joystick)
             deviceType = "Dance Mat";
 
         Debug.Log($"CONFIRMED: Player {playerIndexToAssign + 1} uses {device.name}");
-
         SessionConfig.SetPlayerDevice(playerIndexToAssign, device, deviceType);
 
-        // Disabling the action is safe here, but we rely on OnDisable doing it for us
-        GoToNextStep();
+        // Instead of switching immediately, we Fade Out first
+        StartCoroutine(FadeOutAndSwitch());
     }
 
-    private void GoToNextStep()
+    // --- FADE OUT LOGIC ---
+    IEnumerator FadeOutAndSwitch()
     {
+        isTransitioning = true; // Block input
+        joinAction.Disable();   // Stop listening
+
+        float timer = 0f;
+        while (timer < fadeDuration)
+        {
+            timer += Time.unscaledDeltaTime;
+            canvasGroup.alpha = Mathf.Lerp(1f, 0f, timer / fadeDuration);
+            yield return null;
+        }
+        canvasGroup.alpha = 0f;
+
+        // NOW we switch
         if (SessionConfig.PlayerCount > 1 && playerIndexToAssign == 0)
         {
             if (nextMenuForPlayer2 != null)
             {
                 nextMenuForPlayer2.SetActive(true);
-                gameObject.SetActive(false); // Triggers OnDisable()
+                gameObject.SetActive(false);
             }
         }
         else

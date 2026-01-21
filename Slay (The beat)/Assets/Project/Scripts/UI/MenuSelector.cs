@@ -50,6 +50,7 @@ public class MenuSelector : MonoBehaviour
     private float lastMoveTime;
     private float pulseTime;
     private bool isFading = true;
+    private bool hasSelected = false; // <--- NEW FLAG
     private CanvasGroup canvasGroup;
 
     void Awake()
@@ -79,12 +80,13 @@ public class MenuSelector : MonoBehaviour
         select.Enable();
         startBtn.Enable();
 
-        SetInitialVisuals();
+        SetInitialVisuals(); // Resets everything
 
         canvasGroup.alpha = 0f;
         canvasGroup.interactable = false;
         canvasGroup.blocksRaycasts = false;
         isFading = true;
+        hasSelected = false; // <--- RESET FLAG
 
         StartCoroutine(FadeInCanvas());
     }
@@ -117,7 +119,8 @@ public class MenuSelector : MonoBehaviour
 
     void Update()
     {
-        if (isFading)
+        // If fading OR we have already selected, stop updating visuals
+        if (isFading || hasSelected) 
             return;
 
         pulseTime += Time.unscaledDeltaTime;
@@ -160,6 +163,7 @@ public class MenuSelector : MonoBehaviour
             }
 
             // -------- PARTICLES --------
+            // Only update these if we haven't selected yet
             if (i < selectionParticles.Length && selectionParticles[i] != null)
             {
                 selectionParticles[i].SetActive(selected);
@@ -175,7 +179,7 @@ public class MenuSelector : MonoBehaviour
 
     private void Move(int direction)
     {
-        if (isFading)
+        if (isFading || hasSelected) // Lock movement if selected
             return;
 
         if (Time.unscaledTime - lastMoveTime < moveCooldown)
@@ -192,6 +196,7 @@ public class MenuSelector : MonoBehaviour
     private void SetInitialVisuals()
     {
         pulseTime = 0f;
+        hasSelected = false;
 
         for (int i = 0; i < buttons.Length; i++)
         {
@@ -213,9 +218,26 @@ public class MenuSelector : MonoBehaviour
 
     private void ActivateIndex(int idx)
     {
-        if (isFading)
+        if (isFading || hasSelected)
             return;
 
+        hasSelected = true; // LOCK THE MENU
+
+        // 1. Force Disable ALL Particles
+        for (int i = 0; i < selectionParticles.Length; i++)
+        {
+            if (selectionParticles[i] != null)
+                selectionParticles[i].SetActive(false);
+        }
+
+        // 2. Force Enable ALL Sprites (Show P1 AND P2 icons)
+        for (int i = 0; i < selectionSprites.Length; i++)
+        {
+            if (selectionSprites[i] != null)
+                selectionSprites[i].SetActive(true);
+        }
+
+        // 3. Fire the event (PlayerCountMenu logic runs now)
         onSelectIndex?.Invoke(idx);
     }
 }
