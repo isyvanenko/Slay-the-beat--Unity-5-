@@ -1821,7 +1821,7 @@ MonoBehaviour:
   defaultPrompt: Press any button to join
   confirmPrompt: Press again to confirm!
   nextMenuForPlayer2: {fileID: 0}
-  gameSceneName: 
+  gameSceneName: Toxic_Stage
 --- !u!224 &799593791
 RectTransform:
   m_ObjectHideFlags: 0
@@ -12785,7 +12785,7 @@ MonoBehaviour:
   defaultPrompt: 
   confirmPrompt: Press again to confirm!
   nextMenuForPlayer2: {fileID: 799593782}
-  gameSceneName: 
+  gameSceneName: Toxic_Stage
 --- !u!224 &2023702107
 RectTransform:
   m_ObjectHideFlags: 0

@@ -1,0 +1,132 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &3637075445878100504
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8984261688128120377, guid: 6e4172a1719a94bc0b79df3bfb30e344, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7893054
+      objectReference: {fileID: 0}
+    - target: {fileID: -8984261688128120377, guid: 6e4172a1719a94bc0b79df3bfb30e344, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.6140009
+      objectReference: {fileID: 0}
+    - target: {fileID: -8984261688128120377, guid: 6e4172a1719a94bc0b79df3bfb30e344, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 75.759
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6e4172a1719a94bc0b79df3bfb30e344, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.73
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6e4172a1719a94bc0b79df3bfb30e344, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6e4172a1719a94bc0b79df3bfb30e344, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -7.625
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6e4172a1719a94bc0b79df3bfb30e344, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6e4172a1719a94bc0b79df3bfb30e344, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6e4172a1719a94bc0b79df3bfb30e344, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6e4172a1719a94bc0b79df3bfb30e344, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6e4172a1719a94bc0b79df3bfb30e344, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6e4172a1719a94bc0b79df3bfb30e344, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6e4172a1719a94bc0b79df3bfb30e344, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -4405808166799090935, guid: 6e4172a1719a94bc0b79df3bfb30e344, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: ca365b2d4c7c24135a3041d1f17e0561, type: 2}
+    - target: {fileID: 919132149155446097, guid: 6e4172a1719a94bc0b79df3bfb30e344, type: 3}
+      propertyPath: m_Name
+      value: spotlight
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: -3940309405008766541, guid: 6e4172a1719a94bc0b79df3bfb30e344, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1331651401816254467}
+  m_SourcePrefab: {fileID: 100100000, guid: 6e4172a1719a94bc0b79df3bfb30e344, type: 3}
+--- !u!1 &8874424017773022123 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -3940309405008766541, guid: 6e4172a1719a94bc0b79df3bfb30e344, type: 3}
+  m_PrefabInstance: {fileID: 3637075445878100504}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1331651401816254467
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8874424017773022123}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 824ce98e1125b41e2b4d89e42bf2e30c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  musicSource: {fileID: 0}
+  targetRenderer: {fileID: 0}
+  sensitivity: 10
+  smoothTime: 0.1
+  minAlpha: 0.2
+  maxAlpha: 1
+  colorGradient:
+    serializedVersion: 2
+    key0: {r: 0.879622, g: 1, b: 0.6556604, a: 1}
+    key1: {r: 1, g: 0.72187614, b: 0.41037738, a: 1}
+    key2: {r: 1, g: 0.6084906, b: 0.81331694, a: 0}
+    key3: {r: 0.3443396, g: 0.67062485, b: 1, a: 0}
+    key4: {r: 1, g: 1, b: 1, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 0
+    ctime1: 11758
+    ctime2: 27563
+    ctime3: 46838
+    ctime4: 65535
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 65535
+    atime2: 0
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_ColorSpace: -1
+    m_NumColorKeys: 5
+    m_NumAlphaKeys: 2
+  colorStrength: 0.25
