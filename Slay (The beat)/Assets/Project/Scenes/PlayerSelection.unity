@@ -18226,6 +18226,7 @@ GameObject:
   - component: {fileID: 460061251070887201}
   - component: {fileID: 7805736869035871673}
   - component: {fileID: 6045368644922885640}
+  - component: {fileID: 7805736869035871675}
   m_Layer: 0
   m_Name: PlayerSelect
   m_TagString: Untagged
@@ -18777,6 +18778,21 @@ MonoBehaviour:
   twoPlayerSound: {fileID: 8300000, guid: bb8859e1c33374745826223b7c3bf079, type: 3}
   deviceSelectMenuP1: {fileID: 2023702098}
   fadeDuration: 0.5
+--- !u!114 &7805736869035871675
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3055272421853757824}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ad48b49b62f44cedaffdfc8bab17c1e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fadeInDuration: 5
+  setBlocksRaycastsOnEnd: 1
+  setInteractableOnEnd: 1
 --- !u!224 &8030747093335911830
 RectTransform:
   m_ObjectHideFlags: 0

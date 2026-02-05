@@ -1,138 +1,166 @@
 using UnityEngine;
-using UnityEngine.SceneManagement; // For loading scenes
-using TMPro; // For TextMeshPro
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using TMPro;
 using System.Collections;
 
-/// <summary>
-/// This script counts down from a specified time.
-/// If the timer reaches 0, it loads a specified scene.
-/// The display is capped at 99, even if the time is longer.
-/// Call StopTimer() from another script when a choice is made.
-/// </summary>
 public class TimeoutRestarter : MonoBehaviour
 {
     [Header("Timer Settings")]
-    [Tooltip("The total time in seconds to count down from.")]
     public float totalTimeInSeconds = 30f;
+    public string sceneToLoadOnTimeout = "StartScene";
 
-    [Tooltip("The name of the scene to load when the timer hits 0.")]
-    public string sceneToLoadOnTimeout = "StartScene"; // Make sure this scene is in your Build Settings
-
-    [Header("Display")]
-    [Tooltip("The TextMeshPro UI element to display the countdown on.")]
+    [Header("UI Components")]
     public TextMeshProUGUI countdownText;
-    [Tooltip("A reference to the 'Unlimited Time' UI object.")]
+    public Slider timerSlider;
+    public Image sliderFillImage;
     public GameObject unlimitedtime;
-    [Tooltip("The color the text will be when the timer gets low.")]
+
+    [Header("Low Time Feedback")]
+    [Tooltip("The image/object that will fade in and out during low time.")]
+    public CanvasGroup lowTimeWarningGroup; 
     public Color32 lowTimeColor = new Color32(255, 29, 0, 255);
-    [Tooltip("The time in seconds when the text should turn red.")]
     public float lowTimeThreshold = 10f;
+    public float fadeSpeed = 5f; // Higher is faster pulsing
+
+    [Header("Interval Pulse")]
+    public Color32 pulseColor = new Color32(255, 215, 0, 255); // Gold
+    public float pulseDuration = 0.6f;
 
     private float currentTime;
-    private bool isTimerRunning = false; // Re-added this missing variable
-    private Color32 defaultColor; // To remember the starting color
+    private bool isTimerRunning = false;
+    private bool isPulsingGold = false;
+    private int lastPulseTriggerSecond = -1; 
+    
+    private Color defaultTextColor;
+    private Color defaultSliderColor;
 
     void Start()
     {
-        // Store the default color
-        if (countdownText != null)
+        if (countdownText != null) defaultTextColor = countdownText.color;
+        if (sliderFillImage != null) defaultSliderColor = sliderFillImage.color;
+
+        if (timerSlider != null)
         {
-            defaultColor = countdownText.color;
+            timerSlider.maxValue = totalTimeInSeconds;
+            timerSlider.value = totalTimeInSeconds;
         }
 
-        // Automatically start the timer when the script is enabled
+        // Ensure the warning starts invisible
+        if (lowTimeWarningGroup != null) lowTimeWarningGroup.alpha = 0;
+
         ResetAndStartTimer();
 
-        // Check for unlimited time at start
-        if (totalTimeInSeconds > 1000 && unlimitedtime != null)
-        {
-            unlimitedtime.SetActive(true);
-        }
-        else if (unlimitedtime != null)
-        {
-            unlimitedtime.SetActive(false);
-        }
-    }
-
-    /// <summary>
-    /// Resets the timer to the full duration and starts it.
-    /// </summary>
-    public void ResetAndStartTimer()
-    {
-        currentTime = totalTimeInSeconds;
-        isTimerRunning = true;
-        UpdateTimerDisplay(); // Update display on the first frame
-    }
-
-    /// <summary>
-    /// Stops the timer from counting down.
-    /// Call this from your MenuSelector script when the player makes a choice.
-    /// </summary>
-    public void StopTimer()
-    {
-        isTimerRunning = false;
+        if (unlimitedtime != null)
+            unlimitedtime.SetActive(totalTimeInSeconds > 1000);
     }
 
     void Update()
     {
-        // If the timer isn't running, do nothing
-        if (!isTimerRunning)
-            return;
+        if (!isTimerRunning) return;
 
-        // Count down
         currentTime -= Time.deltaTime;
 
-        // --- BRACKETING FIX ---
-        // This 'if' block was completely broken before.
-        // Check if time has run out
+        // 1. INTERVAL PULSE (Every 5 seconds, only if NOT in low time)
+        int currentSecond = Mathf.CeilToInt(currentTime);
+        if (currentTime > lowTimeThreshold && currentSecond % 5 == 0 && currentSecond != lastPulseTriggerSecond)
+        {
+            lastPulseTriggerSecond = currentSecond;
+            StartCoroutine(PulseGoldRoutine());
+        }
+
+        // 2. LOW TIME FADE (The "Heartbeat" effect)
+        HandleLowTimeVisuals();
+
         if (currentTime <= 0)
         {
-            currentTime = 0;
-            isTimerRunning = false;
-            
-            Debug.Log($"Timer reached 0! Loading scene: {sceneToLoadOnTimeout}");
-
-            // Re-added the missing scene load logic
-            if (TransitionManager.Instance != null)
-            {
-                TransitionManager.Instance.LoadScene(sceneToLoadOnTimeout);
-            }
-            else
-            {
-                SceneManager.LoadScene(sceneToLoadOnTimeout);
-            }
-        } // --- THIS BRACE WAS MISSING ---
-
-        // This logic is now OUTSIDE the block above, so it runs every frame
-
-        // --- COLOR LOGIC FIX ---
-        // This now checks 'currentTime' to see if the timer is low.
-        if (currentTime < lowTimeThreshold && currentTime > 0)
-        {
-            countdownText.color = lowTimeColor;
-        }
-        else if (currentTime > lowTimeThreshold) // Reset color if not low
-        {
-            countdownText.color = defaultColor;
+            HandleTimeout();
         }
 
-        // Update the visual display
-        UpdateTimerDisplay();
+        UpdateUI();
     }
 
-    private void UpdateTimerDisplay()
+    private void HandleLowTimeVisuals()
+    {
+        if (currentTime < lowTimeThreshold && currentTime > 0)
+        {
+            if (lowTimeWarningGroup != null)
+            {
+                // Sine wave oscillates between -1 and 1. 
+                // We use Abs to make it stay between 0 and 1 for alpha.
+                float alpha = Mathf.Abs(Mathf.Sin(Time.time * fadeSpeed));
+                lowTimeWarningGroup.alpha = alpha;
+            }
+        }
+        else
+        {
+            // Ensure it's hidden if we aren't in low time
+            if (lowTimeWarningGroup != null) lowTimeWarningGroup.alpha = 0;
+        }
+    }
+
+    private void UpdateUI()
     {
         if (countdownText != null)
         {
-            // Calculate the display time, rounding up (so it shows "10" then "9")
             int timeToDisplay = Mathf.CeilToInt(currentTime);
+            countdownText.text = Mathf.Clamp(timeToDisplay, 0, 99).ToString("D2");
             
-            // Clamp the display value to be 99 at most, as requested
-            int clampedTime = Mathf.Clamp(timeToDisplay, 0, 99);
-            
-            // Update the text
-            // "D2" formats the number as two digits (e.g., "09", "08")
-            countdownText.text = clampedTime.ToString("D2");
+            if (!isPulsingGold)
+                countdownText.color = (currentTime < lowTimeThreshold) ? (Color)lowTimeColor : defaultTextColor;
         }
+
+        if (timerSlider != null) timerSlider.value = currentTime;
+
+        if (sliderFillImage != null && !isPulsingGold)
+            sliderFillImage.color = (currentTime < lowTimeThreshold) ? (Color)lowTimeColor : defaultSliderColor;
     }
+
+    private IEnumerator PulseGoldRoutine()
+    {
+        isPulsingGold = true;
+        float elapsed = 0;
+        float halfDist = pulseDuration / 2;
+
+        while (elapsed < halfDist)
+        {
+            elapsed += Time.deltaTime;
+            ApplyPulseColor(Color.Lerp(defaultTextColor, pulseColor, elapsed / halfDist));
+            yield return null;
+        }
+
+        elapsed = 0;
+        while (elapsed < halfDist)
+        {
+            elapsed += Time.deltaTime;
+            ApplyPulseColor(Color.Lerp(pulseColor, defaultTextColor, elapsed / halfDist));
+            yield return null;
+        }
+
+        isPulsingGold = false;
+    }
+
+    private void ApplyPulseColor(Color c)
+    {
+        if (countdownText != null) countdownText.color = c;
+        if (sliderFillImage != null) sliderFillImage.color = c;
+    }
+
+    private void HandleTimeout()
+    {
+        currentTime = 0;
+        isTimerRunning = false;
+        if (TransitionManager.Instance != null)
+            TransitionManager.Instance.LoadScene(sceneToLoadOnTimeout);
+        else
+            SceneManager.LoadScene(sceneToLoadOnTimeout);
+    }
+
+    public void ResetAndStartTimer()
+    {
+        currentTime = totalTimeInSeconds;
+        isTimerRunning = true;
+    }
+
+    public void StopTimer() => isTimerRunning = false;
 }
