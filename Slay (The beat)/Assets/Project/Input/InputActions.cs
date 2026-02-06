@@ -209,6 +209,17 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""d7955c19-7d69-4245-8b1b-7f2d09e71c87"",
+                    ""path"": ""<HID::USB Gamepad >/button3"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""NavigateLeft"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""433c1d75-0517-4597-803b-25b7351ff4d9"",
                     ""path"": ""<Keyboard>/rightArrow"",
                     ""interactions"": """",
@@ -222,6 +233,17 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                     ""name"": """",
                     ""id"": ""7d045f45-bb31-4a2b-81d4-a076d6baad2f"",
                     ""path"": ""<Gamepad>/leftStick/right"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""NavigateRight"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f8e119d5-7cbe-40fc-a2b6-cca63ffaa3cc"",
+                    ""path"": ""<HID::USB Gamepad >/button4"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
