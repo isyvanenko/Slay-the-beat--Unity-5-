@@ -10,7 +10,7 @@ public class LaneController : MonoBehaviour
     public string inputActionName;
     public GameObject notePrefab;
     public Transform spawnPoint;
-    public float noteSpeed = 300f; // Set by Manager
+    public float noteSpeed = 300f; 
 
     [Header("Audio")]
     public AudioSource sfxSource;   
@@ -27,6 +27,12 @@ public class LaneController : MonoBehaviour
     [Header("Scoring")]
     public PlayerScoreManager scoreManager; 
 
+    // --- NEW: ANIMATION CONNECTION ---
+    [Header("Character Animation")]
+    public CharacterAnimationController charAnimator; // Drag the Player Character here
+    public string laneDirectionName; // Set this to "Left", "Right", "Up", or "Down" in Inspector
+    // ---------------------------------
+
     [Header("Visuals")]
     public Color targetColor = Color.white;
     public GameObject holdFlashObject; 
@@ -37,7 +43,6 @@ public class LaneController : MonoBehaviour
     public float goodThreshold = 90f;   
     public float mehThreshold = 160f;   
 
-    // Internal State
     private InputActionMap laneMap;
     private InputAction laneAction;
     private List<NoteObject> activeNotes = new List<NoteObject>();
@@ -45,26 +50,20 @@ public class LaneController : MonoBehaviour
     private Coroutine hitEffectCoroutine; 
     private float holdScoreTimer = 0f; 
 
-    // --- FIXED SETUP: ACCEPTS STRING ARRAY ---
     public void Setup(InputDevice device, string[] actionBindings)
     {
         laneMap = new InputActionMap("LaneMap");
         laneAction = laneMap.AddAction("Hit");
 
-        // Add the bindings (WASD or Arrows or Joystick buttons)
         foreach (string binding in actionBindings)
         {
             laneAction.AddBinding(binding);
         }
 
-        // --- THE FIX IS HERE ---
-        // If the chosen device is a Keyboard, DO NOT lock it to a specific ID.
-        // Just let it listen globally. This fixes the "Keyboard not detected" bug.
         if (device != null && !(device is Keyboard))
         {
             laneMap.devices = new InputDevice[] { device };
         }
-        // -----------------------
 
         laneAction.performed += ctx => OnPress();
         laneAction.canceled += ctx => OnRelease();
@@ -82,8 +81,6 @@ public class LaneController : MonoBehaviour
         if (newNote != null)
         {
             double effectiveStartTime = noteTime - manager.spawnOffset;
-
-            // Calc Miss Line
             float receptorY = 0f;
             if (receptorImage != null) receptorY = receptorImage.rectTransform.anchoredPosition.y;
             else receptorY = transform.localPosition.y;
@@ -98,7 +95,7 @@ public class LaneController : MonoBehaviour
 
     private void OnPress()
     {
-        transform.localScale = Vector3.one * 1.2f; 
+        transform.localScale = Vector3.one * 1.7f; 
 
         if (activeNotes.Count == 0) return;
 
@@ -116,6 +113,14 @@ public class LaneController : MonoBehaviour
             if (scoreManager != null) scoreManager.RegisterHit(judgment);
 
             PlayHitEffect();
+
+            // --- NEW: TRIGGER CHARACTER ANIMATION ---
+            if (charAnimator != null && !string.IsNullOrEmpty(laneDirectionName))
+            {
+                // This sends "Left" (or whatever you set) to the character script
+                charAnimator.TriggerAnimation(laneDirectionName);
+            }
+            // ----------------------------------------
 
             if (targetNote.holdDuration <= 0)
             {
