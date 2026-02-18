@@ -20,6 +20,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Project/Scenes/Toxic_Stage.unity
     guid: a093b2bf2550844be8ebcc45616cc716
+  - enabled: 1
+    path: Assets/Project/Scenes/ResultsScene.unity
+    guid: 920bdf7f51f174fcfbc4638d76ca92f7
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 5580f54f7e37f4a7095a2a8a5f9cc948, type: 2}
   m_UseUCBPForAssetBundles: 0

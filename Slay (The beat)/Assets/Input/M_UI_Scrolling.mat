@@ -24,7 +24,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 138b24c5fac82394ab027b9ed68c8053, type: 3}
+        m_Texture: {fileID: 2800000, guid: 6187ad0784da04a88a88137b4a3cd4cb, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
@@ -32,3 +32,4 @@ Material:
     - _ScrollSpeed: -0.03
     m_Colors: []
   m_BuildTextureStacks: []
+  m_AllowLocking: 1

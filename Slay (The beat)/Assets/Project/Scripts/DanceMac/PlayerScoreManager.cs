@@ -15,6 +15,7 @@ public class PlayerScoreManager : MonoBehaviour
     public int scorePerMeh = 10;         
     public int scorePerHoldTick = 10;    
     public int scorePerHoldFinish = 200; 
+    public int maxCombo = 0;
 
     [Header("Visual Settings")]
     public float baseTextScale = 2.0f; // <--- NEW! Default size (1.0 = Normal, 2.0 = Double)
@@ -69,6 +70,7 @@ public class PlayerScoreManager : MonoBehaviour
         else
         {
             currentCombo++;
+            if (currentCombo > maxCombo) maxCombo = currentCombo;
             if (comboText) 
             {
                 comboText.text = currentCombo.ToString();
