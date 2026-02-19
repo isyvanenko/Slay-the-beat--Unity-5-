@@ -27814,7 +27814,7 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 0}
+  m_audioClip: {fileID: 8300000, guid: 85fac614d1e80472ea8c0f7c7920053d, type: 3}
   m_Resource: {fileID: 8300000, guid: 85fac614d1e80472ea8c0f7c7920053d, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
@@ -29819,7 +29819,7 @@ PlayableDirector:
   m_GameObject: {fileID: 2037020262}
   m_Enabled: 1
   serializedVersion: 3
-  m_PlayableAsset: {fileID: 11400000, guid: 449d184b16c9e4afea85238cc55e8ca4, type: 2}
+  m_PlayableAsset: {fileID: 11400000, guid: 272079fed5282b24c84117efb3138225, type: 2}
   m_InitialState: 0
   m_WrapMode: 2
   m_DirectorUpdateMode: 1
@@ -29847,6 +29847,26 @@ PlayableDirector:
     value: {fileID: 1563594940}
   - key: {fileID: -2105054359425563775, guid: 449d184b16c9e4afea85238cc55e8ca4, type: 2}
     value: {fileID: 1556716743}
+  - key: {fileID: -4134262339092651199, guid: 272079fed5282b24c84117efb3138225, type: 2}
+    value: {fileID: 677547590}
+  - key: {fileID: 3027656976816483509, guid: 272079fed5282b24c84117efb3138225, type: 2}
+    value: {fileID: 1533268829}
+  - key: {fileID: 2203033631321232523, guid: 272079fed5282b24c84117efb3138225, type: 2}
+    value: {fileID: 1106608569}
+  - key: {fileID: -1706648774727581848, guid: 272079fed5282b24c84117efb3138225, type: 2}
+    value: {fileID: 1910179071}
+  - key: {fileID: 4281592941982767288, guid: 272079fed5282b24c84117efb3138225, type: 2}
+    value: {fileID: 1443528651}
+  - key: {fileID: 7630384347784152441, guid: 272079fed5282b24c84117efb3138225, type: 2}
+    value: {fileID: 1714710941}
+  - key: {fileID: -8245971542971210014, guid: 272079fed5282b24c84117efb3138225, type: 2}
+    value: {fileID: 2029295058}
+  - key: {fileID: -4549473790343079016, guid: 272079fed5282b24c84117efb3138225, type: 2}
+    value: {fileID: 1563594940}
+  - key: {fileID: -2105054359425563775, guid: 272079fed5282b24c84117efb3138225, type: 2}
+    value: {fileID: 1556716743}
+  - key: {fileID: 1623242257083542970, guid: 272079fed5282b24c84117efb3138225, type: 2}
+    value: {fileID: 2037020267}
   m_ExposedReferences:
     m_References:
     - 4d25f594783434d7aa6b74b3f30fe08b: {fileID: 1533268825}
