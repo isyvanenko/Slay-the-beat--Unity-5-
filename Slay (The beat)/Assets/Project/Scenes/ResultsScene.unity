@@ -176,7 +176,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 585e261395ef34994812ab63cdf2c602, type: 3}
+  m_Sprite: {fileID: 21300000, guid: a9b57c5577a0f4b3cb5fb4363c946edd, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1961,6 +1961,7 @@ GameObject:
   m_Component:
   - component: {fileID: 635748798}
   - component: {fileID: 635748797}
+  - component: {fileID: 635748799}
   m_Layer: 0
   m_Name: GameObject (1)
   m_TagString: Untagged
@@ -2005,9 +2006,18 @@ MonoBehaviour:
   starSlamDelay: 0.3
   autoTransitionDelay: 15
   rainbowSpeed: 0.75
-  progressSlider: {fileID: 1238013770}
+  voicePlayer1: {fileID: 8300000, guid: e364743c3708a4c85b01d451fb7ee2d4, type: 3}
+  voicePlayer2: {fileID: 8300000, guid: 8bb2d47a02a2c41569e39ea5940db1d7, type: 3}
+  scoreCountingLoop: {fileID: 8300000, guid: 14341e9ae0491485a98a96fb26ee60e2, type: 3}
+  scoreFinished: {fileID: 8300000, guid: 933321ec5ae17466bb283d5f2fa07040, type: 3}
+  comboVoice: {fileID: 8300000, guid: 3711cb20172f849faa0fc0a71282444a, type: 3}
+  starSlam: {fileID: 8300000, guid: d9f7f54578bdf428dbcd3dd474511060, type: 3}
+  applause: {fileID: 8300000, guid: 5a439f21ff5604925a940deb29e32d5a, type: 3}
+  voiceNextSong: {fileID: 0}
+  voiceThankYou: {fileID: 0}
   goldColor: {r: 1, g: 0.74682754, b: 0, a: 1}
   defaultWhite: {r: 1, g: 1, b: 1, a: 1}
+  progressSlider: {fileID: 1238013770}
   songSelectScene: SongSelect
   thankYouScene: ThankYouForPlaying
 --- !u!4 &635748798
@@ -2025,6 +2035,103 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!82 &635748799
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 635748796}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &676527485
 GameObject:
   m_ObjectHideFlags: 0
@@ -5411,7 +5518,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!223 &4992256610160984651
 Canvas:
   m_ObjectHideFlags: 0
