@@ -10,22 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d7208081acd094876a0209816300d0c5, type: 3}
-  m_Name: GlamBot_Score
+  m_Name: PaintedSmile_Score 1
   m_EditorClassIdentifier: 
-  songName: Galm Bot Overload
-  songJacketSprite: {fileID: 21300000, guid: 601983e7ed9374367a7503dbaf150f68, type: 3}
-  gameplaySceneName: ST_GlamBot
-  easySteps: 58
-  mediumSteps: 141
-  hardSteps: 203
-  easyChart: {fileID: 4900000, guid: adeb7dd89f92f49888f90ae60d9c57cb, type: 3}
+  songName: Painted Smile, Empty Seat
+  songJacketSprite: {fileID: 21300000, guid: 5dc82cf1ecc2f4b6eadc6a270580fd12, type: 3}
+  easyChart: {fileID: 0}
   mediumChart: {fileID: 0}
   hardChart: {fileID: 0}
-  songPreviewClip: {fileID: 8300000, guid: 716fd2cb2c75d47d9841072385244689, type: 3}
-  characterSprite: {fileID: 21300000, guid: 2adc5eb5b16a343dfa5f07a0207cba3a, type: 3}
+  songPreviewClip: {fileID: 8300000, guid: 82a63b4dc30444a3aa3a410fe2ad9366, type: 3}
+  characterSprite: {fileID: 21300000, guid: 359d4c16a9b854479b224437f50bf2fb, type: 3}
   p1CharacterSprite: {fileID: 21300000, guid: 585e261395ef34994812ab63cdf2c602, type: 3}
   p2CharacterSprite: {fileID: 21300000, guid: be2865f9c718849aaa78e2c37881f0b0, type: 3}
-  environmentSprite: {fileID: 21300000, guid: 576ddbd834dfd47bf8243c9dc49ff45f, type: 3}
+  environmentSprite: {fileID: 21300000, guid: 7bfd307ebebea472bbc2728aebb2ce87, type: 3}
   fiveStars: 900000
   fourStars: 700000
   threeStars: 500000

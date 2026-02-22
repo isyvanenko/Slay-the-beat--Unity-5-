@@ -2018,7 +2018,7 @@ MonoBehaviour:
   goldColor: {r: 1, g: 0.74682754, b: 0, a: 1}
   defaultWhite: {r: 1, g: 1, b: 1, a: 1}
   progressSlider: {fileID: 1238013770}
-  songSelectScene: SongSelect
+  songSelectScene: SongSelection
   thankYouScene: ThankYouForPlaying
 --- !u!4 &635748798
 Transform:

@@ -213,7 +213,8 @@ public class DeviceSetupMenu : MonoBehaviour
         }
         else
         {
-            SceneManager.LoadScene(gameSceneName);
+            TransitionManager.Instance.LoadScene(gameSceneName);
+            
         }
     }
 }

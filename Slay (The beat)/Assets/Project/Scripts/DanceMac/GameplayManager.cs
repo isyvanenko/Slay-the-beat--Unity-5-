@@ -59,45 +59,63 @@ public SongGradeData thisSongGrades; // Drag your created SongGrade file here
     // (Ensure you have a GameSessionData.cs or class defined!)
 
     void Start()
+{
+    // --- 0. Sync with Bridge (The Missing Link) ---
+    if (GameDataBridge.SelectedSong != null)
     {
-        // --- 1. Setup Inputs ---
-        SetupPlayer1();
+        thisSongGrades = GameDataBridge.SelectedSong;
         
-        if (SessionConfig.PlayerCount == 2) 
-        {
-            SetupPlayer2();
-            if (p2Panel != null) p2Panel.SetActive(true);
-        }
-        else if (p2Panel != null)
-        {
-             p2Panel.SetActive(false);
-        }
-
-        // --- 2. Load Chart ---
-        if (textLoader != null) songChart = textLoader.LoadChart();
-        secondsPerBeat = 60f / bpm;
-
-        // --- 3. Calculate Spawn Offset ---
-        RectTransform receptorRect = p1Left.GetComponent<RectTransform>();
-        RectTransform spawnRect = p1Left.spawnPoint.GetComponent<RectTransform>();
+        // Ensure the music source plays the selected song's clip
+        // (Note: You might want to add a fullSongClip to SongGradeData if preview is short)
         
-        float safeSpeed = (noteSpeed > 0) ? noteSpeed : 300f;
-        float pixelDistance = Mathf.Abs(receptorRect.anchoredPosition.y - spawnRect.anchoredPosition.y);
-        spawnOffset = (pixelDistance / safeSpeed) + manualLatencyAdjustment;
-
-        // --- 4. Sync Speed ---
-        p1Left.noteSpeed = safeSpeed; p1Down.noteSpeed = safeSpeed;
-        p1Up.noteSpeed = safeSpeed;   p1Right.noteSpeed = safeSpeed;
-
-        if (p2Left != null) {
-            p2Left.noteSpeed = safeSpeed; p2Down.noteSpeed = safeSpeed;
-            p2Up.noteSpeed = safeSpeed;   p2Right.noteSpeed = safeSpeed;
-        }
-
-        // --- 5. Start Music ---
-        dspSongStartTime = AudioSettings.dspTime + startDelay;
-        if (musicSource != null) musicSource.PlayScheduled(dspSongStartTime);
+        
+        Debug.Log($"<color=green>Gameplay Sync:</color> Playing {thisSongGrades.songName} on Difficulty {GameDataBridge.SelectedDifficulty}");
     }
+    else
+    {
+        Debug.LogWarning("GameplayManager: No song found in Bridge! Using Inspector default.");
+    }
+
+    // --- 1. Setup Inputs ---
+    SetupPlayer1();
+    
+    if (SessionConfig.PlayerCount == 2) 
+    {
+        SetupPlayer2();
+        if (p2Panel != null) p2Panel.SetActive(true);
+    }
+    else if (p2Panel != null)
+    {
+         p2Panel.SetActive(false);
+    }
+
+    // --- 2. Load Chart ---
+    // The TextChartLoader will now see the updated 'thisSongGrades' via the bridge
+    if (textLoader != null) songChart = textLoader.LoadChart();
+    secondsPerBeat = 60f / bpm;
+
+    // --- 3. Calculate Spawn Offset ---
+    RectTransform receptorRect = p1Left.GetComponent<RectTransform>();
+    RectTransform spawnRect = p1Left.spawnPoint.GetComponent<RectTransform>();
+    
+    float safeSpeed = (noteSpeed > 0) ? noteSpeed : 300f;
+    float pixelDistance = Mathf.Abs(receptorRect.anchoredPosition.y - spawnRect.anchoredPosition.y);
+    spawnOffset = (pixelDistance / safeSpeed) + manualLatencyAdjustment;
+
+    // --- 4. Sync Speed ---
+    p1Left.noteSpeed = safeSpeed; p1Down.noteSpeed = safeSpeed;
+    p1Up.noteSpeed = safeSpeed;   p1Right.noteSpeed = safeSpeed;
+
+    if (p2Left != null) {
+        p2Left.noteSpeed = safeSpeed; p2Down.noteSpeed = safeSpeed;
+        p2Up.noteSpeed = safeSpeed;   p2Right.noteSpeed = safeSpeed;
+    }
+
+    // --- 5. Start Music ---
+    dspSongStartTime = AudioSettings.dspTime + startDelay;
+    if (musicSource != null && musicSource.clip != null) 
+        musicSource.PlayScheduled(dspSongStartTime);
+}
 
     void SetupPlayer1()
     {

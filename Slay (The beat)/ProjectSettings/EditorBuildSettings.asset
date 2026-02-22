@@ -23,6 +23,15 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Project/Scenes/ResultsScene.unity
     guid: 920bdf7f51f174fcfbc4638d76ca92f7
+  - enabled: 1
+    path: Assets/Project/Scenes/SongSelection.unity
+    guid: 080621964840d4b54a3f6eb40c00e984
+  - enabled: 1
+    path: Assets/Project/Scenes/ST_AngelOfYourDreams.unity
+    guid: ba763ffbbc74c4335aab9d25f01948df
+  - enabled: 1
+    path: Assets/Project/Scenes/ST_PaintedSmile.unity
+    guid: 40171102dd38f4a36b32e2c4d195e9cc
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 5580f54f7e37f4a7095a2a8a5f9cc948, type: 2}
   m_UseUCBPForAssetBundles: 0

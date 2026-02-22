@@ -4,51 +4,68 @@ using UnityEngine;
 
 public class TextChartLoader : MonoBehaviour
 {
-    public TextAsset chartFile; // Drag your .txt file here
-
     public List<NoteEvent> LoadChart()
     {
         List<NoteEvent> newChart = new List<NoteEvent>();
 
-        if (chartFile == null)
+        // 1. Grab data from the Bridge
+        SongGradeData data = GameDataBridge.SelectedSong;
+        int diff = GameDataBridge.SelectedDifficulty;
+
+        if (data == null)
         {
-            Debug.LogError("No Chart File assigned!");
+            Debug.LogError("<color=red>CHART ERROR:</color> No Song Data in Bridge! Did you start from the Menu?");
             return newChart;
         }
 
-        // Split the file into lines
+        // 2. Select the correct file based on difficulty
+        TextAsset chartFile = null;
+        string diffName = "";
+
+        switch (diff)
+        {
+            case 0: chartFile = data.easyChart; diffName = "EASY"; break;
+            case 1: chartFile = data.mediumChart; diffName = "MEDIUM"; break;
+            case 2: chartFile = data.hardChart; diffName = "HARD"; break;
+        }
+
+        if (chartFile == null)
+        {
+            Debug.LogError($"<color=red>CHART ERROR:</color> The {diffName} .txt file is missing in SongGradeData!");
+            return newChart;
+        }
+
+        Debug.Log($"<color=cyan>CHART LOADER:</color> Parsing {data.songName} [{diffName}] - File: {chartFile.name}");
+
+        // 3. FULL PARSING LOGIC (Your Key Logic Restored)
         string[] lines = chartFile.text.Split('\n');
 
         foreach (string line in lines)
         {
             if (string.IsNullOrWhiteSpace(line)) continue;
 
-            // 1. Split by TAB first
-            // Format: "16.125 [TAB] Right,3.188"
+            // Split by TAB, fallback to Space
             string[] parts = line.Split('\t');
-            
-            // If tab split fails, try space (just in case)
             if (parts.Length < 2) parts = line.Split(' ');
             if (parts.Length < 2) continue;
 
-            // 2. Parse Time
+            // Parse Time
             if (!float.TryParse(parts[0].Trim(), out float time)) continue;
 
-            // 3. Parse Data (Direction + Hold)
-            // Example: "Right,3.188" OR just "Left"
+            // Parse Data (Direction + Hold)
             string dataPart = parts[1].Trim();
             string[] dataSplit = dataPart.Split(',');
 
             string directionStr = dataSplit[0].Trim();
             float holdDuration = 0f;
 
-            // Check if there is a hold duration (the part after the comma)
+            // Check for hold duration
             if (dataSplit.Length > 1)
             {
                 float.TryParse(dataSplit[1], out holdDuration);
             }
 
-            // 4. Convert "Left/Right/Up/Down" to ID (0-3)
+            // Convert String to Index
             int laneIndex = GetLaneIndex(directionStr);
 
             if (laneIndex != -1)
@@ -62,10 +79,10 @@ public class TextChartLoader : MonoBehaviour
             }
         }
 
-        // Sort just in case the file lines are out of order
+        // Sort just in case
         newChart.Sort((a, b) => a.time.CompareTo(b.time));
 
-        Debug.Log($"Loaded {newChart.Count} notes from Text format.");
+        Debug.Log($"<color=green>CHART SUCCESS:</color> Generated {newChart.Count} notes.");
         return newChart;
     }
 
