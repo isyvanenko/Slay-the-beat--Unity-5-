@@ -27,11 +27,9 @@ public class LaneController : MonoBehaviour
     [Header("Scoring")]
     public PlayerScoreManager scoreManager; 
 
-    // --- NEW: ANIMATION CONNECTION ---
     [Header("Character Animation")]
-    public CharacterAnimationController charAnimator; // Drag the Player Character here
-    public string laneDirectionName; // Set this to "Left", "Right", "Up", or "Down" in Inspector
-    // ---------------------------------
+    public CharacterAnimationController charAnimator; 
+    public string laneDirectionName; 
 
     [Header("Visuals")]
     public Color targetColor = Color.white;
@@ -43,32 +41,43 @@ public class LaneController : MonoBehaviour
     public float goodThreshold = 90f;   
     public float mehThreshold = 160f;   
 
-    private InputActionMap laneMap;
-    private InputAction laneAction;
+    // Changed from InputActionMap to a single InputAction reference
+    private InputAction laneAction; 
     private List<NoteObject> activeNotes = new List<NoteObject>();
     private NoteObject currentHoldNote = null;
     private Coroutine hitEffectCoroutine; 
     private float holdScoreTimer = 0f; 
 
-    public void Setup(InputDevice device, string[] actionBindings)
+    private float lastPressTime;
+    public float inputCooldown = 0.05f; // 50ms buffer
+
+    /// <summary>
+    /// REPLACES SETUP: This is called by GameplayManager to link the 
+    /// PlayerInput actions to this specific lane.
+    /// </summary>
+    public void Initialize(InputAction action)
     {
-        laneMap = new InputActionMap("LaneMap");
-        laneAction = laneMap.AddAction("Hit");
-
-        foreach (string binding in actionBindings)
+        // Unsubscribe from old action if it exists to prevent memory leaks
+        if (laneAction != null)
         {
-            laneAction.AddBinding(binding);
+            laneAction.performed -= OnActionTriggered;
+            laneAction.canceled -= OnActionCanceled;
         }
 
-        if (device != null && !(device is Keyboard))
-        {
-            laneMap.devices = new InputDevice[] { device };
-        }
+        laneAction = action;
 
-        laneAction.performed += ctx => OnPress();
-        laneAction.canceled += ctx => OnRelease();
-        laneMap.Enable();
+        if (laneAction != null)
+        {
+            laneAction.Enable();
+            // We use these wrapper methods to call your existing logic
+            laneAction.performed += OnActionTriggered;
+            laneAction.canceled += OnActionCanceled;
+        }
     }
+
+    // Wrapper to match InputAction signature
+    private void OnActionTriggered(InputAction.CallbackContext context) => OnPress();
+    private void OnActionCanceled(InputAction.CallbackContext context) => OnRelease();
 
     public void SpawnNote(float duration, float noteTime, GameplayManager manager)
     {
@@ -97,6 +106,11 @@ public class LaneController : MonoBehaviour
     {
         transform.localScale = Vector3.one * 1.7f; 
 
+        // Ignore input if it happened too fast (debounce)
+        if (Time.time - lastPressTime < inputCooldown) return;
+        lastPressTime = Time.time;
+
+        transform.localScale = Vector3.one * 1.7f;
         if (activeNotes.Count == 0) return;
 
         NoteObject targetNote = activeNotes[0];
@@ -114,13 +128,10 @@ public class LaneController : MonoBehaviour
 
             PlayHitEffect();
 
-            // --- NEW: TRIGGER CHARACTER ANIMATION ---
             if (charAnimator != null && !string.IsNullOrEmpty(laneDirectionName))
             {
-                // This sends "Left" (or whatever you set) to the character script
                 charAnimator.TriggerAnimation(laneDirectionName);
             }
-            // ----------------------------------------
 
             if (targetNote.holdDuration <= 0)
             {
@@ -209,5 +220,14 @@ public class LaneController : MonoBehaviour
     private void DestroyNote(NoteObject note) { activeNotes.Remove(note); Destroy(note.gameObject); }
     void OnTriggerEnter2D(Collider2D other) { if (other.TryGetComponent(out NoteObject note)) { activeNotes.Add(note); note.canBeHit = true; } }
     void OnTriggerExit2D(Collider2D other) { if (other.TryGetComponent(out NoteObject note)) { activeNotes.Remove(note); note.canBeHit = false; } }
-    void OnDisable() { if (laneMap != null) { laneMap.Disable(); laneMap.Dispose(); } }
+    
+    // Clean up listeners when the lane is disabled or destroyed
+    void OnDisable() 
+    { 
+        if (laneAction != null) 
+        { 
+            laneAction.performed -= OnActionTriggered;
+            laneAction.canceled -= OnActionCanceled;
+        } 
+    }
 }

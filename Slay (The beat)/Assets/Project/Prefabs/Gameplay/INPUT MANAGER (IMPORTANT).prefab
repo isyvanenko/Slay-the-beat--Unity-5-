@@ -1,0 +1,235 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1238486914461399167
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5851473016503295034}
+  - component: {fileID: 3448971062209581676}
+  m_Layer: 0
+  m_Name: Player Input 1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5851473016503295034
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1238486914461399167}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1641971192107495225}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3448971062209581676
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1238486914461399167}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Actions: {fileID: -944628639613478452, guid: e2700107b22ee194a8da715f31026ee6, type: 3}
+  m_NotificationBehavior: 2
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents:
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: bf9acccf-e6fc-4974-b59c-a42960951761
+    m_ActionName: 'UI/Start[/USB Gamepad /button10,/USB Gamepad 1/button10,/Keyboard/space]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 755ca0f1-8cc7-452a-a014-99f93e00f109
+    m_ActionName: 'UI/Select[/USB Gamepad /button9,/USB Gamepad 1/button9,/Keyboard/space,/XboxGamepadMacOSWireless/buttonSouth]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 40567c0e-3460-48f9-836d-3500c69b3be8
+    m_ActionName: 'UI/NavigateLeft[/Keyboard/leftArrow,/XboxGamepadMacOSWireless/leftStick/left,/USB
+      Gamepad /button3,/USB Gamepad 1/button3,/USB Gamepad /trigger,/USB Gamepad
+      1/trigger]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 6f4f63dd-bad5-4438-81e6-7b588c10a10c
+    m_ActionName: 'UI/NavigateRight[/Keyboard/rightArrow,/XboxGamepadMacOSWireless/leftStick/right,/USB
+      Gamepad /button4,/USB Gamepad 1/button4]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 9ecdf301-d030-49ae-a51e-4d457bd635d5
+    m_ActionName: 'Gameplay/Left[/Keyboard/leftArrow,/USB Gamepad /trigger,/USB Gamepad
+      1/trigger,/USB Gamepad /button3,/USB Gamepad 1/button3]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: ecaf9238-cd46-4fd5-a41e-6184eefdc00a
+    m_ActionName: 'Gameplay/Down[/Keyboard/downArrow,/USB Gamepad /button2,/USB Gamepad
+      1/button2]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 096d05b1-d849-473f-a320-a97b9a35ddb7
+    m_ActionName: 'Gameplay/Up[/Keyboard/upArrow,/USB Gamepad /trigger,/USB Gamepad
+      1/trigger,/USB Gamepad /button3,/USB Gamepad 1/button3]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 2775a916-b192-423a-ac47-37c2f2bf2d3c
+    m_ActionName: 'Gameplay/Right[/USB Gamepad /button4,/USB Gamepad 1/button4,/Keyboard/rightArrow]'
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: P1_Scheme
+  m_DefaultActionMap: Gameplay
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
+--- !u!1 &3316421259027437030
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2008131297676404771}
+  - component: {fileID: 584953327622296179}
+  m_Layer: 0
+  m_Name: Player Input 2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2008131297676404771
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3316421259027437030}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1641971192107495225}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &584953327622296179
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3316421259027437030}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Actions: {fileID: -944628639613478452, guid: e2700107b22ee194a8da715f31026ee6, type: 3}
+  m_NotificationBehavior: 2
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents:
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: bf9acccf-e6fc-4974-b59c-a42960951761
+    m_ActionName: 'UI/Start[/USB Gamepad /button10,/USB Gamepad 1/button10,/Keyboard/space]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 755ca0f1-8cc7-452a-a014-99f93e00f109
+    m_ActionName: 'UI/Select[/USB Gamepad /button9,/USB Gamepad 1/button9,/Keyboard/space,/XboxGamepadMacOSWireless/buttonSouth]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 40567c0e-3460-48f9-836d-3500c69b3be8
+    m_ActionName: 'UI/NavigateLeft[/Keyboard/leftArrow,/XboxGamepadMacOSWireless/leftStick/left,/USB
+      Gamepad /button3,/USB Gamepad 1/button3,/USB Gamepad /trigger,/USB Gamepad
+      1/trigger]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 6f4f63dd-bad5-4438-81e6-7b588c10a10c
+    m_ActionName: 'UI/NavigateRight[/Keyboard/rightArrow,/XboxGamepadMacOSWireless/leftStick/right,/USB
+      Gamepad /button4,/USB Gamepad 1/button4]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 9ecdf301-d030-49ae-a51e-4d457bd635d5
+    m_ActionName: 'Gameplay/Left[/Keyboard/leftArrow,/USB Gamepad /trigger,/USB Gamepad
+      1/trigger,/USB Gamepad /button3,/USB Gamepad 1/button3]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: ecaf9238-cd46-4fd5-a41e-6184eefdc00a
+    m_ActionName: 'Gameplay/Down[/Keyboard/downArrow,/USB Gamepad /button2,/USB Gamepad
+      1/button2]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 096d05b1-d849-473f-a320-a97b9a35ddb7
+    m_ActionName: 'Gameplay/Up[/Keyboard/upArrow,/USB Gamepad /trigger,/USB Gamepad
+      1/trigger,/USB Gamepad /button3,/USB Gamepad 1/button3]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 2775a916-b192-423a-ac47-37c2f2bf2d3c
+    m_ActionName: 'Gameplay/Right[/USB Gamepad /button4,/USB Gamepad 1/button4,/Keyboard/rightArrow]'
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: P2_Scheme
+  m_DefaultActionMap: Gameplay
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
+--- !u!1 &3578502745631688828
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1641971192107495225}
+  m_Layer: 0
+  m_Name: INPUT MANAGER (IMPORTANT)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1641971192107495225
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3578502745631688828}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 688.3126, y: 300.98154, z: 1.71537}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 5851473016503295034}
+  - {fileID: 2008131297676404771}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

@@ -154,6 +154,17 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""1f1c91fd-93bc-4cd1-907f-c31e8c9ee674"",
+                    ""path"": """",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Start"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""6662300a-f9af-4e84-a0ea-587db2ad59e3"",
                     ""path"": ""<HID::USB Gamepad >/button9"",
                     ""interactions"": """",
@@ -220,6 +231,17 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""f9d96ee3-c9bd-429d-a923-d3456862b0c7"",
+                    ""path"": ""<Joystick>/trigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""NavigateLeft"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""433c1d75-0517-4597-803b-25b7351ff4d9"",
                     ""path"": ""<Keyboard>/rightArrow"",
                     ""interactions"": """",
@@ -243,6 +265,17 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""f8e119d5-7cbe-40fc-a2b6-cca63ffaa3cc"",
+                    ""path"": ""<HID::USB Gamepad >/button4"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""NavigateRight"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""8aa6dce5-6c1f-4220-bd1d-455360e20a1f"",
                     ""path"": ""<HID::USB Gamepad >/button4"",
                     ""interactions"": """",
                     ""processors"": """",
@@ -301,7 +334,7 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                     ""path"": ""<Keyboard>/leftArrow"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": "";P1_Scheme"",
                     ""action"": ""Left"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -309,10 +342,21 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""2d2b411d-66fe-4cd6-a1ae-5240d0305f3f"",
+                    ""path"": ""<HID::USB Gamepad >/trigger"",
+                    ""interactions"": """",
+                    ""processors"": ""AxisDeadzone(min=0.5,max=1)"",
+                    ""groups"": "";P1_Scheme"",
+                    ""action"": ""Left"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a5b77706-28ca-4ca0-b2d0-1d0490a2257e"",
                     ""path"": ""<HID::USB Gamepad >/button3"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": "";P2_Scheme"",
                     ""action"": ""Left"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -323,7 +367,7 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                     ""path"": ""<Keyboard>/downArrow"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": "";P1_Scheme"",
                     ""action"": ""Down"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -334,19 +378,8 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                     ""path"": ""<HID::USB Gamepad >/button2"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": "";P2_Scheme;P1_Scheme"",
                     ""action"": ""Down"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": """",
-                    ""id"": ""5ab0848b-04df-41d0-b01f-e882113b16d7"",
-                    ""path"": ""<HID::USB Gamepad >/trigger"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""Up"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -356,7 +389,29 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                     ""path"": ""<Keyboard>/upArrow"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": "";P1_Scheme"",
+                    ""action"": ""Up"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""fb722bc5-82f3-446a-b3b3-270786932bd3"",
+                    ""path"": ""<HID::USB Gamepad >/trigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";P2_Scheme"",
+                    ""action"": ""Up"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""71f03d5d-d2ff-4f1f-8e48-de8f3dff14fa"",
+                    ""path"": ""<HID::USB Gamepad >/button3"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";P1_Scheme"",
                     ""action"": ""Up"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -367,7 +422,7 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                     ""path"": ""<HID::USB Gamepad >/button4"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": "";P1_Scheme;P2_Scheme"",
                     ""action"": ""Right"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -378,7 +433,7 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                     ""path"": ""<Keyboard>/rightArrow"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
+                    ""groups"": "";P1_Scheme"",
                     ""action"": ""Right"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -386,7 +441,40 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
             ]
         }
     ],
-    ""controlSchemes"": []
+    ""controlSchemes"": [
+        {
+            ""name"": ""P1_Scheme"",
+            ""bindingGroup"": ""P1_Scheme"",
+            ""devices"": [
+                {
+                    ""devicePath"": ""<Gamepad>"",
+                    ""isOptional"": false,
+                    ""isOR"": false
+                },
+                {
+                    ""devicePath"": ""<Keyboard>"",
+                    ""isOptional"": false,
+                    ""isOR"": false
+                },
+                {
+                    ""devicePath"": ""<Joystick>"",
+                    ""isOptional"": false,
+                    ""isOR"": false
+                }
+            ]
+        },
+        {
+            ""name"": ""P2_Scheme"",
+            ""bindingGroup"": ""P2_Scheme"",
+            ""devices"": [
+                {
+                    ""devicePath"": ""<Gamepad>"",
+                    ""isOptional"": false,
+                    ""isOR"": false
+                }
+            ]
+        }
+    ]
 }");
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
@@ -735,6 +823,32 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
     /// Provides a new <see cref="GameplayActions" /> instance referencing this action map.
     /// </summary>
     public GameplayActions @Gameplay => new GameplayActions(this);
+    private int m_P1_SchemeSchemeIndex = -1;
+    /// <summary>
+    /// Provides access to the input control scheme.
+    /// </summary>
+    /// <seealso cref="UnityEngine.InputSystem.InputControlScheme" />
+    public InputControlScheme P1_SchemeScheme
+    {
+        get
+        {
+            if (m_P1_SchemeSchemeIndex == -1) m_P1_SchemeSchemeIndex = asset.FindControlSchemeIndex("P1_Scheme");
+            return asset.controlSchemes[m_P1_SchemeSchemeIndex];
+        }
+    }
+    private int m_P2_SchemeSchemeIndex = -1;
+    /// <summary>
+    /// Provides access to the input control scheme.
+    /// </summary>
+    /// <seealso cref="UnityEngine.InputSystem.InputControlScheme" />
+    public InputControlScheme P2_SchemeScheme
+    {
+        get
+        {
+            if (m_P2_SchemeSchemeIndex == -1) m_P2_SchemeSchemeIndex = asset.FindControlSchemeIndex("P2_Scheme");
+            return asset.controlSchemes[m_P2_SchemeSchemeIndex];
+        }
+    }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.
     /// </summary>

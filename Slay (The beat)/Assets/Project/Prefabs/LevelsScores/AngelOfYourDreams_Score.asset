@@ -10,11 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d7208081acd094876a0209816300d0c5, type: 3}
-  m_Name: Angel_Score
+  m_Name: AngelOfYourDreams_Score
   m_EditorClassIdentifier: 
-  songName: Glam Bot
+  songName: Angel of your dreams
+  songJacketSprite: {fileID: 21300000, guid: eff0e5423410c447f84899e895463df8, type: 3}
+  gameplaySceneName: ST_AngelOfYourDreams
+  easySteps: 0
+  mediumSteps: 0
+  hardSteps: 0
+  easyChart: {fileID: 0}
+  mediumChart: {fileID: 4900000, guid: 6dc6e0b6e1e91405ab9da8a1382594d7, type: 3}
+  hardChart: {fileID: 0}
+  songPreviewClip: {fileID: 0}
+  characterSprite: {fileID: 0}
   p1CharacterSprite: {fileID: 21300000, guid: be9e5009e2cbf48a3919863474f9e699, type: 3}
   p2CharacterSprite: {fileID: 21300000, guid: a9b57c5577a0f4b3cb5fb4363c946edd, type: 3}
+  environmentSprite: {fileID: 0}
   fiveStars: 9500000
   fourStars: 7500000
   threeStars: 5500000
