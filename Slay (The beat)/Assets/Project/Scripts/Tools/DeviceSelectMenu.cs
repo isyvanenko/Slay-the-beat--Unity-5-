@@ -21,7 +21,7 @@ public class DeviceSetupMenu : MonoBehaviour
     [Header("Specific Icons")]
     public Image danceMatIcon;
     public Image joystickIcon;
-    public Image keyboardIcon; // Added Keyboard Slot
+    // KeyboardIcon removed as per request
     public Color standbyColor = Color.black;
     public Color activeColor = Color.white;
 
@@ -40,8 +40,8 @@ public class DeviceSetupMenu : MonoBehaviour
     private float lastInteractionTime;
     private CanvasGroup canvasGroup;
     private bool isTransitioning = false;
-    private Coroutine pulseRoutine;
-    private Image currentlyHighlighting;
+    private Coroutine pulseRoutine1;
+    private Coroutine pulseRoutine2;
 
     private void Awake() => canvasGroup = GetComponent<CanvasGroup>();
 
@@ -49,9 +49,8 @@ public class DeviceSetupMenu : MonoBehaviour
     {
         ResetUI();
         
+        // Listen for any button on any device
         joinAction = new InputAction(binding: "/*/<button>", type: InputActionType.PassThrough);
-        joinAction.AddBinding("<Joystick>/trigger");
-        joinAction.AddBinding("<Gamepad>/start");
         joinAction.performed += OnInputDetected;
         joinAction.Enable();
 
@@ -64,23 +63,21 @@ public class DeviceSetupMenu : MonoBehaviour
         joinAction.performed -= OnInputDetected;
         joinAction.Disable();
         joinAction.Dispose();
-        StopPulse();
+        StopAllPulses();
     }
 
     private void ResetUI()
     {
         if (statusText != null) statusText.text = defaultPrompt;
         
-        // Set all icons to standby
         if (danceMatIcon) danceMatIcon.color = standbyColor;
         if (joystickIcon) joystickIcon.color = standbyColor;
-        if (keyboardIcon) keyboardIcon.color = standbyColor;
         
         isWaitingForConfirmation = false;
         pendingDevice = null;
         lastInteractionTime = 0f;
         isTransitioning = false;
-        StopPulse();
+        StopAllPulses();
     }
 
     private void OnInputDetected(InputAction.CallbackContext ctx)
@@ -108,33 +105,43 @@ public class DeviceSetupMenu : MonoBehaviour
         isWaitingForConfirmation = true;
         lastInteractionTime = Time.unscaledTime;
 
-        // Reset all to standby before highlighting new selection
+        // Reset to standby
         if (danceMatIcon) danceMatIcon.color = standbyColor;
         if (joystickIcon) joystickIcon.color = standbyColor;
-        if (keyboardIcon) keyboardIcon.color = standbyColor;
+        StopAllPulses();
 
         string devName = device.name.ToLower();
-        string devProd = device.description.product.ToLower();
+        string devProd = device.description.product != null ? device.description.product.ToLower() : "";
 
-        // Check Device Type
-        if (devName.Contains("keyboard") || device is Keyboard)
+        // --- DEVELOPER KEYBOARD LOGIC ---
+        if (device is Keyboard || devName.Contains("keyboard"))
         {
-            currentlyHighlighting = keyboardIcon;
+            // Highlight BOTH for the developer
+            if (danceMatIcon) danceMatIcon.color = activeColor;
+            if (joystickIcon) joystickIcon.color = activeColor;
+            
+            pulseRoutine1 = StartCoroutine(PulseIcon(danceMatIcon));
+            pulseRoutine2 = StartCoroutine(PulseIcon(joystickIcon));
         }
-        else if (devName.Contains("mat") || devProd.Contains("mat"))
+        // --- DANCE MAT DETECTION ---
+        else if (devName.Contains("mat") || devProd.Contains("mat") || 
+                 devProd.Contains("dance") || devProd.Contains("twin usb") || 
+                 devProd.Contains("usb gamepad"))
         {
-            currentlyHighlighting = danceMatIcon;
+            if (danceMatIcon)
+            {
+                danceMatIcon.color = activeColor;
+                pulseRoutine1 = StartCoroutine(PulseIcon(danceMatIcon));
+            }
         }
+        // --- GENERIC CONTROLLER ---
         else
         {
-            currentlyHighlighting = joystickIcon;
-        }
-
-        if (currentlyHighlighting != null)
-        {
-            currentlyHighlighting.color = activeColor;
-            StopPulse();
-            pulseRoutine = StartCoroutine(PulseIcon(currentlyHighlighting));
+            if (joystickIcon)
+            {
+                joystickIcon.color = activeColor;
+                pulseRoutine1 = StartCoroutine(PulseIcon(joystickIcon));
+            }
         }
 
         if (statusText != null) statusText.text = confirmPrompt;
@@ -143,20 +150,21 @@ public class DeviceSetupMenu : MonoBehaviour
     private void ConfirmSelection(InputDevice device)
     {
         lastInteractionTime = Time.unscaledTime;
-        StopPulse();
+        StopAllPulses();
 
         string deviceType = "Controller";
-        if (currentlyHighlighting == danceMatIcon) deviceType = "Dance Mat";
-        if (currentlyHighlighting == keyboardIcon) deviceType = "Keyboard";
+        
+        // Determine type for SessionConfig
+        if (device is Keyboard) deviceType = "Debug Keyboard";
+        else if (danceMatIcon.color == activeColor && joystickIcon.color == standbyColor) deviceType = "Dance Mat";
 
         SessionConfig.SetPlayerDevice(playerIndexToAssign, device, deviceType);
         StartCoroutine(FadeOutAndSwitch());
     }
 
-    // --- ANIMATIONS ---
-
     IEnumerator PulseIcon(Image target)
     {
+        if (target == null) yield break;
         Vector3 originalScale = Vector3.one;
         Vector3 targetScale = Vector3.one * pulseScale;
         float timer = 0f;
@@ -171,12 +179,12 @@ public class DeviceSetupMenu : MonoBehaviour
         target.transform.localScale = Vector3.one;
     }
 
-    private void StopPulse()
+    private void StopAllPulses()
     {
-        if (pulseRoutine != null) StopCoroutine(pulseRoutine);
+        if (pulseRoutine1 != null) StopCoroutine(pulseRoutine1);
+        if (pulseRoutine2 != null) StopCoroutine(pulseRoutine2);
         if (danceMatIcon) danceMatIcon.transform.localScale = Vector3.one;
         if (joystickIcon) joystickIcon.transform.localScale = Vector3.one;
-        if (keyboardIcon) keyboardIcon.transform.localScale = Vector3.one;
     }
 
     IEnumerator FadeIn()
@@ -214,7 +222,6 @@ public class DeviceSetupMenu : MonoBehaviour
         else
         {
             TransitionManager.Instance.LoadScene(gameSceneName);
-            
         }
     }
 }

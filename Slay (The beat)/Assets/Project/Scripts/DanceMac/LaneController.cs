@@ -41,7 +41,6 @@ public class LaneController : MonoBehaviour
     public float goodThreshold = 90f;   
     public float mehThreshold = 160f;   
 
-    // Changed from InputActionMap to a single InputAction reference
     private InputAction laneAction; 
     private List<NoteObject> activeNotes = new List<NoteObject>();
     private NoteObject currentHoldNote = null;
@@ -51,13 +50,8 @@ public class LaneController : MonoBehaviour
     private float lastPressTime;
     public float inputCooldown = 0.05f; // 50ms buffer
 
-    /// <summary>
-    /// REPLACES SETUP: This is called by GameplayManager to link the 
-    /// PlayerInput actions to this specific lane.
-    /// </summary>
     public void Initialize(InputAction action)
     {
-        // Unsubscribe from old action if it exists to prevent memory leaks
         if (laneAction != null)
         {
             laneAction.performed -= OnActionTriggered;
@@ -69,14 +63,22 @@ public class LaneController : MonoBehaviour
         if (laneAction != null)
         {
             laneAction.Enable();
-            // We use these wrapper methods to call your existing logic
             laneAction.performed += OnActionTriggered;
             laneAction.canceled += OnActionCanceled;
         }
     }
 
-    // Wrapper to match InputAction signature
-    private void OnActionTriggered(InputAction.CallbackContext context) => OnPress();
+    // --- UPDATED WRAPPER ---
+    private void OnActionTriggered(InputAction.CallbackContext context)
+    {
+        // Only trigger OnPress if the button value is high (pressed)
+        // This prevents "ghost hits" when letting go of a key or mat sensor
+        if (context.ReadValueAsButton())
+        {
+            OnPress();
+        }
+    }
+
     private void OnActionCanceled(InputAction.CallbackContext context) => OnRelease();
 
     public void SpawnNote(float duration, float noteTime, GameplayManager manager)
@@ -104,13 +106,12 @@ public class LaneController : MonoBehaviour
 
     private void OnPress()
     {
-        transform.localScale = Vector3.one * 1.7f; 
-
         // Ignore input if it happened too fast (debounce)
         if (Time.time - lastPressTime < inputCooldown) return;
         lastPressTime = Time.time;
 
         transform.localScale = Vector3.one * 1.7f;
+
         if (activeNotes.Count == 0) return;
 
         NoteObject targetNote = activeNotes[0];
@@ -221,7 +222,6 @@ public class LaneController : MonoBehaviour
     void OnTriggerEnter2D(Collider2D other) { if (other.TryGetComponent(out NoteObject note)) { activeNotes.Add(note); note.canBeHit = true; } }
     void OnTriggerExit2D(Collider2D other) { if (other.TryGetComponent(out NoteObject note)) { activeNotes.Remove(note); note.canBeHit = false; } }
     
-    // Clean up listeners when the lane is disabled or destroyed
     void OnDisable() 
     { 
         if (laneAction != null) 
