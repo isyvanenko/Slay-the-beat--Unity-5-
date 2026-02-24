@@ -12,71 +12,72 @@ public class DeviceSetupMenu : MonoBehaviour
     public int playerIndexToAssign = 0;
     public float confirmationDelay = 0.5f;
 
+    [Header("Canvases (CanvasGroups)")]
+    public CanvasGroup mainPromptCG;    
+    public CanvasGroup confirmControllerCG; 
+    public CanvasGroup confirmMatCG;    
+    public float subFadeSpeed = 8f;
+
     [Header("Visuals")]
     public float fadeDuration = 0.5f;
-    public TextMeshProUGUI statusText;
-    public string defaultPrompt = "Press any button to join";
-    public string confirmPrompt = "Press again to confirm!";
+    public string gameSceneName = "GameScene";
 
-    [Header("Specific Icons")]
+    [Header("Icons to Pulse")]
     public Image danceMatIcon;
     public Image joystickIcon;
-    // KeyboardIcon removed as per request
-    public Color standbyColor = Color.black;
-    public Color activeColor = Color.white;
-
-    [Header("Animation Settings")]
     public float pulseScale = 1.15f;
     public float pulseSpeed = 5f;
 
     [Header("Next Steps")]
-    public GameObject nextMenuForPlayer2;
-    public string gameSceneName = "GameScene";
+    public GameObject nextMenuForPlayer2; // DRAG PLAYER 2 UI HERE
 
     // Internal State
     private InputAction joinAction;
     private InputDevice pendingDevice;
     private bool isWaitingForConfirmation = false;
     private float lastInteractionTime;
-    private CanvasGroup canvasGroup;
+    private CanvasGroup rootCanvasGroup;
     private bool isTransitioning = false;
+    
     private Coroutine pulseRoutine1;
     private Coroutine pulseRoutine2;
+    private CanvasGroup activeConfirmCG;
 
-    private void Awake() => canvasGroup = GetComponent<CanvasGroup>();
+    private void Awake() => rootCanvasGroup = GetComponent<CanvasGroup>();
 
     private void OnEnable()
     {
         ResetUI();
         
-        // Listen for any button on any device
         joinAction = new InputAction(binding: "/*/<button>", type: InputActionType.PassThrough);
         joinAction.performed += OnInputDetected;
         joinAction.Enable();
 
-        canvasGroup.alpha = 0f;
-        StartCoroutine(FadeIn());
+        rootCanvasGroup.alpha = 0f;
+        StartCoroutine(FadeIn(rootCanvasGroup, 1f));
     }
 
     private void OnDisable()
     {
-        joinAction.performed -= OnInputDetected;
-        joinAction.Disable();
-        joinAction.Dispose();
+        if (joinAction != null)
+        {
+            joinAction.performed -= OnInputDetected;
+            joinAction.Disable();
+        }
         StopAllPulses();
     }
 
     private void ResetUI()
     {
-        if (statusText != null) statusText.text = defaultPrompt;
-        
-        if (danceMatIcon) danceMatIcon.color = standbyColor;
-        if (joystickIcon) joystickIcon.color = standbyColor;
+        SetCGAlpha(mainPromptCG, 1f);
+        SetCGAlpha(confirmControllerCG, 0f);
+        SetCGAlpha(confirmMatCG, 0f);
         
         isWaitingForConfirmation = false;
         pendingDevice = null;
         lastInteractionTime = 0f;
         isTransitioning = false;
+        activeConfirmCG = null;
         StopAllPulses();
     }
 
@@ -86,7 +87,8 @@ public class DeviceSetupMenu : MonoBehaviour
         if (Time.unscaledTime < lastInteractionTime + confirmationDelay) return;
 
         InputDevice inputDev = ctx.control.device;
-
+        
+        // Prevent P2 from stealing P1's device
         if (SessionConfig.IsDeviceUsed(inputDev) && inputDev != pendingDevice) return;
 
         if (isWaitingForConfirmation && pendingDevice == inputDev)
@@ -104,62 +106,120 @@ public class DeviceSetupMenu : MonoBehaviour
         pendingDevice = device;
         isWaitingForConfirmation = true;
         lastInteractionTime = Time.unscaledTime;
-
-        // Reset to standby
-        if (danceMatIcon) danceMatIcon.color = standbyColor;
-        if (joystickIcon) joystickIcon.color = standbyColor;
         StopAllPulses();
 
         string devName = device.name.ToLower();
-        string devProd = device.description.product != null ? device.description.product.ToLower() : "";
+        string devProd = device.description.product?.ToLower() ?? "";
 
-        // --- DEVELOPER KEYBOARD LOGIC ---
+        CanvasGroup nextCG = null;
+
         if (device is Keyboard || devName.Contains("keyboard"))
         {
-            // Highlight BOTH for the developer
-            if (danceMatIcon) danceMatIcon.color = activeColor;
-            if (joystickIcon) joystickIcon.color = activeColor;
-            
+            nextCG = confirmControllerCG; 
             pulseRoutine1 = StartCoroutine(PulseIcon(danceMatIcon));
             pulseRoutine2 = StartCoroutine(PulseIcon(joystickIcon));
         }
-        // --- DANCE MAT DETECTION ---
-        else if (devName.Contains("mat") || devProd.Contains("mat") || 
-                 devProd.Contains("dance") || devProd.Contains("twin usb") || 
-                 devProd.Contains("usb gamepad"))
+        else if (devName.Contains("mat") || devProd.Contains("mat") || devProd.Contains("dance") || devProd.Contains("usb gamepad"))
         {
-            if (danceMatIcon)
-            {
-                danceMatIcon.color = activeColor;
-                pulseRoutine1 = StartCoroutine(PulseIcon(danceMatIcon));
-            }
+            nextCG = confirmMatCG;
+            pulseRoutine1 = StartCoroutine(PulseIcon(danceMatIcon));
         }
-        // --- GENERIC CONTROLLER ---
         else
         {
-            if (joystickIcon)
-            {
-                joystickIcon.color = activeColor;
-                pulseRoutine1 = StartCoroutine(PulseIcon(joystickIcon));
-            }
+            nextCG = confirmControllerCG;
+            pulseRoutine1 = StartCoroutine(PulseIcon(joystickIcon));
         }
 
-        if (statusText != null) statusText.text = confirmPrompt;
+        StartCoroutine(FadeOut(mainPromptCG));
+        StartCoroutine(FadeIn(nextCG, 1f));
+        activeConfirmCG = nextCG;
     }
 
     private void ConfirmSelection(InputDevice device)
     {
         lastInteractionTime = Time.unscaledTime;
+        isTransitioning = true;
         StopAllPulses();
 
         string deviceType = "Controller";
-        
-        // Determine type for SessionConfig
         if (device is Keyboard) deviceType = "Debug Keyboard";
-        else if (danceMatIcon.color == activeColor && joystickIcon.color == standbyColor) deviceType = "Dance Mat";
+        else if (activeConfirmCG == confirmMatCG) deviceType = "Dance Mat";
 
         SessionConfig.SetPlayerDevice(playerIndexToAssign, device, deviceType);
         StartCoroutine(FadeOutAndSwitch());
+    }
+
+    // --- TRANSITION LOGIC ---
+
+    IEnumerator FadeOutAndSwitch()
+{
+    // 1. Wait for the root canvas of THIS player to finish fading out
+    float timer = 0f;
+    float startAlpha = rootCanvasGroup.alpha;
+    
+    while (timer < fadeDuration)
+    {
+        timer += Time.unscaledDeltaTime;
+        rootCanvasGroup.alpha = Mathf.Lerp(startAlpha, 0f, timer / fadeDuration);
+        yield return null;
+    }
+    rootCanvasGroup.alpha = 0f;
+
+    // 2. Small buffer to ensure rendering has caught up
+    yield return new WaitForSecondsRealtime(0.05f);
+
+    // 3. Logic for switching or loading
+    if (SessionConfig.PlayerCount == 2 && playerIndexToAssign == 0)
+    {
+        if (nextMenuForPlayer2 != null)
+        {
+            // We turn ON P2 first, then turn OFF P1
+            nextMenuForPlayer2.SetActive(true); 
+            gameObject.SetActive(false); 
+        }
+        else
+        {
+            // Fallback if you forgot to assign P2 in the inspector
+            SceneManager.LoadScene(gameSceneName);
+        }
+    }
+    else
+    {
+        // P1 in Solo mode OR P2 has finished
+        SceneManager.LoadScene(gameSceneName);
+    }
+}
+
+    // --- UI HELPERS ---
+
+    private void SetCGAlpha(CanvasGroup cg, float alpha)
+    {
+        if (cg == null) return;
+        cg.alpha = alpha;
+        cg.interactable = alpha > 0.1f;
+        cg.blocksRaycasts = alpha > 0.1f;
+    }
+
+    IEnumerator FadeIn(CanvasGroup cg, float targetAlpha)
+    {
+        if (cg == null) yield break;
+        while (cg.alpha < targetAlpha)
+        {
+            cg.alpha += Time.unscaledDeltaTime * subFadeSpeed;
+            yield return null;
+        }
+        SetCGAlpha(cg, targetAlpha);
+    }
+
+    IEnumerator FadeOut(CanvasGroup cg)
+    {
+        if (cg == null) yield break;
+        while (cg.alpha > 0)
+        {
+            cg.alpha -= Time.unscaledDeltaTime * subFadeSpeed;
+            yield return null;
+        }
+        SetCGAlpha(cg, 0f);
     }
 
     IEnumerator PulseIcon(Image target)
@@ -168,12 +228,10 @@ public class DeviceSetupMenu : MonoBehaviour
         Vector3 originalScale = Vector3.one;
         Vector3 targetScale = Vector3.one * pulseScale;
         float timer = 0f;
-
         while (isWaitingForConfirmation)
         {
             timer += Time.unscaledDeltaTime * pulseSpeed;
-            float lerpVal = (Mathf.Sin(timer) + 1f) / 2f; 
-            target.transform.localScale = Vector3.Lerp(originalScale, targetScale, lerpVal);
+            target.transform.localScale = Vector3.Lerp(originalScale, targetScale, (Mathf.Sin(timer) + 1f) / 2f);
             yield return null;
         }
         target.transform.localScale = Vector3.one;
@@ -185,43 +243,5 @@ public class DeviceSetupMenu : MonoBehaviour
         if (pulseRoutine2 != null) StopCoroutine(pulseRoutine2);
         if (danceMatIcon) danceMatIcon.transform.localScale = Vector3.one;
         if (joystickIcon) joystickIcon.transform.localScale = Vector3.one;
-    }
-
-    IEnumerator FadeIn()
-    {
-        float timer = 0f;
-        while (timer < fadeDuration)
-        {
-            timer += Time.unscaledDeltaTime;
-            canvasGroup.alpha = Mathf.Lerp(0f, 1f, timer / fadeDuration);
-            yield return null;
-        }
-        canvasGroup.alpha = 1f;
-    }
-
-    IEnumerator FadeOutAndSwitch()
-    {
-        isTransitioning = true;
-        float timer = 0f;
-        while (timer < fadeDuration)
-        {
-            timer += Time.unscaledDeltaTime;
-            canvasGroup.alpha = Mathf.Lerp(1f, 0f, timer / fadeDuration);
-            yield return null;
-        }
-        canvasGroup.alpha = 0f;
-
-        if (SessionConfig.PlayerCount > 1 && playerIndexToAssign == 0)
-        {
-            if (nextMenuForPlayer2 != null)
-            {
-                nextMenuForPlayer2.SetActive(true);
-                gameObject.SetActive(false);
-            }
-        }
-        else
-        {
-            TransitionManager.Instance.LoadScene(gameSceneName);
-        }
     }
 }

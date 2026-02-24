@@ -46,9 +46,12 @@ public class LaneController : MonoBehaviour
     private NoteObject currentHoldNote = null;
     private Coroutine hitEffectCoroutine; 
     private float holdScoreTimer = 0f; 
-
     private float lastPressTime;
-    public float inputCooldown = 0.05f; // 50ms buffer
+    public float inputCooldown = 0.05f; 
+
+    private RectTransform rectTransform;
+
+    void Awake() => rectTransform = GetComponent<RectTransform>();
 
     public void Initialize(InputAction action)
     {
@@ -57,9 +60,7 @@ public class LaneController : MonoBehaviour
             laneAction.performed -= OnActionTriggered;
             laneAction.canceled -= OnActionCanceled;
         }
-
         laneAction = action;
-
         if (laneAction != null)
         {
             laneAction.Enable();
@@ -68,15 +69,9 @@ public class LaneController : MonoBehaviour
         }
     }
 
-    // --- UPDATED WRAPPER ---
     private void OnActionTriggered(InputAction.CallbackContext context)
     {
-        // Only trigger OnPress if the button value is high (pressed)
-        // This prevents "ghost hits" when letting go of a key or mat sensor
-        if (context.ReadValueAsButton())
-        {
-            OnPress();
-        }
+        if (context.ReadValueAsButton()) OnPress();
     }
 
     private void OnActionCanceled(InputAction.CallbackContext context) => OnRelease();
@@ -87,35 +82,34 @@ public class LaneController : MonoBehaviour
         
         GameObject newNoteObj = Instantiate(notePrefab, spawnPoint.position, Quaternion.identity, transform.parent);
         newNoteObj.transform.SetAsFirstSibling(); 
+        
         NoteObject newNote = newNoteObj.GetComponent<NoteObject>();
 
         if (newNote != null)
         {
-            double effectiveStartTime = noteTime - manager.spawnOffset;
-            float receptorY = 0f;
-            if (receptorImage != null) receptorY = receptorImage.rectTransform.anchoredPosition.y;
-            else receptorY = transform.localPosition.y;
+            double songSpawnTime = noteTime - manager.spawnOffset;
+            float receptorY = receptorImage != null ? receptorImage.rectTransform.anchoredPosition.y : rectTransform.anchoredPosition.y;
             float missY = receptorY + mehThreshold; 
 
-            newNote.Init(effectiveStartTime, noteSpeed, manager, scoreManager, missY); 
+            newNote.Init(noteTime, songSpawnTime, noteSpeed, manager, scoreManager, missY); 
             newNote.SetRotation(transform.rotation); 
             newNote.SetupHold(duration, noteSpeed);
+            
+            // Set the lane's main color to the note
             newNote.SetColor(targetColor);
         }
     }
 
     private void OnPress()
     {
-        // Ignore input if it happened too fast (debounce)
         if (Time.time - lastPressTime < inputCooldown) return;
         lastPressTime = Time.time;
-
+        
         transform.localScale = Vector3.one * 1.7f;
-
         if (activeNotes.Count == 0) return;
 
         NoteObject targetNote = activeNotes[0];
-        float distance = Mathf.Abs(targetNote.transform.position.y - transform.position.y);
+        float distance = Mathf.Abs(targetNote.GetComponent<RectTransform>().anchoredPosition.y - rectTransform.anchoredPosition.y);
 
         if (distance < mehThreshold)
         {
@@ -126,13 +120,13 @@ public class LaneController : MonoBehaviour
             if (distance < perfectThreshold) judgment = "PERFECT";
 
             if (scoreManager != null) scoreManager.RegisterHit(judgment);
-
             PlayHitEffect();
 
             if (charAnimator != null && !string.IsNullOrEmpty(laneDirectionName))
-            {
                 charAnimator.TriggerAnimation(laneDirectionName);
-            }
+
+            // STOP PULSE AND SET SOLID COLOR ON HIT
+            targetNote.StartHold(); 
 
             if (targetNote.holdDuration <= 0)
             {
@@ -141,8 +135,8 @@ public class LaneController : MonoBehaviour
             else
             {
                 currentHoldNote = targetNote;
-                currentHoldNote.isBeingHeld = true;
                 activeNotes.Remove(targetNote); 
+                
                 if (holdFlashObject != null) holdFlashObject.SetActive(true);
                 if (holdMaskContainer != null) currentHoldNote.transform.SetParent(holdMaskContainer, true);
             }
@@ -153,11 +147,66 @@ public class LaneController : MonoBehaviour
     {
         if (currentHoldNote != null)
         {
-            currentHoldNote.isBeingHeld = false;
+            currentHoldNote.ReleaseHoldEarly(); 
             currentHoldNote.transform.SetParent(transform.parent, true); 
-            if (currentHoldNote.TryGetComponent(out Image img)) img.color = Color.gray;
-            currentHoldNote = null;
+            currentHoldNote = null; 
             if (holdFlashObject != null) holdFlashObject.SetActive(false);
+            transform.localScale = Vector3.one;
+        }
+    }
+
+    void Update()
+    {
+        // Lerp scale back to normal
+        if (currentHoldNote == null)
+        {
+            transform.localScale = Vector3.Lerp(transform.localScale, Vector3.one, Time.deltaTime * 10f);
+            return; 
+        }
+
+        // HARD INPUT GUARD: Kills hold if button is physically released
+        if (laneAction != null && !laneAction.IsPressed())
+        {
+            OnRelease();
+            return;
+        }
+
+        if (currentHoldNote.gameObject == null) { currentHoldNote = null; return; }
+
+        // Rotation effect and pulsing scale for holding
+        if (holdFlashObject != null) holdFlashObject.transform.Rotate(0, 0, 300 * Time.deltaTime);
+        transform.localScale = Vector3.one * 1.1f;
+
+        // Hold Score Ticks
+        if (scoreManager != null)
+        {
+            holdScoreTimer += Time.deltaTime;
+            if (holdScoreTimer >= 0.15f) 
+            {
+                holdScoreTimer = 0f;
+                scoreManager.AddScore(scoreManager.scorePerHoldTick);
+            }
+        }
+
+        // TAIL END MARKER CHECK (World Space)
+        if (currentHoldNote.tailEndMarker != null)
+        {
+            float tailBottomY = currentHoldNote.tailEndMarker.position.y;
+            float receptorY = receptorImage.transform.position.y;
+
+            // When the bottom marker crosses the receptor (assuming scrolling UP)
+            if (tailBottomY >= receptorY)
+            {
+                if (scoreManager != null)
+                {
+                    scoreManager.AddScore(scoreManager.scorePerHoldFinish);
+                    scoreManager.RegisterHit("PERFECT"); 
+                }
+                
+                Destroy(currentHoldNote.gameObject);
+                currentHoldNote = null;
+                if (holdFlashObject != null) holdFlashObject.SetActive(false);
+            }
         }
     }
 
@@ -175,52 +224,29 @@ public class LaneController : MonoBehaviour
         receptorImage.sprite = defaultSprite;
     }
 
-    void Update()
-    {
-        if (currentHoldNote == null)
-        {
-            transform.localScale = Vector3.Lerp(transform.localScale, Vector3.one, Time.deltaTime * 10f);
-            if (holdFlashObject != null && holdFlashObject.activeSelf) holdFlashObject.SetActive(false);
-            return; 
-        }
-
-        if (currentHoldNote.gameObject == null)
-        {
-            currentHoldNote = null;
-            if (holdFlashObject != null) holdFlashObject.SetActive(false);
-            return;
-        }
-
-        if (holdFlashObject != null) holdFlashObject.transform.Rotate(0, 0, 300 * Time.deltaTime);
-        transform.localScale = Vector3.one * 1.1f;
-
-        if (scoreManager != null)
-        {
-            holdScoreTimer += Time.deltaTime;
-            if (holdScoreTimer >= 0.2f) 
-            {
-                holdScoreTimer = 0f;
-                scoreManager.AddScore(scoreManager.scorePerHoldTick);
-            }
-        }
-
-        float tailY_Actual = currentHoldNote.transform.position.y - (currentHoldNote.holdDuration * noteSpeed);
-        if (tailY_Actual > transform.position.y)
-        {
-            if (scoreManager != null)
-            {
-                scoreManager.AddScore(scoreManager.scorePerHoldFinish);
-                scoreManager.RegisterHit("PERFECT"); 
-            }
-            Destroy(currentHoldNote.gameObject);
-            currentHoldNote = null;
-            if (holdFlashObject != null) holdFlashObject.SetActive(false);
-        }
+    private void DestroyNote(NoteObject note) 
+    { 
+        if(activeNotes.Contains(note)) activeNotes.Remove(note); 
+        Destroy(note.gameObject); 
     }
 
-    private void DestroyNote(NoteObject note) { activeNotes.Remove(note); Destroy(note.gameObject); }
-    void OnTriggerEnter2D(Collider2D other) { if (other.TryGetComponent(out NoteObject note)) { activeNotes.Add(note); note.canBeHit = true; } }
-    void OnTriggerExit2D(Collider2D other) { if (other.TryGetComponent(out NoteObject note)) { activeNotes.Remove(note); note.canBeHit = false; } }
+    void OnTriggerEnter2D(Collider2D other) 
+    { 
+        if (other.TryGetComponent(out NoteObject note)) 
+        { 
+            activeNotes.Add(note); 
+            note.canBeHit = true; 
+        } 
+    }
+
+    void OnTriggerExit2D(Collider2D other) 
+    { 
+        if (other.TryGetComponent(out NoteObject note)) 
+        { 
+            activeNotes.Remove(note); 
+            note.canBeHit = false; 
+        } 
+    }
     
     void OnDisable() 
     { 
