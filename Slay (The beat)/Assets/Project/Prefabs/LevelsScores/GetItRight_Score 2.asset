@@ -10,18 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d7208081acd094876a0209816300d0c5, type: 3}
-  m_Name: PaintedSmile_Score 1
+  m_Name: GetItRight_Score 2
   m_EditorClassIdentifier: 
-  songName: Painted Smile, Empty Seat
-  songJacketSprite: {fileID: 21300000, guid: 5dc82cf1ecc2f4b6eadc6a270580fd12, type: 3}
-  gameplaySceneName: ST_PaintedSmile
-  easySteps: 0
-  mediumSteps: 0
+  songName: Get it right
+  songJacketSprite: {fileID: 0}
+  gameplaySceneName: ST_GetItRight
+  easySteps: 70
+  mediumSteps: 111
   hardSteps: 0
-  easyChart: {fileID: 0}
-  mediumChart: {fileID: 4900000, guid: 9aee3ccc9d1144932a8e8206a3c55d73, type: 3}
+  easyChart: {fileID: 4900000, guid: b73c4fcdb57dc44e9a389bdfe5588942, type: 3}
+  mediumChart: {fileID: 4900000, guid: 1bf2f5ea69cf44372a9df8bb8faa0613, type: 3}
   hardChart: {fileID: 0}
-  songPreviewClip: {fileID: 8300000, guid: 4f8d502b71b284ce8a03604fff577091, type: 3}
+  songPreviewClip: {fileID: 8300000, guid: 415e1a9863dbc42378724071a2c30234, type: 3}
   characterSprite: {fileID: 21300000, guid: eed6188d0045047cc945c180a5ea6149, type: 3}
   p1CharacterSprite: {fileID: 21300000, guid: 585e261395ef34994812ab63cdf2c602, type: 3}
   p2CharacterSprite: {fileID: 21300000, guid: be2865f9c718849aaa78e2c37881f0b0, type: 3}

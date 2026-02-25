@@ -21,7 +21,7 @@ MonoBehaviour:
   easyChart: {fileID: 4900000, guid: d4d7b41e1210d49e79e986268f38cbfc, type: 3}
   mediumChart: {fileID: 4900000, guid: adeb7dd89f92f49888f90ae60d9c57cb, type: 3}
   hardChart: {fileID: 4900000, guid: b18b5b8d2653b4c908221ded1a0f06ef, type: 3}
-  songPreviewClip: {fileID: 8300000, guid: 716fd2cb2c75d47d9841072385244689, type: 3}
+  songPreviewClip: {fileID: 8300000, guid: 1b4eccb4b294c469e9448b96bd035168, type: 3}
   characterSprite: {fileID: 21300000, guid: db16e3b436ff541c4b566b4b5f047124, type: 3}
   p1CharacterSprite: {fileID: 21300000, guid: 585e261395ef34994812ab63cdf2c602, type: 3}
   p2CharacterSprite: {fileID: 21300000, guid: be2865f9c718849aaa78e2c37881f0b0, type: 3}

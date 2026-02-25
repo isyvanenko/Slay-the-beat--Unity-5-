@@ -2019,7 +2019,7 @@ MonoBehaviour:
   defaultWhite: {r: 1, g: 1, b: 1, a: 1}
   progressSlider: {fileID: 1238013770}
   songSelectScene: SongSelection
-  thankYouScene: ThankYouForPlaying
+  thankYouScene: Feedback_Scene
 --- !u!4 &635748798
 Transform:
   m_ObjectHideFlags: 0

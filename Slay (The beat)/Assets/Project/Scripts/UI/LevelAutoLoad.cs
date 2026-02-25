@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using System.Collections;
+using UnityEngine.InputSystem; 
 
 public class LevelAutoLoad : MonoBehaviour
 {
@@ -15,6 +16,7 @@ public class LevelAutoLoad : MonoBehaviour
     public Slider timerSlider;
 
     private float timer;
+    public string scenetospawn;
 
     void Start()
     {
@@ -24,16 +26,12 @@ public class LevelAutoLoad : MonoBehaviour
         {
             timerSlider.minValue = 0;
             timerSlider.maxValue = 1;
-            timerSlider.value = 0; // start at 0 (full time)
+            timerSlider.value = 0; 
         }
 
         if (SceneTransManager != null)
         {
             anim = SceneTransManager.GetComponent<Animator>();
-        }
-        else
-        {
-            Debug.Log("Missing a reference to the Scene Trans Manager");
         }
     }
 
@@ -41,7 +39,6 @@ public class LevelAutoLoad : MonoBehaviour
     {
         timer -= Time.deltaTime;
 
-        // Update slider: 0 -> full time, 1 -> time done
         if (timerSlider != null)
         {
             float progress = 1 - (timer / countdownTime);
@@ -50,20 +47,46 @@ public class LevelAutoLoad : MonoBehaviour
 
         if (timer <= 0)
         {
-            StartCoroutine(CallSpawner());
+            LoadNextLevel();
         }
     }
 
-    public IEnumerator CallSpawner()
-    {
-        anim.SetTrigger("EndScene");
-        yield return new WaitForSeconds(0.8f);
-        LoadNextLevel();
-   }
-
     void LoadNextLevel()
     {
-        int nextSceneIndex = SceneManager.GetActiveScene().buildIndex + 1;
-        SceneManager.LoadScene(nextSceneIndex);
+        // 1. Wipe the data clean
+        ResetEntireGameSession();
+        
+        // 2. Load the start scene (Menu/Title)
+        TransitionManager.Instance.LoadScene(scenetospawn);
+    }
+
+    void ResetEntireGameSession()
+    {
+        Debug.Log("System: Purging session data for fresh start.");
+
+        // --- Reset SessionConfig ---
+        SessionConfig.PlayerCount = 1;
+        SessionConfig.Player1Device = null;
+        SessionConfig.Player2Device = null;
+        SessionConfig.P1DeviceType = "";
+        SessionConfig.P2DeviceType = "";
+
+        // --- Reset GameSessionData ---
+        GameSessionData.P1Score = 0;
+        GameSessionData.P2Score = 0;
+        GameSessionData.P1MaxCombo = 0;
+        GameSessionData.P2MaxCombo = 0;
+        GameSessionData.IsTwoPlayer = false;
+        GameSessionData.SongName = "Unknown Song";
+        GameSessionData.CurrentSongGrades = null;
+        
+        // CRITICAL: Reset the round counter so the game doesn't think it's over immediately
+        GameSessionData.CurrentRound = 1; 
+
+        // --- Reset Bridge ---
+        if (GameDataBridge.SelectedSong != null)
+        {
+            GameDataBridge.SelectedSong = null;
+        }
     }
 }
