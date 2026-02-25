@@ -22,10 +22,10 @@ MonoBehaviour:
   mediumChart: {fileID: 4900000, guid: adeb7dd89f92f49888f90ae60d9c57cb, type: 3}
   hardChart: {fileID: 4900000, guid: b18b5b8d2653b4c908221ded1a0f06ef, type: 3}
   songPreviewClip: {fileID: 8300000, guid: 716fd2cb2c75d47d9841072385244689, type: 3}
-  characterSprite: {fileID: 21300000, guid: 2adc5eb5b16a343dfa5f07a0207cba3a, type: 3}
+  characterSprite: {fileID: 21300000, guid: db16e3b436ff541c4b566b4b5f047124, type: 3}
   p1CharacterSprite: {fileID: 21300000, guid: 585e261395ef34994812ab63cdf2c602, type: 3}
   p2CharacterSprite: {fileID: 21300000, guid: be2865f9c718849aaa78e2c37881f0b0, type: 3}
-  environmentSprite: {fileID: 21300000, guid: 576ddbd834dfd47bf8243c9dc49ff45f, type: 3}
+  environmentSprite: {fileID: 21300000, guid: 7115972734f7f40cb9612150aeff826d, type: 3}
   fiveStars: 900000
   fourStars: 700000
   threeStars: 500000
