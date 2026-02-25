@@ -180,13 +180,14 @@ public class DeviceSetupMenu : MonoBehaviour
         else
         {
             // Fallback if you forgot to assign P2 in the inspector
-            SceneManager.LoadScene(gameSceneName);
+             TransitionManager.Instance.LoadScene(gameSceneName);
         }
     }
     else
     {
+        TransitionManager.Instance.LoadScene(gameSceneName);
         // P1 in Solo mode OR P2 has finished
-        SceneManager.LoadScene(gameSceneName);
+        
     }
 }
 
