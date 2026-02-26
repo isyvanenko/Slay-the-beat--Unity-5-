@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7208081acd094876a0209816300d0c5, type: 3}
+  m_Name: FallenInLove_Score 2
+  m_EditorClassIdentifier: 
+  songName: Fallen in Love
+  songJacketSprite: {fileID: 21300000, guid: ba53632d982dd47f0805324e22c01548, type: 3}
+  gameplaySceneName: ST_PaintedSmile
+  easySteps: 0
+  mediumSteps: 0
+  hardSteps: 0
+  easyChart: {fileID: 0}
+  mediumChart: {fileID: 4900000, guid: 9aee3ccc9d1144932a8e8206a3c55d73, type: 3}
+  hardChart: {fileID: 0}
+  songPreviewClip: {fileID: 8300000, guid: 12d4d5a32cfb1449fa5371ad8d0088e4, type: 3}
+  characterSprite: {fileID: 21300000, guid: eed6188d0045047cc945c180a5ea6149, type: 3}
+  p1CharacterSprite: {fileID: 21300000, guid: 585e261395ef34994812ab63cdf2c602, type: 3}
+  p2CharacterSprite: {fileID: 21300000, guid: be2865f9c718849aaa78e2c37881f0b0, type: 3}
+  environmentSprite: {fileID: 21300000, guid: b8c06eeb726b84bb3b9f543450b3bdc9, type: 3}
+  fiveStars: 900000
+  fourStars: 700000
+  threeStars: 500000
+  twoStars: 300000
+  oneStar: 100000
