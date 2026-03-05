@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: GlamBot_Score
   m_EditorClassIdentifier: 
   songName: Galm Bot Overload
-  songJacketSprite: {fileID: 21300000, guid: 601983e7ed9374367a7503dbaf150f68, type: 3}
+  songJacketSprite: {fileID: 21300000, guid: c09b823ad2759435fb8ad1264895a25b, type: 3}
   gameplaySceneName: ST_GlamBot
   easySteps: 52
   mediumSteps: 104

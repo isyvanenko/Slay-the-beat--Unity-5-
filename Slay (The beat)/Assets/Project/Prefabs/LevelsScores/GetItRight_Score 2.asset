@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: GetItRight_Score 2
   m_EditorClassIdentifier: 
   songName: Get it right
-  songJacketSprite: {fileID: 0}
+  songJacketSprite: {fileID: 21300000, guid: 804ace60fae414352a2c2efdce98b4e3, type: 3}
   gameplaySceneName: ST_GetItRight
   easySteps: 70
   mediumSteps: 111
