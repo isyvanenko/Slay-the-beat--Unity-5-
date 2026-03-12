@@ -2129,6 +2129,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: aee1f8ff73274412c9f32e816ccae585, type: 2}
   - {fileID: 11400000, guid: d39354803a2244022ad96612fa3b952f, type: 2}
   - {fileID: 11400000, guid: fb019d42e9268433892c1739d041e352, type: 2}
+  maxTimerValue: 30
+  timerText: {fileID: 0}
+  timerSlider: {fileID: 1238013770}
   songPrefab: {fileID: 1570734423960454562, guid: 7531e4efe3f074279b6df5ad7da654ce, type: 3}
   container: {fileID: 895924008}
   slots:

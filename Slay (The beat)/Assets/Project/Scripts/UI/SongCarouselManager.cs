@@ -14,6 +14,12 @@ public class SongCarouselManager : MonoBehaviour
     [Header("Data Source")]
     public List<SongGradeData> allSongData;
 
+    [Header("Arcade Timer")]
+    public float maxTimerValue = 30f; 
+    public TextMeshProUGUI timerText; 
+    public Slider timerSlider; // Add your UI Slider here
+    private float currentTimer;
+
     [Header("Carousel Setup")]
     public GameObject songPrefab; 
     public Transform container;     
@@ -21,9 +27,9 @@ public class SongCarouselManager : MonoBehaviour
     public CanvasGroup carouselCanvasGroup;
 
     [Header("Main Menu Visuals")]
-    public TextMeshProUGUI mainSongTitleText; // The big title at the top
-    public Image mainCharacterDisplay;        // The character silhouette/image
-    public Image mainBackgroundDisplay;       // The environment/bg image
+    public TextMeshProUGUI mainSongTitleText; 
+    public Image mainCharacterDisplay;        
+    public Image mainBackgroundDisplay;       
 
     [Header("Difficulty UI Elements")]
     public CanvasGroup difficultyCanvasGroup;
@@ -66,52 +72,99 @@ public class SongCarouselManager : MonoBehaviour
     }
 
     void Start()
-{
-    if (allSongData.Count == 0) return;
-
-    // 1. Hide the container immediately so we don't see the "spawn pile"
-    carouselCanvasGroup.alpha = 0f;
-
-    // 2. Initialize Carousel Blocks
-    for (int i = 0; i < allSongData.Count; i++)
     {
-        GameObject go = Instantiate(songPrefab, container);
-        RectTransform rt = go.GetComponent<RectTransform>();
+        if (allSongData.Count == 0) return;
+
+        ResetTimer();
+
+        carouselCanvasGroup.alpha = 0f;
+
+        for (int i = 0; i < allSongData.Count; i++)
+        {
+            GameObject go = Instantiate(songPrefab, container);
+            RectTransform rt = go.GetComponent<RectTransform>();
+            
+            originalScales.Add(rt.localScale);
+            spawnedBlocks.Add(rt);
+            spawnedGroups.Add(go.GetComponent<CanvasGroup>() ?? go.AddComponent<CanvasGroup>());
+            
+            go.GetComponent<SongBlock>()?.UpdateData(allSongData[i]);
+        }
         
-        // Ensure we record the scale properly
-        originalScales.Add(rt.localScale);
-        spawnedBlocks.Add(rt);
-        spawnedGroups.Add(go.GetComponent<CanvasGroup>() ?? go.AddComponent<CanvasGroup>());
-        
-        go.GetComponent<SongBlock>()?.UpdateData(allSongData[i]);
+        Canvas.ForceUpdateCanvases();
+        SnapToPositions();
+
+        difficultyCanvasGroup.alpha = 0f;
+        difficultyCanvasGroup.blocksRaycasts = false;
+        if(pressAgainText) pressAgainText.SetActive(false);
+
+        UpdateSelectionVisuals();
+        carouselCanvasGroup.alpha = 1f;
     }
-    
-    // 3. FORCE UNITY TO CALCULATE UI POSITIONS
-    // This makes sure the 'slots' positions are accurate before we read them
-    Canvas.ForceUpdateCanvases();
-
-    // 4. SNAP POSITIONS IMMEDIATELY
-    SnapToPositions();
-
-    // 5. Setup UI State
-    difficultyCanvasGroup.alpha = 0f;
-    difficultyCanvasGroup.blocksRaycasts = false;
-    if(pressAgainText) pressAgainText.SetActive(false);
-
-    UpdateSelectionVisuals();
-
-    // 6. Show the carousel now that everything is snapped
-    carouselCanvasGroup.alpha = 1f;
-}
 
     void Update()
     {
         if (isTransitioning) return;
 
+        HandleArcadeTimer();
+
         if (currentState == MenuState.Carousel)
             UpdateCarouselMovement();
         else
             UpdateDifficultyVisuals();
+    }
+
+    private void HandleArcadeTimer()
+    {
+        if (currentState == MenuState.Confirming && isTransitioning) return;
+
+        currentTimer -= Time.deltaTime;
+        
+        // Update Text Display
+        if (timerText != null)
+        {
+            timerText.text = Mathf.CeilToInt(currentTimer).ToString();
+            timerText.color = currentTimer < 5f ? Color.red : Color.white;
+        }
+
+        // Update Slider Display (Normalizing currentTimer to 0-1 range)
+        if (timerSlider != null)
+        {
+            float targetValue = Mathf.Clamp01(currentTimer / maxTimerValue);
+            // Lerp the value for a smoother visual depletion
+            timerSlider.value = Mathf.Lerp(timerSlider.value, targetValue, Time.deltaTime * 5f);
+        }
+
+        if (currentTimer <= 0)
+        {
+            AutoSelect();
+        }
+    }
+
+    private void AutoSelect()
+    {
+        if (currentState == MenuState.Carousel)
+        {
+            Debug.Log("Arcade Timeout: Selecting current song.");
+            OnConfirm(); 
+        }
+        else if (currentState == MenuState.Difficulty || currentState == MenuState.Confirming)
+        {
+            Debug.Log("Arcade Timeout: Defaulting to Easy Mode.");
+            currentDiffIndex = 0; // Force Easy
+            GameDataBridge.SelectedDifficulty = currentDiffIndex;
+            
+            string targetScene = allSongData[currentSongIndex].gameplaySceneName;
+            if (!string.IsNullOrEmpty(targetScene))
+                TransitionManager.Instance.LoadScene(targetScene);
+        }
+    }
+
+    public void ResetTimer()
+    {
+        currentTimer = maxTimerValue;
+        // Instant snap for the slider when reset
+        if(timerSlider != null) timerSlider.value = 1f;
     }
 
     void OnMove(int dir)
@@ -135,19 +188,13 @@ public class SongCarouselManager : MonoBehaviour
         }
     }
 
-    // This handles the Name, Images, and Music update
     void UpdateSelectionVisuals()
     {
         SongGradeData currentData = allSongData[currentSongIndex];
-
-        // Update Text
         if (mainSongTitleText != null) mainSongTitleText.text = currentData.songName;
-
-        // Update Sprites
         if (mainCharacterDisplay != null) mainCharacterDisplay.sprite = currentData.characterSprite;
         if (mainBackgroundDisplay != null) mainBackgroundDisplay.sprite = currentData.environmentSprite;
 
-        // Update Music
         if (musicSource && currentData.songPreviewClip)
         {
             musicSource.Stop();
@@ -186,6 +233,7 @@ public class SongCarouselManager : MonoBehaviour
     IEnumerator TransitionToDifficulty()
     {
         isTransitioning = true;
+        ResetTimer(); 
         if (sfxSource && selectSound) sfxSource.PlayOneShot(selectSound);
         
         diffSongTitle.text = allSongData[currentSongIndex].songName;
@@ -218,27 +266,24 @@ public class SongCarouselManager : MonoBehaviour
         }
     }
 
-    // Add this new method to the script
-void SnapToPositions()
-{
-    for (int i = 0; i < spawnedBlocks.Count; i++)
+    void SnapToPositions()
     {
-        int rawDiff = i - currentSongIndex;
-        if (rawDiff > spawnedBlocks.Count / 2) rawDiff -= spawnedBlocks.Count;
-        if (rawDiff <= -spawnedBlocks.Count / 2) rawDiff += spawnedBlocks.Count;
-
-        int targetSlotIndex = rawDiff + 3; 
-        if (targetSlotIndex >= 0 && targetSlotIndex < slots.Length)
+        for (int i = 0; i < spawnedBlocks.Count; i++)
         {
-            // Instead of Lerp, we set position and scale directly
-            spawnedBlocks[i].position = slots[targetSlotIndex].position;
-            spawnedBlocks[i].localScale = originalScales[i] * slots[targetSlotIndex].localScale.x;
-            spawnedGroups[i].alpha = (targetSlotIndex == 0 || targetSlotIndex == 6) ? 0f : 1f;
-            
-            if (targetSlotIndex == 3) spawnedBlocks[i].SetAsLastSibling();
+            int rawDiff = i - currentSongIndex;
+            if (rawDiff > spawnedBlocks.Count / 2) rawDiff -= spawnedBlocks.Count;
+            if (rawDiff <= -spawnedBlocks.Count / 2) rawDiff += spawnedBlocks.Count;
+
+            int targetSlotIndex = rawDiff + 3; 
+            if (targetSlotIndex >= 0 && targetSlotIndex < slots.Length)
+            {
+                spawnedBlocks[i].position = slots[targetSlotIndex].position;
+                spawnedBlocks[i].localScale = originalScales[i] * slots[targetSlotIndex].localScale.x;
+                spawnedGroups[i].alpha = (targetSlotIndex == 0 || targetSlotIndex == 6) ? 0f : 1f;
+                if (targetSlotIndex == 3) spawnedBlocks[i].SetAsLastSibling();
+            }
         }
     }
-}
 
     void UpdateDifficultyVisuals()
     {

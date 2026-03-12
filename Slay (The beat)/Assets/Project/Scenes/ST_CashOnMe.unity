@@ -7928,7 +7928,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 276180105196762060, guid: 73447161f385247378244375212c2ced, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3442669050176077518, guid: 73447161f385247378244375212c2ced, type: 3}
       propertyPath: m_Pivot.x
@@ -13734,7 +13734,7 @@ MonoBehaviour:
   p1ScoreManager: {fileID: 212706496}
   p2ScoreManager: {fileID: 1060807191}
   noteSpeed: 400
-  bpm: 135
+  bpm: 133
   holdsAreInBeats: 1
   startDelay: 3
   manualLatencyAdjustment: 0
@@ -13791,7 +13791,7 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: deb9655eeabcf4c36ab0c5fd4bfabbef, type: 3}
+  m_audioClip: {fileID: 0}
   m_Resource: {fileID: 8300000, guid: deb9655eeabcf4c36ab0c5fd4bfabbef, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
