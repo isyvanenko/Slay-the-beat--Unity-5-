@@ -36,6 +36,9 @@ EditorBuildSettings:
     path: Assets/Project/Scenes/ST_GetItRight.unity
     guid: 84da1489f30c84a10b5d2ed0ad526509
   - enabled: 1
+    path: Assets/Project/Scenes/ST_CashOnMe.unity
+    guid: 2400cfe8df745458994769c38341d8f8
+  - enabled: 1
     path: Assets/Project/Scenes/Feedback_Scene.unity
     guid: 23d5fe574c9814d9d9c3779a854b4062
   m_configObjects:
