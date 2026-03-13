@@ -56,6 +56,13 @@ public class GameplayManager : MonoBehaviour
 
     void Start()
     {
+        // --- NEW: UI ENABLING/DISABLING ---
+        // This ensures the Player 2 canvas is turned off immediately if it's a 1-player game
+        if (p2Panel != null)
+        {
+            p2Panel.SetActive(SessionConfig.PlayerCount == 2);
+        }
+
         // --- 0. Sync with Bridge ---
         if (GameDataBridge.SelectedSong != null)
         {
@@ -87,34 +94,46 @@ public class GameplayManager : MonoBehaviour
     }
 
     void SetupPlayerInputs()
-{
-    // --- Player 1 ---
-    if (p1Input != null && SessionConfig.Player1Device != null)
     {
-        p1Input.user.UnpairDevices(); 
-        // This pairs the DEVICE, regardless of what the scheme is named
-        InputUser.PerformPairingWithDevice(SessionConfig.Player1Device, p1Input.user);
-        
-        p1Left.Initialize(p1Input.actions["Left"]);
-        p1Down.Initialize(p1Input.actions["Down"]);
-        p1Up.Initialize(p1Input.actions["Up"]);
-        p1Right.Initialize(p1Input.actions["Right"]);
+        // --- Player 1 ---
+        if (p1Input != null && SessionConfig.Player1Device != null)
+        {
+            p1Input.user.UnpairDevices(); 
+            // This pairs the DEVICE, regardless of what the scheme is named
+            InputUser.PerformPairingWithDevice(SessionConfig.Player1Device, p1Input.user);
+            
+            p1Left.Initialize(p1Input.actions["Left"]);
+            p1Down.Initialize(p1Input.actions["Down"]);
+            p1Up.Initialize(p1Input.actions["Up"]);
+            p1Right.Initialize(p1Input.actions["Right"]);
 
-        Debug.Log($"<color=cyan>P1 Locked to Device ID:</color> {SessionConfig.Player1Device.deviceId}");
+            Debug.Log($"<color=cyan>P1 Locked to Device ID:</color> {SessionConfig.Player1Device.deviceId}");
+        }
+
+        // --- Player 2 ---
+        if (SessionConfig.PlayerCount == 2)
+        {
+            if (p2Input != null && SessionConfig.Player2Device != null)
+            {
+                p2Input.gameObject.SetActive(true); // Ensure P2 input is active
+                p2Input.user.UnpairDevices();
+                InputUser.PerformPairingWithDevice(SessionConfig.Player2Device, p2Input.user);
+
+                if (p2Left != null) p2Left.Initialize(p2Input.actions["Left"]);
+                if (p2Down != null) p2Down.Initialize(p2Input.actions["Down"]);
+                if (p2Up != null) p2Up.Initialize(p2Input.actions["Up"]);
+                if (p2Right != null) p2Right.Initialize(p2Input.actions["Right"]);
+            }
+        }
+        else
+        {
+            // --- NEW: Disable P2 Input entirely for 1-player mode ---
+            if (p2Input != null)
+            {
+                p2Input.gameObject.SetActive(false);
+            }
+        }
     }
-
-    // --- Player 2 ---
-    if (SessionConfig.PlayerCount == 2 && p2Input != null && SessionConfig.Player2Device != null)
-    {
-        p2Input.user.UnpairDevices();
-        InputUser.PerformPairingWithDevice(SessionConfig.Player2Device, p2Input.user);
-
-        p2Left.Initialize(p2Input.actions["Left"]);
-        p2Down.Initialize(p2Input.actions["Down"]);
-        p2Up.Initialize(p2Input.actions["Up"]);
-        p2Right.Initialize(p2Input.actions["Right"]);
-    }
-}
 
     public double GetSongTime() { return AudioSettings.dspTime - dspSongStartTime; }
 
@@ -163,6 +182,11 @@ public class GameplayManager : MonoBehaviour
             GameSessionData.P2MaxCombo = p2ScoreManager.maxCombo;
             GameSessionData.IsTwoPlayer = true;
         }
+        else
+        {
+            GameSessionData.IsTwoPlayer = false; // Ensure results screen knows it's single player
+        }
+        
         GameSessionData.CurrentSongGrades = thisSongGrades;
         TransitionManager.Instance.LoadScene("ResultsScene");
     }
