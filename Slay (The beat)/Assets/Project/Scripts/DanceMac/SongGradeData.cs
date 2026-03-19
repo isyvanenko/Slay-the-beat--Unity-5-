@@ -3,10 +3,14 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "NewSongGrade", menuName = "RhythmGame/SongGradeData")]
 public class SongGradeData : ScriptableObject
 {
+    // --- NEW: Toggle this ON for your "Random" item ---
+    [Header("Special Feature")]
+    public bool isRandomOption = false; 
+
     [Header("Song Info")]
     public string songName;
     public Sprite songJacketSprite;
-    public string gameplaySceneName = "GameplayScene"; // The scene this song loads into
+    public string gameplaySceneName = "GameplayScene"; 
 
     [Header("Difficulty Step Counts")]
     public int easySteps;
@@ -22,9 +26,9 @@ public class SongGradeData : ScriptableObject
     public AudioClip songPreviewClip; 
 
     [Header("Visuals")]
-    public Sprite characterSprite;      // Main silhouette
-    public Sprite p1CharacterSprite;    // For results/gameplay
-    public Sprite p2CharacterSprite;    // For results/gameplay
+    public Sprite characterSprite;      
+    public Sprite p1CharacterSprite;    
+    public Sprite p2CharacterSprite;    
     public Sprite environmentSprite; 
 
     [Header("Star Thresholds")]
@@ -34,9 +38,6 @@ public class SongGradeData : ScriptableObject
     public int twoStars = 600000;
     public int oneStar = 500000;
 
-    /// <summary>
-    /// Returns the correct TextAsset based on difficulty index (0=Easy, 1=Med, 2=Hard)
-    /// </summary>
     public TextAsset GetChart(int difficultyIndex)
     {
         switch (difficultyIndex)

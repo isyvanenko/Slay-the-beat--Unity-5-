@@ -10,6 +10,9 @@ public class DifficultySelector : MonoBehaviour
 {
     [Header("Song Header Info")]
     public TextMeshProUGUI songNameText;
+    
+    // --- JACKET ART REFERENCE ---
+    public Image jacketImageDisplay;
 
     [Header("UI Box Elements")]
     public RectTransform[] difficultyBoxes; 
@@ -34,7 +37,20 @@ public class DifficultySelector : MonoBehaviour
     public void ShowMenu()
     {
         currentSong = GameDataBridge.SelectedSong;
-        if (songNameText != null && currentSong != null) songNameText.text = currentSong.songName;
+        
+        if (currentSong != null)
+        {
+            // Update Text
+            if (songNameText != null) 
+                songNameText.text = currentSong.songName;
+                
+            // --- UPDATED: Uses your actual songJacketSprite variable ---
+            if (jacketImageDisplay != null)
+            {
+                jacketImageDisplay.sprite = currentSong.songJacketSprite; 
+            }
+        }
+
         UpdateAllStepDisplays();
 
         index = 1;
@@ -49,7 +65,6 @@ public class DifficultySelector : MonoBehaviour
         if (hasSelected || canvasGroup.alpha < 0.9f) return;
 
         // --- HARDWIRED POLLING ---
-        // This checks the hardware directly, bypassing your InputActions asset.
         if (Keyboard.current.leftArrowKey.wasPressedThisFrame || 
             (Gamepad.current != null && Gamepad.current.dpad.left.wasPressedThisFrame))
         {

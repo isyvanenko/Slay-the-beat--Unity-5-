@@ -8,17 +8,30 @@ using UnityEngine.SceneManagement;
 
 public class SongCarouselManager : MonoBehaviour
 {
-    private enum MenuState { Carousel, Difficulty, Confirming }
-    [SerializeField] private MenuState currentState = MenuState.Carousel;
+    private enum MenuState { Splash, Carousel, Difficulty, Confirming }
+    [SerializeField] private MenuState currentState = MenuState.Splash;
 
     [Header("Data Source")]
     public List<SongGradeData> allSongData;
 
-    [Header("Arcade Timer")]
+    [Header("Splash Screen")]
+    public CanvasGroup splashCanvasGroup;
+    public TextMeshProUGUI splashStageText;
+    public float splashDuration = 2.5f; 
+
+    [Header("Arcade Timer & Warnings")]
     public float maxTimerValue = 30f; 
     public TextMeshProUGUI timerText; 
-    public Slider timerSlider; // Add your UI Slider here
+    public Slider timerSlider; 
     private float currentTimer;
+    private float nextWarningTime;
+    private Coroutine warningRoutine;
+
+    [Header("Control Prompts (Canvases)")]
+    public GameObject controlsSongSelect;       
+    public GameObject controlsDifficultyNormal; 
+    public GameObject controlsDifficultyForced; 
+    public CanvasGroup warningCanvasGroup;      
 
     [Header("Carousel Setup")]
     public GameObject songPrefab; 
@@ -33,6 +46,7 @@ public class SongCarouselManager : MonoBehaviour
 
     [Header("Difficulty UI Elements")]
     public CanvasGroup difficultyCanvasGroup;
+    public Image diffJacketDisplay; 
     public RectTransform[] difficultyBoxes; 
     public Image[] difficultyOutlines;
     public TextMeshProUGUI[] diffStepTexts;
@@ -52,6 +66,7 @@ public class SongCarouselManager : MonoBehaviour
     public AudioClip moveSound;         
     public AudioClip selectSound;
     public AudioClip confirmSound;
+    public AudioClip cancelSound; 
     public float musicMaxVolume = 0.5f;
 
     private List<RectTransform> spawnedBlocks = new List<RectTransform>();
@@ -62,22 +77,36 @@ public class SongCarouselManager : MonoBehaviour
     private int currentDiffIndex = 1; 
     private InputActions input;
     private bool isTransitioning = false;
+    private bool wasAutoSelected = false; 
+    
+    // --- NEW: Secret variable to hold the hidden track ---
+    private SongGradeData secretRandomSong = null;
 
     void Awake()
     {
         input = new InputActions();
         input.UI.NavigateLeft.performed += _ => OnMove(-1);
         input.UI.NavigateRight.performed += _ => OnMove(1);
-        input.UI.Select.performed += _ => OnConfirm();
+        input.UI.Select.performed += _ => OnConfirm(false); 
+        input.UI.Cancel.performed += _ => OnCancel(); 
     }
 
     void Start()
     {
         if (allSongData.Count == 0) return;
 
-        ResetTimer();
-
+        currentState = MenuState.Splash;
         carouselCanvasGroup.alpha = 0f;
+        difficultyCanvasGroup.alpha = 0f;
+        
+        if (warningCanvasGroup != null) warningCanvasGroup.alpha = 0f;
+        if (splashCanvasGroup != null) 
+        {
+            splashCanvasGroup.alpha = 1f;
+            splashCanvasGroup.gameObject.SetActive(true);
+        }
+
+        if (musicSource != null) musicSource.Stop();
 
         for (int i = 0; i < allSongData.Count; i++)
         {
@@ -93,13 +122,38 @@ public class SongCarouselManager : MonoBehaviour
         
         Canvas.ForceUpdateCanvases();
         SnapToPositions();
+        
+        if (pressAgainText) pressAgainText.SetActive(false);
+        UpdateControlCanvases(); 
 
-        difficultyCanvasGroup.alpha = 0f;
-        difficultyCanvasGroup.blocksRaycasts = false;
-        if(pressAgainText) pressAgainText.SetActive(false);
+        StartCoroutine(SplashSequenceRoutine());
+    }
 
-        UpdateSelectionVisuals();
-        carouselCanvasGroup.alpha = 1f;
+    private IEnumerator SplashSequenceRoutine()
+    {
+        isTransitioning = true;
+
+        if (splashStageText != null)
+        {
+            if (SessionConfig.CurrentStage >= SessionConfig.MaxStages)
+            {
+                splashStageText.text = "STAGE " + SessionConfig.CurrentStage + "\n<color=yellow>FINAL STAGE</color>";
+            }
+            else
+            {
+                splashStageText.text = "STAGE " + SessionConfig.CurrentStage;
+            }
+        }
+
+        yield return new WaitForSeconds(splashDuration);
+        yield return StartCoroutine(FadeGroups(splashCanvasGroup, carouselCanvasGroup));
+
+        currentState = MenuState.Carousel;
+        isTransitioning = false;
+        
+        UpdateSelectionVisuals(); 
+        ResetTimer(); 
+        UpdateControlCanvases(); 
     }
 
     void Update()
@@ -110,28 +164,32 @@ public class SongCarouselManager : MonoBehaviour
 
         if (currentState == MenuState.Carousel)
             UpdateCarouselMovement();
-        else
+        else if (currentState == MenuState.Difficulty)
             UpdateDifficultyVisuals();
     }
 
     private void HandleArcadeTimer()
     {
-        if (currentState == MenuState.Confirming && isTransitioning) return;
+        if (currentState == MenuState.Splash || currentState == MenuState.Confirming || isTransitioning) return;
 
         currentTimer -= Time.deltaTime;
         
-        // Update Text Display
+        if (currentTimer <= nextWarningTime && currentTimer > 0)
+        {
+            nextWarningTime -= 10f; 
+            if (warningRoutine != null) StopCoroutine(warningRoutine);
+            warningRoutine = StartCoroutine(FlashWarningRoutine());
+        }
+
         if (timerText != null)
         {
             timerText.text = Mathf.CeilToInt(currentTimer).ToString();
             timerText.color = currentTimer < 5f ? Color.red : Color.white;
         }
 
-        // Update Slider Display (Normalizing currentTimer to 0-1 range)
         if (timerSlider != null)
         {
             float targetValue = Mathf.Clamp01(currentTimer / maxTimerValue);
-            // Lerp the value for a smoother visual depletion
             timerSlider.value = Mathf.Lerp(timerSlider.value, targetValue, Time.deltaTime * 5f);
         }
 
@@ -141,20 +199,45 @@ public class SongCarouselManager : MonoBehaviour
         }
     }
 
+    private IEnumerator FlashWarningRoutine()
+    {
+        if (warningCanvasGroup != null)
+        {
+            if (!warningCanvasGroup.gameObject.activeSelf) 
+                warningCanvasGroup.gameObject.SetActive(true);
+            
+            float duration = 2f;
+            float elapsed = 0f;
+            float pulses = 3f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float phase = (elapsed / duration) * (pulses * Mathf.PI * 2f);
+                warningCanvasGroup.alpha = (-Mathf.Cos(phase) + 1f) / 2f;
+                yield return null;
+            }
+
+            warningCanvasGroup.alpha = 0f;
+        }
+    }
+
     private void AutoSelect()
     {
         if (currentState == MenuState.Carousel)
         {
-            Debug.Log("Arcade Timeout: Selecting current song.");
-            OnConfirm(); 
+            OnConfirm(true); 
         }
         else if (currentState == MenuState.Difficulty || currentState == MenuState.Confirming)
         {
-            Debug.Log("Arcade Timeout: Defaulting to Easy Mode.");
-            currentDiffIndex = 0; // Force Easy
+            currentDiffIndex = 0; 
+            
+            // --- UPDATED: Pass the secret song if we land on random! ---
+            SongGradeData finalSong = allSongData[currentSongIndex].isRandomOption ? secretRandomSong : allSongData[currentSongIndex];
+            GameDataBridge.SelectedSong = finalSong;
             GameDataBridge.SelectedDifficulty = currentDiffIndex;
             
-            string targetScene = allSongData[currentSongIndex].gameplaySceneName;
+            string targetScene = finalSong.gameplaySceneName;
             if (!string.IsNullOrEmpty(targetScene))
                 TransitionManager.Instance.LoadScene(targetScene);
         }
@@ -163,13 +246,35 @@ public class SongCarouselManager : MonoBehaviour
     public void ResetTimer()
     {
         currentTimer = maxTimerValue;
-        // Instant snap for the slider when reset
-        if(timerSlider != null) timerSlider.value = 1f;
+        if (timerSlider != null) timerSlider.value = 1f;
+        
+        nextWarningTime = maxTimerValue - 10f; 
+        
+        if (warningCanvasGroup != null) 
+        {
+            warningCanvasGroup.alpha = 0f;
+            warningCanvasGroup.blocksRaycasts = false;
+            warningCanvasGroup.interactable = false;
+            warningCanvasGroup.gameObject.SetActive(true); 
+        }
+        if (warningRoutine != null) StopCoroutine(warningRoutine);
+    }
+
+    private void UpdateControlCanvases()
+    {
+        if (controlsSongSelect) 
+            controlsSongSelect.SetActive(currentState == MenuState.Carousel);
+            
+        if (controlsDifficultyNormal) 
+            controlsDifficultyNormal.SetActive(currentState == MenuState.Difficulty && !wasAutoSelected);
+            
+        if (controlsDifficultyForced) 
+            controlsDifficultyForced.SetActive(currentState == MenuState.Difficulty && wasAutoSelected);
     }
 
     void OnMove(int dir)
     {
-        if (isTransitioning || currentState == MenuState.Confirming) return;
+        if (isTransitioning || currentState == MenuState.Confirming || currentState == MenuState.Splash) return;
 
         if (currentState == MenuState.Carousel)
         {
@@ -190,7 +295,36 @@ public class SongCarouselManager : MonoBehaviour
 
     void UpdateSelectionVisuals()
     {
+        if (currentState == MenuState.Splash) return;
+
         SongGradeData currentData = allSongData[currentSongIndex];
+
+        // --- NEW: Secret Song Generation ---
+        if (currentData.isRandomOption)
+        {
+            if (secretRandomSong == null)
+            {
+                // Gather all valid songs that ARE NOT the random block
+                List<SongGradeData> validSongs = new List<SongGradeData>();
+                foreach (var s in allSongData) 
+                {
+                    if (!s.isRandomOption) validSongs.Add(s);
+                }
+
+                // Pick one randomly
+                if (validSongs.Count > 0)
+                {
+                    secretRandomSong = validSongs[Random.Range(0, validSongs.Count)];
+                }
+            }
+        }
+        else
+        {
+            // Clear the secret song if we move off the random block
+            secretRandomSong = null; 
+        }
+
+        // Visually, display the currentData (the question marks and mysterious text/music)
         if (mainSongTitleText != null) mainSongTitleText.text = currentData.songName;
         if (mainCharacterDisplay != null) mainCharacterDisplay.sprite = currentData.characterSprite;
         if (mainBackgroundDisplay != null) mainBackgroundDisplay.sprite = currentData.environmentSprite;
@@ -204,13 +338,14 @@ public class SongCarouselManager : MonoBehaviour
         }
     }
 
-    void OnConfirm()
+    void OnConfirm(bool isAuto = false)
     {
-        if (isTransitioning) return;
+        if (isTransitioning || currentState == MenuState.Splash) return;
 
         if (currentState == MenuState.Carousel)
         {
-            GameDataBridge.SelectedSong = allSongData[currentSongIndex];
+            wasAutoSelected = isAuto; 
+            // We wait to set the actual bridge until they pick difficulty
             StartCoroutine(TransitionToDifficulty());
         }
         else if (currentState == MenuState.Difficulty)
@@ -218,15 +353,36 @@ public class SongCarouselManager : MonoBehaviour
             currentState = MenuState.Confirming;
             if (sfxSource && selectSound) sfxSource.PlayOneShot(selectSound);
             if (pressAgainText) pressAgainText.SetActive(true);
+            
+            if (controlsDifficultyNormal) controlsDifficultyNormal.SetActive(false);
+            if (controlsDifficultyForced) controlsDifficultyForced.SetActive(false);
         }
         else if (currentState == MenuState.Confirming)
         {
             if (sfxSource && confirmSound) sfxSource.PlayOneShot(confirmSound);
+            
+            // --- UPDATED: Assign the real song to the bridge right before loading ---
+            SongGradeData finalSong = allSongData[currentSongIndex].isRandomOption ? secretRandomSong : allSongData[currentSongIndex];
+            
+            GameDataBridge.SelectedSong = finalSong;
             GameDataBridge.SelectedDifficulty = currentDiffIndex;
             
-            string targetScene = allSongData[currentSongIndex].gameplaySceneName;
+            string targetScene = finalSong.gameplaySceneName;
             if (!string.IsNullOrEmpty(targetScene))
                 TransitionManager.Instance.LoadScene(targetScene);
+        }
+    }
+
+    void OnCancel()
+    {
+        if (isTransitioning || currentState == MenuState.Confirming || currentState == MenuState.Splash) return;
+
+        if (currentState == MenuState.Difficulty)
+        {
+            if (wasAutoSelected) return; 
+
+            if (sfxSource && cancelSound) sfxSource.PlayOneShot(cancelSound);
+            StartCoroutine(TransitionToCarousel());
         }
     }
 
@@ -236,14 +392,45 @@ public class SongCarouselManager : MonoBehaviour
         ResetTimer(); 
         if (sfxSource && selectSound) sfxSource.PlayOneShot(selectSound);
         
-        diffSongTitle.text = allSongData[currentSongIndex].songName;
-        diffStepTexts[0].text = allSongData[currentSongIndex].easySteps.ToString();
-        diffStepTexts[1].text = allSongData[currentSongIndex].mediumSteps.ToString();
-        diffStepTexts[2].text = allSongData[currentSongIndex].hardSteps.ToString();
+        SongGradeData currentData = allSongData[currentSongIndex];
+        
+        // --- NEW: Grab the stats of the SECRET song if we are on random ---
+        SongGradeData statsData = currentData.isRandomOption ? secretRandomSong : currentData;
+
+        // Display the Title and Jacket of the Random Block, but the Numbers of the Secret Song
+        diffSongTitle.text = currentData.songName; 
+        
+        if (statsData != null)
+        {
+            diffStepTexts[0].text = statsData.easySteps.ToString();
+            diffStepTexts[1].text = statsData.mediumSteps.ToString();
+            diffStepTexts[2].text = statsData.hardSteps.ToString();
+        }
+
+        if (diffJacketDisplay != null)
+        {
+            diffJacketDisplay.sprite = currentData.songJacketSprite;
+        }
 
         yield return StartCoroutine(FadeGroups(carouselCanvasGroup, difficultyCanvasGroup));
         currentState = MenuState.Difficulty;
+        UpdateControlCanvases(); 
         difficultyCanvasGroup.blocksRaycasts = true;
+        isTransitioning = false;
+    }
+
+    IEnumerator TransitionToCarousel()
+    {
+        isTransitioning = true;
+        ResetTimer(); 
+        
+        if (pressAgainText) pressAgainText.SetActive(false); 
+
+        yield return StartCoroutine(FadeGroups(difficultyCanvasGroup, carouselCanvasGroup));
+        
+        currentState = MenuState.Carousel;
+        UpdateControlCanvases(); 
+        difficultyCanvasGroup.blocksRaycasts = false;
         isTransitioning = false;
     }
 
@@ -303,6 +490,8 @@ public class SongCarouselManager : MonoBehaviour
 
     IEnumerator FadeGroups(CanvasGroup from, CanvasGroup to)
     {
+        from.blocksRaycasts = false; 
+
         float t = 0;
         while (t < 1f)
         {

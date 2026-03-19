@@ -118,8 +118,8 @@ public class ResultsManager : MonoBehaviour
     {
         // --- 1. SETUP MUSIC FOR RESULTS ---
         if (MusicManager.Instance != null) {
-            MusicManager.Instance.PlayResults(); // Play the background track
-            MusicManager.Instance.SetClub(1.0f);   // Instantly switch to Club vibe
+            MusicManager.Instance.PlayResults(); 
+            MusicManager.Instance.SetClub(1.0f);   
             MusicManager.Instance.SetQuiet(false);
         }
 
@@ -199,11 +199,13 @@ public class ResultsManager : MonoBehaviour
 
         // --- 2. SWITCH BACK TO NORMAL MUSIC ---
         if (MusicManager.Instance != null) {
-            MusicManager.Instance.SetNormal(2.0f); // Clean up the audio for the voice lines
+            MusicManager.Instance.SetNormal(2.0f); 
         }
 
         yield return new WaitForSeconds(1.0f);
-        if (GameSessionData.CurrentRound < GameSessionData.TotalRounds)
+
+        // --- UPDATED: Uses SessionConfig Stage System ---
+        if (SessionConfig.CurrentStage < SessionConfig.MaxStages)
             PlayOneShot(voiceNextSong);
         else
             PlayOneShot(voiceThankYou);
@@ -236,7 +238,6 @@ public class ResultsManager : MonoBehaviour
     }
     void StopLoop() { if(loopAudioSource != null) loopAudioSource.Stop(); }
 
-    // --- Visual Coroutines (CountNumberRoutine, SlamStar, PopText, etc. - keep these the same) ---
     IEnumerator CountNumberRoutine(TextMeshProUGUI textObj, int start, int target, string format)
     {
         float timer = 0;
@@ -304,13 +305,25 @@ public class ResultsManager : MonoBehaviour
         t.localScale = targetScale;
     }
 
+    // --- NEW: Attach this to your Continue UI Button! ---
+    public void ForceContinue()
+    {
+        StopAllCoroutines(); 
+        AutoProgress();
+    }
+
+    // --- UPDATED: Arcade Progression Logic ---
     void AutoProgress()
     {
-        if (GameSessionData.CurrentRound < GameSessionData.TotalRounds) {
-            GameSessionData.CurrentRound++;
+        if (SessionConfig.CurrentStage < SessionConfig.MaxStages) 
+        {
+            // Add 1 to the stage, then go back to Song Select
+            SessionConfig.CurrentStage++;
             TransitionManager.Instance.LoadScene(songSelectScene);
-        } else {
-            GameSessionData.CurrentRound = 1; 
+        } 
+        else 
+        {
+            // End of playthrough!
             TransitionManager.Instance.LoadScene(thankYouScene);
         }
     }
