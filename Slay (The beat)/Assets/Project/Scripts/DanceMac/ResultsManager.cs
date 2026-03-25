@@ -23,14 +23,18 @@ public class ResultsManager : MonoBehaviour
     public TextMeshProUGUI p2ComboText; 
     public List<Image> p2Stars; 
 
-    [Header("Winner UI")]
-    public TextMeshProUGUI winnerText;
+    [Header("Winner UI (Optional)")]
+    public TextMeshProUGUI winnerText; 
 
     [Header("Sequence Settings")]
     public float countDuration = 3.0f; 
     public float starSlamDelay = 0.3f; 
     public float autoTransitionDelay = 15.0f; 
     public float rainbowSpeed = 2.0f;
+
+    [Header("Bonus Logic")]
+    public int pointsPerCombo = 1000; 
+    public int easyModeBonus = 25000; // <--- NEW: Bonus for playing on Easy!
 
     [Header("Audio Clips (Internal)")]
     public AudioClip voicePlayer1;
@@ -65,11 +69,16 @@ public class ResultsManager : MonoBehaviour
     private bool showWinnerRainbow = false;
     private Image winnerSilhouette;
 
+    private bool p1ScoreRainbow = false;
+    private bool p2ScoreRainbow = false;
+
+    private int p1FinalTotalScore = 0;
+    private int p2FinalTotalScore = 0;
+
     void Awake()
     {
         mainAudioSource = GetComponent<AudioSource>();
         
-        // Capture Scales
         p1ScoreScale = p1ScoreText.transform.localScale;
         p1ComboScale = p1ComboText.transform.localScale;
         foreach(Image s in p1Stars) {
@@ -86,10 +95,9 @@ public class ResultsManager : MonoBehaviour
             }
         }
 
-        // Setup Characters
-        if (GameSessionData.CurrentSongGrades != null) {
-            if(p1Silhouette != null) p1Silhouette.sprite = GameSessionData.CurrentSongGrades.p1CharacterSprite;
-            if(p2Silhouette != null) p2Silhouette.sprite = GameSessionData.CurrentSongGrades.p2CharacterSprite;
+        if (GameDataBridge.SelectedSong != null) {
+            if(p1Silhouette != null) p1Silhouette.sprite = GameDataBridge.SelectedSong.p1CharacterSprite;
+            if(p2Silhouette != null) p2Silhouette.sprite = GameDataBridge.SelectedSong.p2CharacterSprite;
         }
 
         if (progressSlider != null) progressSlider.gameObject.SetActive(false);
@@ -102,6 +110,16 @@ public class ResultsManager : MonoBehaviour
         p1ComboText.text = "";
         if (p2Panel != null) p2Panel.SetActive(GameSessionData.IsTwoPlayer);
 
+        // --- NEW: Check if difficulty is Easy (Index 0) ---
+        int diffBonus = (GameDataBridge.SelectedDifficulty == 0) ? easyModeBonus : 0;
+
+        // Calculate Final Scores (Base + Combo + Difficulty Bonus)
+        int p1Bonus = (GameSessionData.P1MaxCombo * pointsPerCombo) + diffBonus;
+        p1FinalTotalScore = GameSessionData.P1Score + p1Bonus;
+
+        int p2Bonus = (GameSessionData.P2MaxCombo * pointsPerCombo) + diffBonus;
+        p2FinalTotalScore = GameSessionData.P2Score + p2Bonus;
+
         StartCoroutine(ResultsSequence());
     }
 
@@ -112,11 +130,19 @@ public class ResultsManager : MonoBehaviour
             float hue = Mathf.Repeat(Time.time * rainbowSpeed, 1f);
             winnerSilhouette.color = Color.HSVToRGB(hue, 0.7f, 1f);
         }
+
+        if (p1ScoreRainbow) ApplyRainbowToText(p1ScoreText);
+        if (p2ScoreRainbow) ApplyRainbowToText(p2ScoreText);
+    }
+
+    void ApplyRainbowToText(TextMeshProUGUI textObj)
+    {
+        float hue = Mathf.Repeat(Time.time * rainbowSpeed, 1f);
+        textObj.color = Color.HSVToRGB(hue, 0.7f, 1f);
     }
 
     IEnumerator ResultsSequence()
     {
-        // --- 1. SETUP MUSIC FOR RESULTS ---
         if (MusicManager.Instance != null) {
             MusicManager.Instance.PlayResults(); 
             MusicManager.Instance.SetClub(1.0f);   
@@ -125,7 +151,9 @@ public class ResultsManager : MonoBehaviour
 
         yield return new WaitForSeconds(0.5f);
 
-        // --- PLAYER 1 REVEAL ---
+        // ==========================================
+        // PLAYER 1 SEQUENCE
+        // ==========================================
         PlayOneShot(voicePlayer1);
         yield return new WaitForSeconds(1.2f);
 
@@ -136,11 +164,21 @@ public class ResultsManager : MonoBehaviour
         yield return new WaitForSeconds(0.4f);
 
         PlayOneShot(comboVoice);
-        p1ComboText.text = "MAX COMBO: " + GameSessionData.P1MaxCombo;
+        p1ComboText.text = $"MAX COMBO: {GameSessionData.P1MaxCombo}";
         yield return StartCoroutine(PopText(p1ComboText.transform, p1ComboScale));
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(0.8f);
 
-        int p1StarsEarned = CalculateStars(GameSessionData.P1Score);
+        // This block runs if they got ANY bonus (Combo OR Easy Mode)
+        if (p1FinalTotalScore > GameSessionData.P1Score)
+        {
+            StartLoop(scoreCountingLoop);
+            yield return StartCoroutine(CountNumberRoutine(p1ScoreText, GameSessionData.P1Score, p1FinalTotalScore, "D8"));
+            StopLoop();
+            PlayOneShot(scoreFinished);
+            yield return new WaitForSeconds(0.5f);
+        }
+
+        int p1StarsEarned = CalculateStars(p1FinalTotalScore);
         for (int i = 0; i < p1StarsEarned; i++) {
             PlayOneShot(starSlam);
             yield return StartCoroutine(SlamStar(p1Stars[i], p1StarScales[i]));
@@ -148,17 +186,17 @@ public class ResultsManager : MonoBehaviour
         }
         if (p1StarsEarned == 5) PlayOneShot(applause);
 
-        if (!GameSessionData.IsTwoPlayer && p1StarsEarned == 5)
+        if (!GameSessionData.IsTwoPlayer)
         {
             yield return new WaitForSeconds(0.5f);
             winnerSilhouette = p1Silhouette; 
             showWinnerRainbow = true;        
-            winnerText.gameObject.SetActive(true);
-            winnerText.text = "PERFECT PERFORMANCE!";
-            yield return StartCoroutine(PopText(winnerText.transform, winnerText.transform.localScale));
+            p1ScoreRainbow = true; 
         }
 
-        // --- PLAYER 2 REVEAL ---
+        // ==========================================
+        // PLAYER 2 SEQUENCE
+        // ==========================================
         if (GameSessionData.IsTwoPlayer)
         {
             yield return new WaitForSeconds(1.5f);
@@ -171,10 +209,20 @@ public class ResultsManager : MonoBehaviour
             PlayOneShot(scoreFinished);
 
             PlayOneShot(comboVoice);
-            p2ComboText.text = "MAX COMBO: " + GameSessionData.P2MaxCombo;
+            p2ComboText.text = $"MAX COMBO: {GameSessionData.P2MaxCombo}";
             yield return StartCoroutine(PopText(p2ComboText.transform, p2ComboScale));
+            yield return new WaitForSeconds(0.8f);
+
+            if (p2FinalTotalScore > GameSessionData.P2Score)
+            {
+                StartLoop(scoreCountingLoop);
+                yield return StartCoroutine(CountNumberRoutine(p2ScoreText, GameSessionData.P2Score, p2FinalTotalScore, "D8"));
+                StopLoop();
+                PlayOneShot(scoreFinished);
+                yield return new WaitForSeconds(0.5f);
+            }
             
-            int p2StarsEarned = CalculateStars(GameSessionData.P2Score);
+            int p2StarsEarned = CalculateStars(p2FinalTotalScore);
             for (int i = 0; i < p2StarsEarned; i++) {
                 PlayOneShot(starSlam);
                 yield return StartCoroutine(SlamStar(p2Stars[i], p2StarScales[i]));
@@ -183,34 +231,31 @@ public class ResultsManager : MonoBehaviour
             if (p2StarsEarned == 5) PlayOneShot(applause);
 
             yield return new WaitForSeconds(0.5f);
-            winnerText.gameObject.SetActive(true);
-            if (GameSessionData.P1Score > GameSessionData.P2Score) {
-                winnerText.text = "PLAYER 1 ATE!";
+            if (p1FinalTotalScore > p2FinalTotalScore) {
+                p1ScoreRainbow = true;
                 winnerSilhouette = p1Silhouette;
-            } else if (GameSessionData.P2Score > GameSessionData.P1Score) {
-                winnerText.text = "PLAYER 2 ATE!";
+            } else if (p2FinalTotalScore > p1FinalTotalScore) {
+                p2ScoreRainbow = true;
                 winnerSilhouette = p2Silhouette;
             } else {
-                winnerText.text = "IT'S A DRAW!";
+                p1ScoreRainbow = true;
+                p2ScoreRainbow = true;
             }
             showWinnerRainbow = true; 
-            yield return StartCoroutine(PopText(winnerText.transform, winnerText.transform.localScale));
         }
 
-        // --- 2. SWITCH BACK TO NORMAL MUSIC ---
+        // --- WRAP UP ---
         if (MusicManager.Instance != null) {
             MusicManager.Instance.SetNormal(2.0f); 
         }
 
         yield return new WaitForSeconds(1.0f);
 
-        // --- UPDATED: Uses SessionConfig Stage System ---
         if (SessionConfig.CurrentStage < SessionConfig.MaxStages)
             PlayOneShot(voiceNextSong);
         else
             PlayOneShot(voiceThankYou);
 
-        // Transition Countdown
         if (progressSlider != null) {
             progressSlider.gameObject.SetActive(true);
             progressSlider.maxValue = autoTransitionDelay;
@@ -224,7 +269,6 @@ public class ResultsManager : MonoBehaviour
         AutoProgress();
     }
 
-    // --- Audio Helpers ---
     void PlayOneShot(AudioClip clip) { if(clip != null) mainAudioSource.PlayOneShot(clip); }
     void StartLoop(AudioClip clip) {
         if (clip == null) return;
@@ -246,8 +290,10 @@ public class ResultsManager : MonoBehaviour
             timer += Time.deltaTime;
             float progress = Mathf.SmoothStep(0, 1, timer / countDuration);
             int current = (int)Mathf.Lerp(start, target, progress);
+            
             float hue = Mathf.Repeat(Time.time * rainbowSpeed, 1f);
             textObj.color = Color.HSVToRGB(hue, 0.7f, 1f);
+            
             textObj.text = (format == "D8") ? current.ToString("D8") : format + current.ToString();
             yield return null;
         }
@@ -281,8 +327,8 @@ public class ResultsManager : MonoBehaviour
 
     int CalculateStars(int score)
     {
-        if (GameSessionData.CurrentSongGrades == null) return 0;
-        var g = GameSessionData.CurrentSongGrades;
+        if (GameDataBridge.SelectedSong == null) return 0;
+        var g = GameDataBridge.SelectedSong;
         if (score >= g.fiveStars) return 5;
         if (score >= g.fourStars) return 4;
         if (score >= g.threeStars) return 3;
@@ -305,25 +351,21 @@ public class ResultsManager : MonoBehaviour
         t.localScale = targetScale;
     }
 
-    // --- NEW: Attach this to your Continue UI Button! ---
     public void ForceContinue()
     {
         StopAllCoroutines(); 
         AutoProgress();
     }
 
-    // --- UPDATED: Arcade Progression Logic ---
     void AutoProgress()
     {
         if (SessionConfig.CurrentStage < SessionConfig.MaxStages) 
         {
-            // Add 1 to the stage, then go back to Song Select
             SessionConfig.CurrentStage++;
             TransitionManager.Instance.LoadScene(songSelectScene);
         } 
         else 
         {
-            // End of playthrough!
             TransitionManager.Instance.LoadScene(thankYouScene);
         }
     }

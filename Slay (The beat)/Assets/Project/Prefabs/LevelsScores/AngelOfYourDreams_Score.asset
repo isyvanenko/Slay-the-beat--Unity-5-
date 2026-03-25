@@ -12,22 +12,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d7208081acd094876a0209816300d0c5, type: 3}
   m_Name: AngelOfYourDreams_Score
   m_EditorClassIdentifier: 
+  isRandomOption: 0
   songName: Angel of your dreams
   songJacketSprite: {fileID: 21300000, guid: 69c54fec7183f4ba2b3bd490c2a4e246, type: 3}
   gameplaySceneName: ST_AngelOfYourDreams
-  easySteps: 0
-  mediumSteps: 0
-  hardSteps: 0
-  easyChart: {fileID: 0}
-  mediumChart: {fileID: 4900000, guid: 6dc6e0b6e1e91405ab9da8a1382594d7, type: 3}
-  hardChart: {fileID: 0}
+  easySteps: 59
+  mediumSteps: 115
+  hardSteps: 129
+  easyChart: {fileID: 4900000, guid: 6dc6e0b6e1e91405ab9da8a1382594d7, type: 3}
+  mediumChart: {fileID: 4900000, guid: c1fce0ccb3f094d1d803ea4eabb5b046, type: 3}
+  hardChart: {fileID: 4900000, guid: 14bace494b74a439c84cab3398aa3690, type: 3}
   songPreviewClip: {fileID: 8300000, guid: 818e0cf4a569f4f32ab987bf8e9c61e2, type: 3}
   characterSprite: {fileID: 21300000, guid: f2abaf46ca1d140828c16dce48d8fecf, type: 3}
   p1CharacterSprite: {fileID: 21300000, guid: be9e5009e2cbf48a3919863474f9e699, type: 3}
   p2CharacterSprite: {fileID: 21300000, guid: a9b57c5577a0f4b3cb5fb4363c946edd, type: 3}
   environmentSprite: {fileID: 21300000, guid: 5e882bafd74124f80ad343a48cda3f28, type: 3}
-  fiveStars: 9500000
-  fourStars: 7500000
-  threeStars: 5500000
-  twoStars: 2500000
+  fiveStars: 11500000
+  fourStars: 9500000
+  threeStars: 7500000
+  twoStars: 5500000
   oneStar: 100000

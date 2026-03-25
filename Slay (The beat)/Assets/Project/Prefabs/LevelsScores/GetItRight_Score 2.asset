@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d7208081acd094876a0209816300d0c5, type: 3}
   m_Name: GetItRight_Score 2
   m_EditorClassIdentifier: 
+  isRandomOption: 0
   songName: Get it right
   songJacketSprite: {fileID: 21300000, guid: 804ace60fae414352a2c2efdce98b4e3, type: 3}
   gameplaySceneName: ST_GetItRight
@@ -26,8 +27,8 @@ MonoBehaviour:
   p1CharacterSprite: {fileID: 21300000, guid: 872afe8c6210d4e189e1c603c3eb1513, type: 3}
   p2CharacterSprite: {fileID: 21300000, guid: a6d7260d37c424c7db14e54925b2f915, type: 3}
   environmentSprite: {fileID: 21300000, guid: b9cf37aa7aab44a939d06378714326f9, type: 3}
-  fiveStars: 900000
-  fourStars: 700000
-  threeStars: 500000
-  twoStars: 300000
+  fiveStars: 7000000
+  fourStars: 5000000
+  threeStars: 4000000
+  twoStars: 3000000
   oneStar: 100000

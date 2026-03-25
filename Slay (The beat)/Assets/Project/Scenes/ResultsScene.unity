@@ -2006,6 +2006,8 @@ MonoBehaviour:
   starSlamDelay: 0.3
   autoTransitionDelay: 15
   rainbowSpeed: 0.75
+  pointsPerCombo: 1000
+  bonusCountDuration: 1.5
   voicePlayer1: {fileID: 8300000, guid: e364743c3708a4c85b01d451fb7ee2d4, type: 3}
   voicePlayer2: {fileID: 8300000, guid: 8bb2d47a02a2c41569e39ea5940db1d7, type: 3}
   scoreCountingLoop: {fileID: 8300000, guid: 14341e9ae0491485a98a96fb26ee60e2, type: 3}
@@ -2019,7 +2021,7 @@ MonoBehaviour:
   defaultWhite: {r: 1, g: 1, b: 1, a: 1}
   progressSlider: {fileID: 1238013770}
   songSelectScene: SongSelection
-  thankYouScene: Feedback_Scene
+  thankYouScene: StageFeedback
 --- !u!4 &635748798
 Transform:
   m_ObjectHideFlags: 0
@@ -4796,8 +4798,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: player 1 ate
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: fc6c6073677bf4f49b5ba8159d027ac8, type: 2}
+  m_sharedMaterial: {fileID: -2383535902019007609, guid: fc6c6073677bf4f49b5ba8159d027ac8, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -4828,7 +4830,7 @@ MonoBehaviour:
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 1
+  m_HorizontalAlignment: 2
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -4887,11 +4889,11 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 895924008}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 31}
+  m_AnchorMin: {x: 0.5, y: 1}
+  m_AnchorMax: {x: 0.5, y: 1}
+  m_AnchoredPosition: {x: 0, y: -134.58}
   m_SizeDelta: {x: 200, y: 50}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0.5, y: 1}
 --- !u!1 &1918709813
 GameObject:
   m_ObjectHideFlags: 0

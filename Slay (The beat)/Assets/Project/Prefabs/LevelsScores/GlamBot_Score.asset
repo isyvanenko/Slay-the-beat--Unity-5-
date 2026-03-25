@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d7208081acd094876a0209816300d0c5, type: 3}
   m_Name: GlamBot_Score
   m_EditorClassIdentifier: 
+  isRandomOption: 0
   songName: Galm Bot Overload
   songJacketSprite: {fileID: 21300000, guid: c09b823ad2759435fb8ad1264895a25b, type: 3}
   gameplaySceneName: ST_GlamBot
@@ -26,8 +27,8 @@ MonoBehaviour:
   p1CharacterSprite: {fileID: 21300000, guid: 585e261395ef34994812ab63cdf2c602, type: 3}
   p2CharacterSprite: {fileID: 21300000, guid: be2865f9c718849aaa78e2c37881f0b0, type: 3}
   environmentSprite: {fileID: 21300000, guid: 7115972734f7f40cb9612150aeff826d, type: 3}
-  fiveStars: 900000
-  fourStars: 700000
-  threeStars: 500000
-  twoStars: 300000
+  fiveStars: 5600000
+  fourStars: 5500000
+  threeStars: 4000000
+  twoStars: 3500000
   oneStar: 100000
