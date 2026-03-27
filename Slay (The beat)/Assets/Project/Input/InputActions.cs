@@ -174,6 +174,17 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""3f92f4f1-46e2-4f74-9c60-f8e61c7b6037"",
+                    ""path"": ""<XInputController>/buttonSouth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Start"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""6662300a-f9af-4e84-a0ea-587db2ad59e3"",
                     ""path"": ""<HID::USB Gamepad >/button9"",
                     ""interactions"": """",
