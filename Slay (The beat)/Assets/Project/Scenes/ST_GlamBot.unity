@@ -25565,6 +25565,26 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5029932175757712338, guid: 73447161f385247378244375212c2ced, type: 3}
+      propertyPath: randomSounds.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 5029932175757712338, guid: 73447161f385247378244375212c2ced, type: 3}
+      propertyPath: 'randomSounds.Array.data[0]'
+      value: 
+      objectReference: {fileID: 8300000, guid: 965f8683e9d0b489c9e57e98918bf3c7, type: 3}
+    - target: {fileID: 5029932175757712338, guid: 73447161f385247378244375212c2ced, type: 3}
+      propertyPath: 'randomSounds.Array.data[1]'
+      value: 
+      objectReference: {fileID: 8300000, guid: 409c33a2d825a47b98c373c7ed8348e3, type: 3}
+    - target: {fileID: 5029932175757712338, guid: 73447161f385247378244375212c2ced, type: 3}
+      propertyPath: 'randomSounds.Array.data[2]'
+      value: 
+      objectReference: {fileID: 8300000, guid: b6bbcaa06b9524d5fb0b9e2f3f13e62a, type: 3}
+    - target: {fileID: 5029932175757712338, guid: 73447161f385247378244375212c2ced, type: 3}
+      propertyPath: 'randomSounds.Array.data[3]'
+      value: 
+      objectReference: {fileID: 8300000, guid: a8813cd8c4721453e8064d0de29c56ac, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

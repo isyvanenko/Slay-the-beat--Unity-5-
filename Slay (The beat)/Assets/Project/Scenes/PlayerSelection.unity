@@ -3214,7 +3214,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 24300002, guid: 5ad17ad67fa43408cac702d0013dd7fb, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 01893fe3c15ca42d4981d6ceb6812781, type: 3}
+  m_Resource: {fileID: 8300000, guid: fe90a49ee9d3441fbb41d98f61dbccd5, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 0.95
@@ -12658,6 +12658,9 @@ MonoBehaviour:
   globalAudioSource: {fileID: 0}
   onePlayerSound: {fileID: 0}
   twoPlayerSound: {fileID: 0}
+  duckedMusicVolume: 0.3
+  duckDropSpeed: 0.3
+  duckRestoreSpeed: 1
   deviceSelectMenuP1: {fileID: 1686697996}
   fadeDuration: 0.5
 --- !u!114 &1686698003
@@ -12674,6 +12677,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerIndexToAssign: 1
   confirmationDelay: 0.5
+  globalAudioSource: {fileID: 148635578}
+  controllerSelectedSfx: {fileID: 8300000, guid: 234dee5ffa7ad4d60b6fcf2171ebca99, type: 3}
+  dancematSelectedSfx: {fileID: 8300000, guid: 3c797d157abe742a294ba4c63c9fbe60, type: 3}
+  selectionConfirmedSfx: {fileID: 8300000, guid: 75dd09aba62e54dbb918de9b53a6b617, type: 3}
+  duckedMusicVolume: 0.2
+  duckDropSpeed: 0.3
+  duckRestoreSpeed: 1
   mainPromptCG: {fileID: 1195159559}
   confirmControllerCG: {fileID: 0}
   confirmMatCG: {fileID: 506356919}
@@ -18762,6 +18772,9 @@ MonoBehaviour:
   globalAudioSource: {fileID: 0}
   onePlayerSound: {fileID: 0}
   twoPlayerSound: {fileID: 0}
+  duckedMusicVolume: 0.3
+  duckDropSpeed: 0.3
+  duckRestoreSpeed: 1
   deviceSelectMenuP1: {fileID: 2023702098}
   fadeDuration: 0.5
 --- !u!114 &2023702106
@@ -18778,6 +18791,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerIndexToAssign: 0
   confirmationDelay: 0.5
+  globalAudioSource: {fileID: 148635578}
+  controllerSelectedSfx: {fileID: 8300000, guid: 234dee5ffa7ad4d60b6fcf2171ebca99, type: 3}
+  dancematSelectedSfx: {fileID: 8300000, guid: 3c797d157abe742a294ba4c63c9fbe60, type: 3}
+  selectionConfirmedSfx: {fileID: 8300000, guid: 75dd09aba62e54dbb918de9b53a6b617, type: 3}
+  duckedMusicVolume: 0.2
+  duckDropSpeed: 0.3
+  duckRestoreSpeed: 1
   mainPromptCG: {fileID: 2036483395}
   confirmControllerCG: {fileID: 1542089555}
   confirmMatCG: {fileID: 767950865}
@@ -25008,8 +25028,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   globalAudioSource: {fileID: 148635578}
-  onePlayerSound: {fileID: 8300000, guid: 234b64486cc9f447fa81bea8a629c188, type: 3}
-  twoPlayerSound: {fileID: 8300000, guid: bb8859e1c33374745826223b7c3bf079, type: 3}
+  onePlayerSound: {fileID: 8300000, guid: f725799b85fd0445ba5fa51b3b5422cf, type: 3}
+  twoPlayerSound: {fileID: 8300000, guid: f671a70ce109f4daa8748e7563435dd6, type: 3}
+  duckedMusicVolume: 0.3
+  duckDropSpeed: 0.3
+  duckRestoreSpeed: 1
   deviceSelectMenuP1: {fileID: 2023702098}
   fadeDuration: 0.5
 --- !u!224 &2023496569018046850

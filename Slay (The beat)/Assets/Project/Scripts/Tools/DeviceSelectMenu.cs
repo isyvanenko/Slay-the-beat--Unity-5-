@@ -12,6 +12,17 @@ public class DeviceSetupMenu : MonoBehaviour
     public int playerIndexToAssign = 0;
     public float confirmationDelay = 0.5f;
 
+    [Header("Audio Setup")]
+    public AudioSource globalAudioSource; 
+    public AudioClip controllerSelectedSfx;
+    public AudioClip dancematSelectedSfx;
+    public AudioClip selectionConfirmedSfx;
+
+    [Header("Audio Ducking (Smooth Fades)")]
+    public float duckedMusicVolume = 0.2f;   
+    public float duckDropSpeed = 0.3f;       
+    public float duckRestoreSpeed = 1.0f;    
+
     [Header("Canvases (CanvasGroups)")]
     public CanvasGroup mainPromptCG;    
     public CanvasGroup confirmControllerCG; 
@@ -112,22 +123,32 @@ public class DeviceSetupMenu : MonoBehaviour
         string devProd = device.description.product?.ToLower() ?? "";
 
         CanvasGroup nextCG = null;
+        AudioClip clipToPlay = null;
 
         if (device is Keyboard || devName.Contains("keyboard"))
         {
             nextCG = confirmControllerCG; 
             pulseRoutine1 = StartCoroutine(PulseIcon(danceMatIcon));
             pulseRoutine2 = StartCoroutine(PulseIcon(joystickIcon));
+            clipToPlay = controllerSelectedSfx;
         }
         else if (devName.Contains("mat") || devProd.Contains("mat") || devProd.Contains("dance") || devProd.Contains("usb gamepad"))
         {
             nextCG = confirmMatCG;
             pulseRoutine1 = StartCoroutine(PulseIcon(danceMatIcon));
+            clipToPlay = dancematSelectedSfx;
         }
         else
         {
             nextCG = confirmControllerCG;
             pulseRoutine1 = StartCoroutine(PulseIcon(joystickIcon));
+            clipToPlay = controllerSelectedSfx;
+        }
+
+        // Play the "Selected" SFX
+        if (globalAudioSource != null && clipToPlay != null)
+        {
+            globalAudioSource.PlayOneShot(clipToPlay);
         }
 
         StartCoroutine(FadeOut(mainPromptCG));
@@ -146,52 +167,98 @@ public class DeviceSetupMenu : MonoBehaviour
         else if (activeConfirmCG == confirmMatCG) deviceType = "Dance Mat";
 
         SessionConfig.SetPlayerDevice(playerIndexToAssign, device, deviceType);
-        StartCoroutine(FadeOutAndSwitch());
-    }
 
-    // --- TRANSITION LOGIC ---
-
-    IEnumerator FadeOutAndSwitch()
-{
-    // 1. Wait for the root canvas of THIS player to finish fading out
-    float timer = 0f;
-    float startAlpha = rootCanvasGroup.alpha;
-    
-    while (timer < fadeDuration)
-    {
-        timer += Time.unscaledDeltaTime;
-        rootCanvasGroup.alpha = Mathf.Lerp(startAlpha, 0f, timer / fadeDuration);
-        yield return null;
-    }
-    rootCanvasGroup.alpha = 0f;
-
-    // 2. Small buffer to ensure rendering has caught up
-    yield return new WaitForSecondsRealtime(0.05f);
-
-    // 3. Logic for switching or loading
-    if (SessionConfig.PlayerCount == 2 && playerIndexToAssign == 0)
-    {
-        if (nextMenuForPlayer2 != null)
+        // Play the final confirmation SFX
+        if (globalAudioSource != null && selectionConfirmedSfx != null)
         {
-            // We turn ON P2 first, then turn OFF P1
-            nextMenuForPlayer2.SetActive(true); 
-            gameObject.SetActive(false); 
+            globalAudioSource.PlayOneShot(selectionConfirmedSfx);
+        }
+
+        StartCoroutine(FadeOutAndSwitch(selectionConfirmedSfx));
+    }
+
+    // --- TRANSITION & AUDIO DUCKING LOGIC ---
+
+    IEnumerator FadeOutAndSwitch(AudioClip playedClip)
+    {
+        AudioSource musicSource = null;
+        float originalMusicVolume = 1f;
+
+        if (MusicManager.Instance != null) 
+        {
+            musicSource = MusicManager.Instance.GetComponent<AudioSource>();
+            if (musicSource != null)
+            {
+                originalMusicVolume = musicSource.volume;
+            }
+        }
+
+        // 1. Smoothly duck music volume
+        if (musicSource != null)
+        {
+            StartCoroutine(FadeMusicVolume(musicSource, musicSource.volume, duckedMusicVolume, duckDropSpeed));
+        }
+
+        // 2. Fade out UI
+        float timer = 0f;
+        float startAlpha = rootCanvasGroup.alpha;
+        
+        while (timer < fadeDuration)
+        {
+            timer += Time.unscaledDeltaTime;
+            rootCanvasGroup.alpha = Mathf.Lerp(startAlpha, 0f, timer / fadeDuration);
+            yield return null;
+        }
+        rootCanvasGroup.alpha = 0f;
+
+        // 3. Wait for Confirmation Audio to finish playing
+        if (playedClip != null)
+        {
+            float remainingWait = playedClip.length - fadeDuration;
+            if (remainingWait > 0) 
+            {
+                yield return new WaitForSecondsRealtime(remainingWait);
+            }
+        }
+
+        // 4. Restore Music Volume completely
+        if (musicSource != null)
+        {
+            yield return StartCoroutine(FadeMusicVolume(musicSource, musicSource.volume, originalMusicVolume, duckRestoreSpeed));
+        }
+
+        // 5. Logic for switching UI or loading the next scene
+        if (SessionConfig.PlayerCount == 2 && playerIndexToAssign == 0)
+        {
+            if (nextMenuForPlayer2 != null)
+            {
+                nextMenuForPlayer2.SetActive(true); 
+                gameObject.SetActive(false); 
+            }
+            else
+            {
+                 TransitionManager.Instance.LoadScene(gameSceneName);
+            }
         }
         else
         {
-            // Fallback if you forgot to assign P2 in the inspector
-             TransitionManager.Instance.LoadScene(gameSceneName);
+            TransitionManager.Instance.LoadScene(gameSceneName);
         }
     }
-    else
-    {
-        TransitionManager.Instance.LoadScene(gameSceneName);
-        // P1 in Solo mode OR P2 has finished
-        
-    }
-}
 
-    // --- UI HELPERS ---
+    // --- HELPER METHODS ---
+
+    IEnumerator FadeMusicVolume(AudioSource source, float startVol, float endVol, float duration)
+    {
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.unscaledDeltaTime;
+            source.volume = Mathf.Lerp(startVol, endVol, t / duration);
+            yield return null;
+        }
+        source.volume = endVol; 
+    }
 
     private void SetCGAlpha(CanvasGroup cg, float alpha)
     {

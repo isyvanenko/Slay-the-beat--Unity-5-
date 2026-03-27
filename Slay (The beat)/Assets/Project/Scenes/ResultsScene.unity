@@ -1981,6 +1981,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d3784f46163347eb8dde7d925bc3c85, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  stageTextDisplay: {fileID: 357023870}
   p1Silhouette: {fileID: 12108945}
   p2Silhouette: {fileID: 199986673}
   p1Panel: {fileID: 1029125055}
@@ -2007,7 +2008,7 @@ MonoBehaviour:
   autoTransitionDelay: 15
   rainbowSpeed: 0.75
   pointsPerCombo: 1000
-  bonusCountDuration: 1.5
+  easyModeBonus: 25000
   voicePlayer1: {fileID: 8300000, guid: e364743c3708a4c85b01d451fb7ee2d4, type: 3}
   voicePlayer2: {fileID: 8300000, guid: 8bb2d47a02a2c41569e39ea5940db1d7, type: 3}
   scoreCountingLoop: {fileID: 8300000, guid: 14341e9ae0491485a98a96fb26ee60e2, type: 3}

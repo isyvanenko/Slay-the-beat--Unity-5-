@@ -7,6 +7,9 @@ using System.Collections.Generic;
 [RequireComponent(typeof(AudioSource))]
 public class ResultsManager : MonoBehaviour
 {
+    [Header("Stage UI")]
+    public TextMeshProUGUI stageTextDisplay; // <--- NEW: Drag your Stage Text here!
+
     [Header("Character Silhouettes")]
     public Image p1Silhouette;
     public Image p2Silhouette;
@@ -34,7 +37,7 @@ public class ResultsManager : MonoBehaviour
 
     [Header("Bonus Logic")]
     public int pointsPerCombo = 1000; 
-    public int easyModeBonus = 25000; // <--- NEW: Bonus for playing on Easy!
+    public int easyModeBonus = 25000; 
 
     [Header("Audio Clips (Internal)")]
     public AudioClip voicePlayer1;
@@ -106,14 +109,15 @@ public class ResultsManager : MonoBehaviour
 
     void Start()
     {
+        // --- NEW: Update the Stage Text ---
+        UpdateStageText();
+
         p1ScoreText.text = "00000000";
         p1ComboText.text = "";
         if (p2Panel != null) p2Panel.SetActive(GameSessionData.IsTwoPlayer);
 
-        // --- NEW: Check if difficulty is Easy (Index 0) ---
         int diffBonus = (GameDataBridge.SelectedDifficulty == 0) ? easyModeBonus : 0;
 
-        // Calculate Final Scores (Base + Combo + Difficulty Bonus)
         int p1Bonus = (GameSessionData.P1MaxCombo * pointsPerCombo) + diffBonus;
         p1FinalTotalScore = GameSessionData.P1Score + p1Bonus;
 
@@ -121,6 +125,16 @@ public class ResultsManager : MonoBehaviour
         p2FinalTotalScore = GameSessionData.P2Score + p2Bonus;
 
         StartCoroutine(ResultsSequence());
+    }
+
+    // --- NEW: Function to handle the Stage Text logic ---
+    void UpdateStageText()
+    {
+        if (stageTextDisplay != null)
+        {
+            // This will automatically say "STAGE 1", "STAGE 2", etc., based on SessionConfig
+            stageTextDisplay.text = "STAGE " + SessionConfig.CurrentStage;
+        }
     }
 
     void Update()
@@ -168,7 +182,6 @@ public class ResultsManager : MonoBehaviour
         yield return StartCoroutine(PopText(p1ComboText.transform, p1ComboScale));
         yield return new WaitForSeconds(0.8f);
 
-        // This block runs if they got ANY bonus (Combo OR Easy Mode)
         if (p1FinalTotalScore > GameSessionData.P1Score)
         {
             StartLoop(scoreCountingLoop);
