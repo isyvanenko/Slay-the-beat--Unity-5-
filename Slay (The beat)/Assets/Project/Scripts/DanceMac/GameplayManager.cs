@@ -95,42 +95,83 @@ public class GameplayManager : MonoBehaviour
 
     void SetupPlayerInputs()
     {
-        // --- Player 1 ---
-        if (p1Input != null && SessionConfig.Player1Device != null)
-        {
-            p1Input.user.UnpairDevices(); 
-            // This pairs the DEVICE, regardless of what the scheme is named
-            InputUser.PerformPairingWithDevice(SessionConfig.Player1Device, p1Input.user);
-            
-            p1Left.Initialize(p1Input.actions["Left"]);
-            p1Down.Initialize(p1Input.actions["Down"]);
-            p1Up.Initialize(p1Input.actions["Up"]);
-            p1Right.Initialize(p1Input.actions["Right"]);
+        Debug.Log("<color=yellow>=== STARTING INPUT SETUP ===</color>");
+        Debug.Log($"P1 Device in Config: {(SessionConfig.Player1Device != null ? SessionConfig.Player1Device.deviceId.ToString() : "NULL")}");
+        Debug.Log($"P2 Device in Config: {(SessionConfig.Player2Device != null ? SessionConfig.Player2Device.deviceId.ToString() : "NULL")}");
 
-            Debug.Log($"<color=cyan>P1 Locked to Device ID:</color> {SessionConfig.Player1Device.deviceId}");
-        }
-
-        // --- Player 2 ---
+        // ====================================================================
+        // STEP 1: WAKE UP OR SLEEP GAMEOBJECTS
+        // ====================================================================
         if (SessionConfig.PlayerCount == 2)
         {
-            if (p2Input != null && SessionConfig.Player2Device != null)
+            if (p2Panel != null) p2Panel.SetActive(true);
+            if (p2Input != null) p2Input.gameObject.SetActive(true);
+        }
+        else
+        {
+            if (p2Panel != null) p2Panel.SetActive(false);
+            if (p2Input != null) p2Input.gameObject.SetActive(false);
+        }
+
+        if (p1Input != null) p1Input.neverAutoSwitchControlSchemes = true;
+        if (p2Input != null) p2Input.neverAutoSwitchControlSchemes = true;
+
+        // ====================================================================
+        // STEP 2: SECURE PLAYER 1 (WITH CRASH PROTECTION)
+        // ====================================================================
+        if (p1Input != null && SessionConfig.Player1Device != null)
+        {
+            try 
             {
-                p2Input.gameObject.SetActive(true); // Ensure P2 input is active
+                // We use Try-Catch so if Unity throws a tantrum here, it won't kill the script!
+                if (p1Input.actions != null) p1Input.actions.Disable(); 
+                
+                p1Input.user.UnpairDevices(); 
+                InputUser.PerformPairingWithDevice(SessionConfig.Player1Device, p1Input.user);
+                
+                if (p1Input.actions != null) p1Input.actions.Enable(); 
+                
+                p1Left.Initialize(p1Input.actions["Left"]);
+                p1Down.Initialize(p1Input.actions["Down"]);
+                p1Up.Initialize(p1Input.actions["Up"]);
+                p1Right.Initialize(p1Input.actions["Right"]);
+
+                Debug.Log($"<color=green>P1 Successfully Locked to Device ID:</color> {SessionConfig.Player1Device.deviceId}");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"<color=red>CRASH DURING P1 SETUP:</color> {e.Message}");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("<color=orange>Skipped P1 Setup: p1Input or Player1Device was NULL!</color>");
+        }
+
+        // ====================================================================
+        // STEP 3: SECURE PLAYER 2 (WITH CRASH PROTECTION)
+        // ====================================================================
+        if (SessionConfig.PlayerCount == 2 && p2Input != null && SessionConfig.Player2Device != null)
+        {
+            try
+            {
+                if (p2Input.actions != null) p2Input.actions.Disable(); 
+                
                 p2Input.user.UnpairDevices();
                 InputUser.PerformPairingWithDevice(SessionConfig.Player2Device, p2Input.user);
+                
+                if (p2Input.actions != null) p2Input.actions.Enable(); 
 
                 if (p2Left != null) p2Left.Initialize(p2Input.actions["Left"]);
                 if (p2Down != null) p2Down.Initialize(p2Input.actions["Down"]);
                 if (p2Up != null) p2Up.Initialize(p2Input.actions["Up"]);
                 if (p2Right != null) p2Right.Initialize(p2Input.actions["Right"]);
+                
+                Debug.Log($"<color=green>P2 Successfully Locked to Device ID:</color> {SessionConfig.Player2Device.deviceId}");
             }
-        }
-        else
-        {
-            // --- NEW: Disable P2 Input entirely for 1-player mode ---
-            if (p2Input != null)
+            catch (System.Exception e)
             {
-                p2Input.gameObject.SetActive(false);
+                Debug.LogError($"<color=red>CRASH DURING P2 SETUP:</color> {e.Message}");
             }
         }
     }

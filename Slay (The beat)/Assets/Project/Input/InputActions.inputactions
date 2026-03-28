@@ -78,7 +78,7 @@
                 {
                     "name": "",
                     "id": "1f1c91fd-93bc-4cd1-907f-c31e8c9ee674",
-                    "path": "",
+                    "path": "<HID::USB Gamepad >/button3",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -319,19 +319,19 @@
                 },
                 {
                     "name": "",
-                    "id": "a5b77706-28ca-4ca0-b2d0-1d0490a2257e",
-                    "path": "<HID::USB Gamepad >/button3",
+                    "id": "6be3873b-1bac-48d5-a3fe-86f1ca0b2c64",
+                    "path": "<XInputController>/leftStick/left",
                     "interactions": "",
                     "processors": "",
-                    "groups": ";P2_Scheme",
+                    "groups": "",
                     "action": "Left",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
                 {
                     "name": "",
-                    "id": "6be3873b-1bac-48d5-a3fe-86f1ca0b2c64",
-                    "path": "<XInputController>/leftStick/left",
+                    "id": "4854f19d-c406-406e-88fd-057bf6c092d7",
+                    "path": "",
                     "interactions": "",
                     "processors": "",
                     "groups": "",

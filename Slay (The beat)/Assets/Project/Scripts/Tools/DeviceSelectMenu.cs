@@ -98,16 +98,37 @@ public class DeviceSetupMenu : MonoBehaviour
         if (Time.unscaledTime < lastInteractionTime + confirmationDelay) return;
 
         InputDevice inputDev = ctx.control.device;
-        
-        // Prevent P2 from stealing P1's device
-        if (SessionConfig.IsDeviceUsed(inputDev) && inputDev != pendingDevice) return;
 
+        // =========================================================
+        // 🚨 STRICT DEVICE LOCKOUT (NO STEALING ALLOWED) 🚨
+        // =========================================================
+        // If this menu is setting up Player 2, reject Player 1's hardware
+        if (playerIndexToAssign == 1 && SessionConfig.Player1Device == inputDev)
+        {
+            Debug.LogWarning($"<color=red>[REJECTED]</color> Player 2 tried to press a button on Player 1's locked device ({inputDev.deviceId}).");
+            
+            // Pro-Tip: If you add an "errorBuzzSfx" AudioClip to this script later, 
+            // you can uncomment the line below to play a buzzer sound so they know they messed up!
+            // if (globalAudioSource != null && errorBuzzSfx != null) globalAudioSource.PlayOneShot(errorBuzzSfx);
+            
+            return; // Stop the code dead in its tracks. Ignore the input.
+        }
+
+        // If this menu is setting up Player 1, reject Player 2's hardware (just in case they go backwards)
+        if (playerIndexToAssign == 0 && SessionConfig.Player2Device == inputDev)
+        {
+            return; 
+        }
+        // =========================================================
+
+        // If they pressed the same safe device twice, confirm it
         if (isWaitingForConfirmation && pendingDevice == inputDev)
         {
             ConfirmSelection(inputDev);
         }
         else
         {
+            // Otherwise, start the prompt for this new safe device
             StartConfirmationPhase(inputDev);
         }
     }
@@ -166,9 +187,16 @@ public class DeviceSetupMenu : MonoBehaviour
         if (device is Keyboard) deviceType = "Debug Keyboard";
         else if (activeConfirmCG == confirmMatCG) deviceType = "Dance Mat";
 
+        // === X-RAY DEBUG LOGS ===
+        Debug.Log($"<color=orange>[MENU SYSTEM]</color> Menu for Player Index {playerIndexToAssign} is trying to save device: {device.deviceId}");
+
         SessionConfig.SetPlayerDevice(playerIndexToAssign, device, deviceType);
 
-        // Play the final confirmation SFX
+        // Immediate verification to see if SessionConfig actually saved it!
+        Debug.Log($"<color=orange>[MENU SYSTEM]</color> VERIFICATION: SessionConfig.Player1Device is now: {(SessionConfig.Player1Device != null ? "SAVED" : "NULL")}");
+        Debug.Log($"<color=orange>[MENU SYSTEM]</color> VERIFICATION: SessionConfig.Player2Device is now: {(SessionConfig.Player2Device != null ? "SAVED" : "NULL")}");
+        // ========================
+
         if (globalAudioSource != null && selectionConfirmedSfx != null)
         {
             globalAudioSource.PlayOneShot(selectionConfirmedSfx);
@@ -242,6 +270,11 @@ public class DeviceSetupMenu : MonoBehaviour
         }
         else
         {
+            // === ADD THESE TWO LIE DETECTOR LINES HERE ===
+            Debug.Log($"<color=magenta>LEAVING MENU! P1 Device is: {(SessionConfig.Player1Device != null ? "SAVED" : "NULL")}</color>");
+            Debug.Log($"<color=magenta>LEAVING MENU! P2 Device is: {(SessionConfig.Player2Device != null ? "SAVED" : "NULL")}</color>");
+            // =============================================
+
             TransitionManager.Instance.LoadScene(gameSceneName);
         }
     }

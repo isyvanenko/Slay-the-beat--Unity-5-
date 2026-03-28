@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
-using UnityEngine.InputSystem.Users;
 
 [RequireComponent(typeof(CanvasGroup))]
 public class PlayerCountMenu : MonoBehaviour
@@ -12,9 +11,9 @@ public class PlayerCountMenu : MonoBehaviour
     public AudioClip twoPlayerSound;
 
     [Header("Audio Ducking (Smooth Fades)")]
-    public float duckedMusicVolume = 0.1f;   // How quiet the music gets
-    public float duckDropSpeed = 0.3f;       // Time it takes to lower the volume
-    public float duckRestoreSpeed = 1.0f;    // Time it takes to bring volume back to normal
+    public float duckedMusicVolume = 0.3f;   
+    public float duckDropSpeed = 0.3f;       
+    public float duckRestoreSpeed = 1.0f;    
 
     [Header("Next Menu")]
     public GameObject deviceSelectMenuP1;
@@ -32,18 +31,7 @@ public class PlayerCountMenu : MonoBehaviour
 
     void OnEnable()
     {
-        // --- ARCADE RESET LOGIC ---
-        SessionConfig.Player1Device = null;
-        SessionConfig.Player2Device = null;
-        SessionConfig.CurrentStage = 1; 
-
-        var allUsers = InputUser.all;
-        for (int i = 0; i < allUsers.Count; i++)
-        {
-            allUsers[i].UnpairDevices();
-        }
-        // --------------------------
-
+        // 🚨 WE REMOVED THE RESET CODE FROM HERE 🚨
         isTransitioning = false;
         if (canvasGroup != null) 
         {
@@ -57,24 +45,24 @@ public class PlayerCountMenu : MonoBehaviour
     {
         if (isTransitioning) return;
 
-        // 1. Logic
+        // --- THE BULLETPROOF RESET ---
+        // We only clear the old controllers when they explicitly click a button to start a new game!
+        SessionConfig.Player1Device = null;
+        SessionConfig.Player2Device = null;
+        SessionConfig.CurrentStage = 1; 
+        // ------------------------------
+
         int playerCount = (index == 0) ? 1 : 2;
         SessionConfig.PlayerCount = playerCount;
         Debug.Log("Player Count Selected: " + playerCount);
 
-        // 2. Play Audio 
         AudioClip clipToPlay = (playerCount == 1) ? onePlayerSound : twoPlayerSound;
         
         if (globalAudioSource != null && clipToPlay != null)
         {
             globalAudioSource.PlayOneShot(clipToPlay);
         }
-        else
-        {
-            Debug.LogWarning("AudioSource or Clip is missing in the Inspector!");
-        }
 
-        // 3. Start Fade
         StartCoroutine(TransitionSequence(clipToPlay));
     }
 
@@ -82,7 +70,6 @@ public class PlayerCountMenu : MonoBehaviour
     {
         isTransitioning = true;
         
-        // Grab the MusicManager's AudioSource directly so we can manipulate it smoothly
         AudioSource musicSource = null;
         float originalMusicVolume = 1f;
 
@@ -95,13 +82,11 @@ public class PlayerCountMenu : MonoBehaviour
             }
         }
 
-        // --- 1. SMOOTHLY DUCK MUSIC VOLUME ---
         if (musicSource != null)
         {
             StartCoroutine(FadeMusicVolume(musicSource, musicSource.volume, duckedMusicVolume, duckDropSpeed));
         }
 
-        // --- 2. FADE UI OUT ---
         float timer = 0f;
         while (timer < fadeDuration)
         {
@@ -114,13 +99,11 @@ public class PlayerCountMenu : MonoBehaviour
         canvasGroup.interactable = false;
         canvasGroup.blocksRaycasts = false;
 
-        // --- 3. TURN ON NEXT MENU ---
         if (deviceSelectMenuP1 != null)
         {
             deviceSelectMenuP1.SetActive(true);
         }
 
-        // --- 4. WAIT FOR AUDIO CLIP TO FINISH ---
         if (playedClip != null)
         {
             float remainingWait = playedClip.length - fadeDuration;
@@ -130,18 +113,14 @@ public class PlayerCountMenu : MonoBehaviour
             }
         }
 
-        // --- 5. SMOOTHLY RESTORE MUSIC VOLUME ---
         if (musicSource != null)
         {
-            // We YIELD this coroutine so the script waits for the fade to finish before shutting off!
             yield return StartCoroutine(FadeMusicVolume(musicSource, musicSource.volume, originalMusicVolume, duckRestoreSpeed));
         }
 
-        // --- 6. TURN OFF GAMEOBJECT ---
         gameObject.SetActive(false);
     }
 
-    // --- CUSTOM SMOOTH FADER ---
     IEnumerator FadeMusicVolume(AudioSource source, float startVol, float endVol, float duration)
     {
         float t = 0f;
@@ -151,6 +130,6 @@ public class PlayerCountMenu : MonoBehaviour
             source.volume = Mathf.Lerp(startVol, endVol, t / duration);
             yield return null;
         }
-        source.volume = endVol; // Ensure it snaps exactly to the target value at the end
+        source.volume = endVol; 
     }
 }

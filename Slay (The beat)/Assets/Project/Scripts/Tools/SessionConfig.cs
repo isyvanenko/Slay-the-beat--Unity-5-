@@ -5,11 +5,31 @@ public static class SessionConfig
 {
     // --- ARCADE STAGE SETTINGS ---
     public static int CurrentStage = 1;
-    public static int MaxStages = 2; // Define how many songs a player gets per playthrough
+    public static int MaxStages = 2; 
 
     public static int PlayerCount = 1;
-    public static InputDevice Player1Device;
+
+    // ==========================================
+    // THE TRIPWIRE FOR PLAYER 1
+    // ==========================================
+    private static InputDevice _player1Device;
+    public static InputDevice Player1Device
+    {
+        get { return _player1Device; }
+        set 
+        { 
+            // If someone tries to set it to NULL, and it wasn't already NULL... ALARM!
+            if (value == null && _player1Device != null)
+            {
+                Debug.LogError("<color=red>🚨 CAUGHT THE ASSASSIN! Player 1 Device was just set to NULL by this script:</color>\n" + System.Environment.StackTrace);
+            }
+            _player1Device = value; 
+        }
+    }
+
+    // Player 2 can stay normal
     public static InputDevice Player2Device;
+    
     public static string P1DeviceType;
     public static string P2DeviceType;
 
@@ -25,12 +45,11 @@ public static class SessionConfig
     }
 
     // --- NEW: Reset for a new player ---
-    // Call this when you load your Main Menu / Insert Coin screen
     public static void ResetSession()
     {
         CurrentStage = 1;
         PlayerCount = 1;
-        Player1Device = null;
+        Player1Device = null; // NOTE: The tripwire will catch if this is accidentally called!
         Player2Device = null;
         P1DeviceType = "";
         P2DeviceType = "";
