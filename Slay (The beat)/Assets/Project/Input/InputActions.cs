@@ -417,7 +417,18 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""4854f19d-c406-406e-88fd-057bf6c092d7"",
-                    ""path"": """",
+                    ""path"": ""<HID::USB Gamepad >/button3"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Left"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b1b19d20-6ef0-48b1-98c0-baec7e244c77"",
+                    ""path"": ""<HID::USB Gamepad >/trigger"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -495,6 +506,17 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                     ""name"": """",
                     ""id"": ""422f023e-ebda-4c55-9fc7-99e61481fd90"",
                     ""path"": ""<Gamepad>/leftStick/up"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Up"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""0d2636a4-98c7-4281-8bad-2a3fea205c5d"",
+                    ""path"": ""<HID::USB Gamepad >/button3"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
