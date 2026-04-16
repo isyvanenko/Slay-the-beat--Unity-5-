@@ -133,7 +133,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2584141795964087645, guid: 4ca0feffba2c34949bfcff00ba4ab761, type: 3}
       propertyPath: nextSceneName
-      value: PlayerSelection
+      value: AmountOfStagesSelection
       objectReference: {fileID: 0}
     - target: {fileID: 4842797551571468537, guid: 4ca0feffba2c34949bfcff00ba4ab761, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1096,7 +1096,7 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 24300002, guid: 5ad17ad67fa43408cac702d0013dd7fb, type: 2}
-  m_audioClip: {fileID: 0}
+  m_audioClip: {fileID: 8300000, guid: 12b1172c1b5414588891e2b62f13dcb2, type: 3}
   m_Resource: {fileID: 8300000, guid: 12b1172c1b5414588891e2b62f13dcb2, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
