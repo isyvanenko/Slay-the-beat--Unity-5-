@@ -7,18 +7,16 @@ using UnityEngine.SceneManagement;
 
 public class StageSelector : MonoBehaviour
 {
-  [Header("Input Actions")]
+    [Header("Input Actions")]
     public InputActionReference navigateLeft;
     public InputActionReference navigateRight;
     public InputActionReference submitAction;
 
     [Header("3D Mesh Settings")]
-    [Tooltip("The Transform of the 6-sided cylinder.")]
     public Transform meshTransform;
-    [Tooltip("How fast the cylinder spins to the next side.")]
     public float spinSpeed = 10f;
     private Quaternion targetRotation;
-    private Vector3 initialEulerAngles; // Stores the starting X and Z rotations
+    private Vector3 initialEulerAngles;
 
     [Header("UI References")]
     public TextMeshProUGUI stageText;
@@ -39,10 +37,10 @@ public class StageSelector : MonoBehaviour
     public float scalePunchAmount = 1.2f;
     public float returnSpeed = 12f;
     
-    [Header("Timer Integration")]
     public TimeoutRestarter timeoutScript;
 
     private Color originalMainColor, originalLeftColor, originalRightColor;
+    private Vector3 leftArrowOriginalScale, rightArrowOriginalScale, textOriginalScale;
     private Coroutine mainFlashCr, leftArrowCr, rightArrowCr;
 
     private void OnEnable()
@@ -68,9 +66,12 @@ public class StageSelector : MonoBehaviour
         if (leftArrowImage != null) originalLeftColor = leftArrowImage.color;
         if (rightArrowImage != null) originalRightColor = rightArrowImage.color;
         
+        if (leftArrowImage != null) leftArrowOriginalScale = leftArrowImage.transform.localScale;
+        if (rightArrowImage != null) rightArrowOriginalScale = rightArrowImage.transform.localScale;
+        if (stageText != null) textOriginalScale = stageText.transform.localScale;
+
         if (meshTransform != null)
         {
-            // Remember the initial X and Z rotation so the spin doesn't reset them to 0
             initialEulerAngles = meshTransform.eulerAngles;
             targetRotation = meshTransform.rotation;
         }
@@ -82,25 +83,19 @@ public class StageSelector : MonoBehaviour
     {
         if (meshTransform != null)
         {
-            // Spherical Lerp for that smooth mechanical spin
             meshTransform.rotation = Quaternion.Slerp(meshTransform.rotation, targetRotation, Time.deltaTime * spinSpeed);
         }
     }
 
-    private void OnNavigateLeft(InputAction.CallbackContext context)
-    {
-        if (context.ReadValue<float>() > 0) HandleNavigation(true);
-    }
+    // --- Input System Listeners ---
+    private void OnNavigateLeft(InputAction.CallbackContext context) { if (context.ReadValue<float>() > 0) HandleNavigation(true); }
+    private void OnNavigateRight(InputAction.CallbackContext context) { if (context.ReadValue<float>() > 0) HandleNavigation(false); }
+    private void OnSubmit(InputAction.CallbackContext context) { if (context.ReadValue<float>() > 0) ConfirmSelection(); }
 
-    private void OnNavigateRight(InputAction.CallbackContext context)
-    {
-        if (context.ReadValue<float>() > 0) HandleNavigation(false);
-    }
-
-    private void OnSubmit(InputAction.CallbackContext context)
-    {
-        if (context.ReadValue<float>() > 0) ConfirmSelection();
-    }
+    // --- NEW: UI Button Listeners (Assign these in the Inspector) ---
+    public void OnLeftClick() => HandleNavigation(true);
+    public void OnRightClick() => HandleNavigation(false);
+    public void OnSubmitClick() => ConfirmSelection();
 
     void HandleNavigation(bool isGoingLeft)
     {
@@ -117,13 +112,10 @@ public class StageSelector : MonoBehaviour
             currentStages = targetValue;
             UpdateStageUI();
             
-            // CALCULATE Y ROTATION:
-            // (currentStages - 1) * 60 degrees. 
-            // We use the initial X and Z so the model doesn't "flip" if it was tilted.
             float targetY = initialEulerAngles.y + ((currentStages - 1) * 60f);
             targetRotation = Quaternion.Euler(initialEulerAngles.x, targetY, initialEulerAngles.z);
 
-            if (stageText != null) stageText.transform.localScale = Vector3.one * scalePunchAmount;
+            if (stageText != null) stageText.transform.localScale = textOriginalScale * scalePunchAmount;
         }
 
         ApplyVisualFeedback(isGoingLeft, flashColor);
@@ -131,10 +123,10 @@ public class StageSelector : MonoBehaviour
 
     void ApplyVisualFeedback(bool isLeft, Color color)
     {
-        if (mainDisplayImage != null) mainDisplayImage.transform.localScale = Vector3.one * (scalePunchAmount * 0.95f);
-        
         Image arrow = isLeft ? leftArrowImage : rightArrowImage;
-        if (arrow != null) arrow.transform.localScale = Vector3.one * scalePunchAmount;
+        Vector3 arrowOrig = isLeft ? leftArrowOriginalScale : rightArrowOriginalScale;
+        
+        if (arrow != null) arrow.transform.localScale = arrowOrig * scalePunchAmount;
 
         ResetColors();
 
@@ -177,10 +169,14 @@ public class StageSelector : MonoBehaviour
     void LateUpdate()
     {
         float step = Time.deltaTime * returnSpeed;
-        if (stageText != null) stageText.transform.localScale = Vector3.Lerp(stageText.transform.localScale, Vector3.one, step);
-        if (mainDisplayImage != null) mainDisplayImage.transform.localScale = Vector3.Lerp(mainDisplayImage.transform.localScale, Vector3.one, step);
-        if (leftArrowImage != null) leftArrowImage.transform.localScale = Vector3.Lerp(leftArrowImage.transform.localScale, Vector3.one, step);
-        if (rightArrowImage != null) rightArrowImage.transform.localScale = Vector3.Lerp(rightArrowImage.transform.localScale, Vector3.one, step);
+        
+        if (stageText != null) 
+            stageText.transform.localScale = Vector3.Lerp(stageText.transform.localScale, textOriginalScale, step);
+        
+        if (leftArrowImage != null) 
+            leftArrowImage.transform.localScale = Vector3.Lerp(leftArrowImage.transform.localScale, leftArrowOriginalScale, step);
+        if (rightArrowImage != null) 
+            rightArrowImage.transform.localScale = Vector3.Lerp(rightArrowImage.transform.localScale, rightArrowOriginalScale, step);
     }
 
     public void ConfirmSelection()
