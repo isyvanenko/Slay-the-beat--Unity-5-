@@ -57,7 +57,6 @@ public class GameplayManager : MonoBehaviour
     void Start()
     {
         // --- NEW: UI ENABLING/DISABLING ---
-        // This ensures the Player 2 canvas is turned off immediately if it's a 1-player game
         if (p2Panel != null)
         {
             p2Panel.SetActive(SessionConfig.PlayerCount == 2);
@@ -93,11 +92,9 @@ public class GameplayManager : MonoBehaviour
             musicSource.PlayScheduled(dspSongStartTime);
     }
 
-    void SetupPlayerInputs()
+   void SetupPlayerInputs()
     {
-        Debug.Log("<color=yellow>=== STARTING INPUT SETUP ===</color>");
-        Debug.Log($"P1 Device in Config: {(SessionConfig.Player1Device != null ? SessionConfig.Player1Device.deviceId.ToString() : "NULL")}");
-        Debug.Log($"P2 Device in Config: {(SessionConfig.Player2Device != null ? SessionConfig.Player2Device.deviceId.ToString() : "NULL")}");
+        Debug.Log("<color=yellow>=== STARTING GAMEPLAY INPUT SETUP ===</color>");
 
         // ====================================================================
         // STEP 1: WAKE UP OR SLEEP GAMEOBJECTS
@@ -117,39 +114,37 @@ public class GameplayManager : MonoBehaviour
         if (p2Input != null) p2Input.neverAutoSwitchControlSchemes = true;
 
         // ====================================================================
-        // STEP 2: SECURE PLAYER 1 (WITH CRASH PROTECTION)
+        // STEP 2: SECURE PLAYER 1 & LOAD CUSTOM MAP
         // ====================================================================
         if (p1Input != null && SessionConfig.Player1Device != null)
         {
             try 
             {
-                // We use Try-Catch so if Unity throws a tantrum here, it won't kill the script!
                 if (p1Input.actions != null) p1Input.actions.Disable(); 
                 
+                // 🚨 REVERTED: We MUST pair the device, even if it's a keyboard!
                 p1Input.user.UnpairDevices(); 
                 InputUser.PerformPairingWithDevice(SessionConfig.Player1Device, p1Input.user);
                 
+                if (!string.IsNullOrEmpty(SessionConfig.P1Bindings))
+                {
+                    p1Input.actions.RemoveAllBindingOverrides(); 
+                    p1Input.actions.LoadBindingOverridesFromJson(SessionConfig.P1Bindings);
+                    Debug.Log("<color=green>[SUCCESS]</color> Player 1 Custom Map Loaded!");
+                }
+
                 if (p1Input.actions != null) p1Input.actions.Enable(); 
                 
                 p1Left.Initialize(p1Input.actions["Left"]);
                 p1Down.Initialize(p1Input.actions["Down"]);
                 p1Up.Initialize(p1Input.actions["Up"]);
                 p1Right.Initialize(p1Input.actions["Right"]);
-
-                Debug.Log($"<color=green>P1 Successfully Locked to Device ID:</color> {SessionConfig.Player1Device.deviceId}");
             }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"<color=red>CRASH DURING P1 SETUP:</color> {e.Message}");
-            }
-        }
-        else
-        {
-            Debug.LogWarning("<color=orange>Skipped P1 Setup: p1Input or Player1Device was NULL!</color>");
+            catch (System.Exception e) { Debug.LogError($"CRASH P1: {e.Message}"); }
         }
 
         // ====================================================================
-        // STEP 3: SECURE PLAYER 2 (WITH CRASH PROTECTION)
+        // STEP 3: SECURE PLAYER 2 & LOAD CUSTOM MAP
         // ====================================================================
         if (SessionConfig.PlayerCount == 2 && p2Input != null && SessionConfig.Player2Device != null)
         {
@@ -157,22 +152,25 @@ public class GameplayManager : MonoBehaviour
             {
                 if (p2Input.actions != null) p2Input.actions.Disable(); 
                 
+                // 🚨 REVERTED: We MUST pair the device here too!
                 p2Input.user.UnpairDevices();
                 InputUser.PerformPairingWithDevice(SessionConfig.Player2Device, p2Input.user);
                 
+                if (!string.IsNullOrEmpty(SessionConfig.P2Bindings))
+                {
+                    p2Input.actions.RemoveAllBindingOverrides();
+                    p2Input.actions.LoadBindingOverridesFromJson(SessionConfig.P2Bindings);
+                    Debug.Log("<color=green>[SUCCESS]</color> Player 2 Custom Map Loaded!");
+                }
+
                 if (p2Input.actions != null) p2Input.actions.Enable(); 
 
                 if (p2Left != null) p2Left.Initialize(p2Input.actions["Left"]);
                 if (p2Down != null) p2Down.Initialize(p2Input.actions["Down"]);
                 if (p2Up != null) p2Up.Initialize(p2Input.actions["Up"]);
                 if (p2Right != null) p2Right.Initialize(p2Input.actions["Right"]);
-                
-                Debug.Log($"<color=green>P2 Successfully Locked to Device ID:</color> {SessionConfig.Player2Device.deviceId}");
             }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"<color=red>CRASH DURING P2 SETUP:</color> {e.Message}");
-            }
+            catch (System.Exception e) { Debug.LogError($"CRASH P2: {e.Message}"); }
         }
     }
 

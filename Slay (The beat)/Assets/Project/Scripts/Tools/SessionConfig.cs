@@ -10,6 +10,12 @@ public static class SessionConfig
     public static int PlayerCount = 1;
 
     // ==========================================
+    // 🚨 NEW: CUSTOM BINDINGS MEMORY 🚨
+    // ==========================================
+    public static string P1Bindings;
+    public static string P2Bindings;
+
+    // ==========================================
     // THE TRIPWIRE FOR PLAYER 1
     // ==========================================
     private static InputDevice _player1Device;
@@ -53,5 +59,9 @@ public static class SessionConfig
         Player2Device = null;
         P1DeviceType = "";
         P2DeviceType = "";
+        
+        // 🚨 NEW: Clear the bindings when the game restarts!
+        P1Bindings = "";
+        P2Bindings = "";
     }
 }
