@@ -975,6 +975,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -1592,6 +1593,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -2046,6 +2048,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -2285,6 +2288,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -4283972540087228153, guid: 41bc46ac4be4e4dc7a73039087669dc4, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.84
+      objectReference: {fileID: 0}
+    - target: {fileID: -4283972540087228153, guid: 41bc46ac4be4e4dc7a73039087669dc4, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 11.87
+      objectReference: {fileID: 0}
+    - target: {fileID: -4283972540087228153, guid: 41bc46ac4be4e4dc7a73039087669dc4, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0
+      objectReference: {fileID: 0}
     - target: {fileID: -2964225117148605397, guid: 41bc46ac4be4e4dc7a73039087669dc4, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -2458,6 +2473,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -2717,7 +2733,6 @@ MonoBehaviour:
   m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
   m_RequiresDepthTexture: 0
   m_RequiresColorTexture: 0
-  m_Version: 2
   m_TaaSettings:
     m_Quality: 3
     m_FrameInfluence: 0.1
@@ -2725,6 +2740,7 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
+  m_Version: 2
 --- !u!1 &334619669
 GameObject:
   m_ObjectHideFlags: 0
@@ -2972,6 +2988,7 @@ MonoBehaviour:
   m_VerticalAlignment: 1024
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -3295,14 +3312,14 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 410087039}
   m_Enabled: 1
-  serializedVersion: 11
+  serializedVersion: 12
   m_Type: 1
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 2
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
-  m_CookieSize: 10
+  m_CookieSize2D: {x: 10, y: 10}
   m_Shadows:
     m_Type: 2
     m_Resolution: -1
@@ -3379,17 +3396,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Version: 4
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
-  m_LightLayerMask: 1
-  m_RenderingLayers: 1
   m_CustomShadowLayers: 0
-  m_ShadowLayerMask: 1
-  m_ShadowRenderingLayers: 1
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 1
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!1 &411263357
 GameObject:
   m_ObjectHideFlags: 0
@@ -3718,6 +3741,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -4112,6 +4136,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -4133,9 +4159,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &508835890
 MeshFilter:
@@ -4390,6 +4418,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -4805,6 +4834,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -5234,6 +5264,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -5255,9 +5287,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &743705826
 MeshFilter:
@@ -5309,7 +5343,7 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 24300002, guid: 5ad17ad67fa43408cac702d0013dd7fb, type: 2}
-  m_audioClip: {fileID: 8300000, guid: fe90a49ee9d3441fbb41d98f61dbccd5, type: 3}
+  m_audioClip: {fileID: 0}
   m_Resource: {fileID: 8300000, guid: fe90a49ee9d3441fbb41d98f61dbccd5, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
@@ -5842,6 +5876,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -6920,6 +6955,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -7254,6 +7290,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -7275,9 +7313,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &940918003
 MeshFilter:
@@ -8499,6 +8539,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -8990,6 +9031,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -9290,6 +9332,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -9467,6 +9510,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -9488,9 +9533,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &1218938862
 MeshFilter:
@@ -10447,7 +10494,7 @@ GameObject:
   m_IsActive: 0
 --- !u!199 &1489377715
 ParticleSystemRenderer:
-  serializedVersion: 6
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -10466,6 +10513,8 @@ ParticleSystemRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -10488,9 +10537,11 @@ ParticleSystemRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_RenderMode: 0
   m_MeshDistribution: 0
   m_SortMode: 0
@@ -10522,7 +10573,6 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
-  m_MaskInteraction: 0
 --- !u!198 &1489377716
 ParticleSystem:
   m_ObjectHideFlags: 0
@@ -15431,6 +15481,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -16416,6 +16467,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -16437,9 +16490,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &1616105918
 MeshFilter:
@@ -16885,6 +16940,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -17929,7 +17985,7 @@ GameObject:
   m_IsActive: 0
 --- !u!199 &1778284971
 ParticleSystemRenderer:
-  serializedVersion: 6
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -17948,6 +18004,8 @@ ParticleSystemRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -17970,9 +18028,11 @@ ParticleSystemRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_RenderMode: 0
   m_MeshDistribution: 0
   m_SortMode: 0
@@ -18004,7 +18064,6 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
-  m_MaskInteraction: 0
 --- !u!198 &1778284972
 ParticleSystem:
   m_ObjectHideFlags: 0
@@ -23452,6 +23511,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -23588,6 +23648,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -24041,6 +24102,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -24252,6 +24314,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -24499,13 +24562,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74d00a7bce09e4038963c8dc2cb65dfb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  laserobj: {fileID: 408586789}
-  transforplayer2obj: {fileID: 1664180173}
+  laserobj: {fileID: 0}
+  transforplayer2obj: {fileID: 0}
   playerIndexToAssign: 1
   confirmationDelay: 0.5
   uiResetButton: {fileID: 0}
   promptText: {fileID: 314604459}
-  resetActionReference: {fileID: 3378182776752380064, guid: e2700107b22ee194a8da715f31026ee6, type: 3}
+  resetActionReference: {fileID: 0}
   playerInputToMap: {fileID: 762709669}
   requiredHoldTime: 1
   slipForgivenessTime: 0.25
@@ -24519,42 +24582,56 @@ MonoBehaviour:
   lockedWhiteColor: {r: 1, g: 1, b: 1, a: 1}
   flashGoldColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   errorRedColor: {r: 1, g: 0.2, b: 0.2, a: 1}
+  goldEmissionColor: {r: 2, g: 1.6, b: 0, a: 2}
+  redEmissionColor: {r: 3, g: 0.6, b: 0.6, a: 3}
   calibrationAnimations:
   - actionName: Left
-    backgroundBaseImage: {fileID: 839336192}
-    arrowIconImage: {fileID: 1875166470}
-    lockIconImage: {fileID: 1796360636}
+    backgroundBaseImage: {fileID: 0}
+    arrowIconImage: {fileID: 0}
+    lockIconImage: {fileID: 0}
     containerToPulse: {fileID: 45591700}
+    target3DModel: {fileID: 0}
+    matInstance: {fileID: 0}
+    originalEmissionColor: {r: 0, g: 0, b: 0, a: 0}
     originalScale: {x: 0, y: 0, z: 0}
     originalPosition: {x: 0, y: 0, z: 0}
   - actionName: Down
-    backgroundBaseImage: {fileID: 229250707}
-    arrowIconImage: {fileID: 1418337054}
-    lockIconImage: {fileID: 878425805}
+    backgroundBaseImage: {fileID: 0}
+    arrowIconImage: {fileID: 0}
+    lockIconImage: {fileID: 0}
     containerToPulse: {fileID: 35013339}
+    target3DModel: {fileID: 0}
+    matInstance: {fileID: 0}
+    originalEmissionColor: {r: 0, g: 0, b: 0, a: 0}
     originalScale: {x: 0, y: 0, z: 0}
     originalPosition: {x: 0, y: 0, z: 0}
   - actionName: Up
-    backgroundBaseImage: {fileID: 252366455}
-    arrowIconImage: {fileID: 1558682307}
-    lockIconImage: {fileID: 960955224}
+    backgroundBaseImage: {fileID: 0}
+    arrowIconImage: {fileID: 0}
+    lockIconImage: {fileID: 0}
     containerToPulse: {fileID: 898061960}
+    target3DModel: {fileID: 0}
+    matInstance: {fileID: 0}
+    originalEmissionColor: {r: 0, g: 0, b: 0, a: 0}
     originalScale: {x: 0, y: 0, z: 0}
     originalPosition: {x: 0, y: 0, z: 0}
   - actionName: Right
-    backgroundBaseImage: {fileID: 74454563}
-    arrowIconImage: {fileID: 1007111852}
-    lockIconImage: {fileID: 1034043148}
+    backgroundBaseImage: {fileID: 0}
+    arrowIconImage: {fileID: 0}
+    lockIconImage: {fileID: 0}
     containerToPulse: {fileID: 679630528}
+    target3DModel: {fileID: 0}
+    matInstance: {fileID: 0}
+    originalEmissionColor: {r: 0, g: 0, b: 0, a: 0}
     originalScale: {x: 0, y: 0, z: 0}
     originalPosition: {x: 0, y: 0, z: 0}
   globalAudioSource: {fileID: 148635578}
-  loopingAudioSource: {fileID: 620769678}
-  stepPromptSfx: {fileID: 8300000, guid: d0607b676bf244cd6890524f931b2996, type: 3}
-  continuousHoldSfx: {fileID: 8300000, guid: 14341e9ae0491485a98a96fb26ee60e2, type: 3}
-  controllerSelectedSfx: {fileID: 8300000, guid: 234dee5ffa7ad4d60b6fcf2171ebca99, type: 3}
-  dancematSelectedSfx: {fileID: 8300000, guid: 3c797d157abe742a294ba4c63c9fbe60, type: 3}
-  selectionConfirmedSfx: {fileID: 8300000, guid: 75dd09aba62e54dbb918de9b53a6b617, type: 3}
+  loopingAudioSource: {fileID: 0}
+  stepPromptSfx: {fileID: 0}
+  continuousHoldSfx: {fileID: 0}
+  controllerSelectedSfx: {fileID: 8300000, guid: 73fb3dd72a0f64ebca1ddb66064989a9, type: 3}
+  dancematSelectedSfx: {fileID: 8300000, guid: 73fb3dd72a0f64ebca1ddb66064989a9, type: 3}
+  selectionConfirmedSfx: {fileID: 8300000, guid: 933321ec5ae17466bb283d5f2fa07040, type: 3}
   resetSfx: {fileID: 0}
   errorBuzzSfx: {fileID: 0}
   duckedMusicVolume: 0.2
@@ -24880,13 +24957,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74d00a7bce09e4038963c8dc2cb65dfb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  laserobj: {fileID: 408586789}
-  transforplayer2obj: {fileID: 1664180173}
+  laserobj: {fileID: 0}
+  transforplayer2obj: {fileID: 0}
   playerIndexToAssign: 0
   confirmationDelay: 0.5
   uiResetButton: {fileID: 0}
   promptText: {fileID: 898718613}
-  resetActionReference: {fileID: 3378182776752380064, guid: e2700107b22ee194a8da715f31026ee6, type: 3}
+  resetActionReference: {fileID: 0}
   playerInputToMap: {fileID: 9202530}
   requiredHoldTime: 1
   slipForgivenessTime: 0.25
@@ -24900,44 +24977,58 @@ MonoBehaviour:
   lockedWhiteColor: {r: 1, g: 1, b: 1, a: 1}
   flashGoldColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   errorRedColor: {r: 1, g: 0.2, b: 0.2, a: 1}
+  goldEmissionColor: {r: 2, g: 1.6, b: 0, a: 2}
+  redEmissionColor: {r: 3, g: 0.6, b: 0.6, a: 3}
   calibrationAnimations:
   - actionName: Left
-    backgroundBaseImage: {fileID: 1594083214}
-    arrowIconImage: {fileID: 1290473825}
-    lockIconImage: {fileID: 525787202}
+    backgroundBaseImage: {fileID: 0}
+    arrowIconImage: {fileID: 0}
+    lockIconImage: {fileID: 0}
     containerToPulse: {fileID: 246652534}
+    target3DModel: {fileID: 0}
+    matInstance: {fileID: 0}
+    originalEmissionColor: {r: 0, g: 0, b: 0, a: 0}
     originalScale: {x: 0, y: 0, z: 0}
     originalPosition: {x: 0, y: 0, z: 0}
   - actionName: Down
-    backgroundBaseImage: {fileID: 485322373}
-    arrowIconImage: {fileID: 1742155158}
-    lockIconImage: {fileID: 1525229810}
+    backgroundBaseImage: {fileID: 0}
+    arrowIconImage: {fileID: 0}
+    lockIconImage: {fileID: 0}
     containerToPulse: {fileID: 1357100714}
+    target3DModel: {fileID: 0}
+    matInstance: {fileID: 0}
+    originalEmissionColor: {r: 0, g: 0, b: 0, a: 0}
     originalScale: {x: 0, y: 0, z: 0}
     originalPosition: {x: 0, y: 0, z: 0}
   - actionName: Up
-    backgroundBaseImage: {fileID: 378105741}
-    arrowIconImage: {fileID: 1428361698}
-    lockIconImage: {fileID: 804397969}
+    backgroundBaseImage: {fileID: 0}
+    arrowIconImage: {fileID: 0}
+    lockIconImage: {fileID: 0}
     containerToPulse: {fileID: 1084644919}
+    target3DModel: {fileID: 0}
+    matInstance: {fileID: 0}
+    originalEmissionColor: {r: 0, g: 0, b: 0, a: 0}
     originalScale: {x: 0, y: 0, z: 0}
     originalPosition: {x: 0, y: 0, z: 0}
   - actionName: Right
-    backgroundBaseImage: {fileID: 1625595546}
-    arrowIconImage: {fileID: 25573485}
-    lockIconImage: {fileID: 338035700}
+    backgroundBaseImage: {fileID: 0}
+    arrowIconImage: {fileID: 0}
+    lockIconImage: {fileID: 0}
     containerToPulse: {fileID: 1110565578}
+    target3DModel: {fileID: 0}
+    matInstance: {fileID: 0}
+    originalEmissionColor: {r: 0, g: 0, b: 0, a: 0}
     originalScale: {x: 0, y: 0, z: 0}
     originalPosition: {x: 0, y: 0, z: 0}
   globalAudioSource: {fileID: 148635578}
-  loopingAudioSource: {fileID: 620769678}
-  stepPromptSfx: {fileID: 8300000, guid: d0607b676bf244cd6890524f931b2996, type: 3}
-  continuousHoldSfx: {fileID: 8300000, guid: 14341e9ae0491485a98a96fb26ee60e2, type: 3}
-  controllerSelectedSfx: {fileID: 0}
-  dancematSelectedSfx: {fileID: 0}
+  loopingAudioSource: {fileID: 0}
+  stepPromptSfx: {fileID: 0}
+  continuousHoldSfx: {fileID: 0}
+  controllerSelectedSfx: {fileID: 8300000, guid: 73fb3dd72a0f64ebca1ddb66064989a9, type: 3}
+  dancematSelectedSfx: {fileID: 8300000, guid: 73fb3dd72a0f64ebca1ddb66064989a9, type: 3}
   selectionConfirmedSfx: {fileID: 8300000, guid: 933321ec5ae17466bb283d5f2fa07040, type: 3}
-  resetSfx: {fileID: 8300000, guid: d0607b676bf244cd6890524f931b2996, type: 3}
-  errorBuzzSfx: {fileID: 8300000, guid: a6356ac45e0b149cf9cb3e2e9299166c, type: 3}
+  resetSfx: {fileID: 0}
+  errorBuzzSfx: {fileID: 0}
   duckedMusicVolume: 0.2
   duckDropSpeed: 0.3
   duckRestoreSpeed: 1
@@ -25173,6 +25264,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -25194,9 +25287,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &2026421182
 MeshFilter:
@@ -25775,6 +25870,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -25837,7 +25933,7 @@ GameObject:
   m_IsActive: 0
 --- !u!199 &2068759849
 ParticleSystemRenderer:
-  serializedVersion: 6
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -25856,6 +25952,8 @@ ParticleSystemRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -25878,9 +25976,11 @@ ParticleSystemRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_RenderMode: 0
   m_MeshDistribution: 0
   m_SortMode: 0
@@ -25912,7 +26012,6 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
-  m_MaskInteraction: 0
 --- !u!198 &2068759850
 ParticleSystem:
   m_ObjectHideFlags: 0
@@ -30982,6 +31081,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -31500,9 +31600,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69b06588287bc4c73a3e9f92d7c4ef57, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  globalAudioSource: {fileID: 148635578}
-  onePlayerSound: {fileID: 8300000, guid: f725799b85fd0445ba5fa51b3b5422cf, type: 3}
-  twoPlayerSound: {fileID: 8300000, guid: f671a70ce109f4daa8748e7563435dd6, type: 3}
+  globalAudioSource: {fileID: 620769678}
+  onePlayerSound: {fileID: 8300000, guid: b79fb7f61d3f34a35842d1877a17dc14, type: 3}
+  twoPlayerSound: {fileID: 8300000, guid: b79fb7f61d3f34a35842d1877a17dc14, type: 3}
   duckedMusicVolume: 0.3
   duckDropSpeed: 0.3
   duckRestoreSpeed: 1
@@ -31733,6 +31833,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -32357,6 +32458,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -32490,6 +32592,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -32627,6 +32730,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -33303,6 +33407,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0

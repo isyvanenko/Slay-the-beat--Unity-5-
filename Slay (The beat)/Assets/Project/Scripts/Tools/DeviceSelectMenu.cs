@@ -9,11 +9,13 @@ using System.Collections.Generic;
 [RequireComponent(typeof(CanvasGroup))]
 public class DeviceSetupMenu : MonoBehaviour
 {
-
-    Animator laser;
-    Animator transforplayer2;
+    // 🚨 YOUR CUSTOM ANIMATIONS 🚨
+    [Header("Custom Animations")]
     public GameObject laserobj;
     public GameObject transforplayer2obj;
+    private Animator laser;
+    private Animator transforplayer2;
+
     [Header("Configuration")]
     public int playerIndexToAssign = 0;
     public float confirmationDelay = 0.5f;
@@ -40,20 +42,31 @@ public class DeviceSetupMenu : MonoBehaviour
     public float shakeDuration = 0.3f;
     public float shakeIntensity = 15f; 
 
-    [Header("State Colors")]
+    [Header("UI State Colors")]
     public Color normalBlackColor = Color.black; 
     public Color lockedWhiteColor = Color.white;
     public Color flashGoldColor = new Color(1f, 0.8f, 0f); 
     public Color errorRedColor = new Color(1f, 0.2f, 0.2f); 
 
+    [Header("3D Emission Settings")]
+    [ColorUsage(true, true)] public Color goldEmissionColor = new Color(1f, 0.8f, 0f, 1f) * 2f; 
+    [ColorUsage(true, true)] public Color redEmissionColor = new Color(1f, 0.2f, 0.2f, 1f) * 3f;
+
     [System.Serializable]
     public class CalibrationAnimsGroup
     {
         public string actionName; 
+        
+        [Header("2D UI Elements")]
         public Graphic backgroundBaseImage; 
         public Graphic arrowIconImage;      
         public Graphic lockIconImage;       
         public CanvasGroup containerToPulse; 
+        
+        [Header("3D Object")]
+        public Renderer target3DModel;
+        [HideInInspector] public Material matInstance;
+        [HideInInspector] public Color originalEmissionColor;
         
         [HideInInspector] public Vector3 originalScale; 
         [HideInInspector] public Vector3 originalPosition; 
@@ -113,12 +126,21 @@ public class DeviceSetupMenu : MonoBehaviour
                 animGroup.originalScale = animGroup.containerToPulse.transform.localScale;
                 animGroup.originalPosition = animGroup.containerToPulse.transform.localPosition;
             }
+
+            if (animGroup.target3DModel != null)
+            {
+                animGroup.matInstance = animGroup.target3DModel.material; 
+                animGroup.matInstance.EnableKeyword("_EMISSION"); 
+                animGroup.originalEmissionColor = animGroup.matInstance.GetColor("_EmissionColor"); 
+            }
         }
     }
 
-    private void Start() {
-        laser = laserobj.GetComponent<Animator>();
-        transforplayer2 = transforplayer2obj.GetComponent<Animator>();
+    // 🚨 YOUR CUSTOM START METHOD 🚨
+    private void Start() 
+    {
+        if (laserobj != null) laser = laserobj.GetComponent<Animator>();
+        if (transforplayer2obj != null) transforplayer2 = transforplayer2obj.GetComponent<Animator>();
     }
 
     private void OnEnable()
@@ -266,6 +288,9 @@ public class DeviceSetupMenu : MonoBehaviour
                 c.a = 0f;
                 animGroup.lockIconImage.color = c;
             }
+
+            if (animGroup.matInstance != null)
+                animGroup.matInstance.SetColor("_EmissionColor", animGroup.originalEmissionColor);
         }
     }
 
@@ -326,7 +351,9 @@ public class DeviceSetupMenu : MonoBehaviour
 
     private void StartMappingSequence(InputDevice device)
     {
-        laser.SetBool("Callibration?", true);
+        // 🚨 YOUR CUSTOM LASER TRIGGER 🚨
+        if (laser != null) laser.SetBool("Callibration?", true);
+        
         isMapping = true;
         SessionConfig.SetPlayerDevice(playerIndexToAssign, device, "Custom");
 
@@ -425,6 +452,12 @@ public class DeviceSetupMenu : MonoBehaviour
                     arrowColor.a = Mathf.Lerp(1f, 0f, progress);
                     animGroup.arrowIconImage.color = arrowColor;
                 }
+
+                if (animGroup.matInstance != null)
+                {
+                    Color currentEmission = Color.Lerp(animGroup.originalEmissionColor, goldEmissionColor, progress);
+                    animGroup.matInstance.SetColor("_EmissionColor", currentEmission);
+                }
             }
             else
             {
@@ -458,6 +491,8 @@ public class DeviceSetupMenu : MonoBehaviour
 
         if (playerInputToMap != null)
             playerInputToMap.actions[animGroup.actionName].ApplyBindingOverride(control.path);
+
+        if (animGroup.matInstance != null) animGroup.matInstance.SetColor("_EmissionColor", goldEmissionColor);
 
         if (animGroup.backgroundBaseImage != null) animGroup.backgroundBaseImage.color = lockedWhiteColor;
         if (animGroup.arrowIconImage != null)
@@ -507,6 +542,8 @@ public class DeviceSetupMenu : MonoBehaviour
             animGroup.arrowIconImage.color = arrowColor;
         }
 
+        if (animGroup.matInstance != null) animGroup.matInstance.SetColor("_EmissionColor", redEmissionColor);
+
         float timer = 0f;
         Transform target = animGroup.containerToPulse.transform;
         Vector3 startPos = animGroup.originalPosition;
@@ -526,6 +563,9 @@ public class DeviceSetupMenu : MonoBehaviour
         target.localPosition = startPos;
         if (promptText != null) promptText.transform.localPosition = promptOriginalPos;
         
+        if (animGroup.matInstance != null)
+            StartCoroutine(FadeMaterialEmission(animGroup.matInstance, redEmissionColor, animGroup.originalEmissionColor, 0.2f));
+
         if (animGroup.backgroundBaseImage != null)
             yield return StartCoroutine(FadeGraphicColor(animGroup.backgroundBaseImage, errorRedColor, normalBlackColor, 0.2f));
     }
@@ -570,6 +610,8 @@ public class DeviceSetupMenu : MonoBehaviour
                     animGroup.containerToPulse.transform.localScale = animGroup.originalScale;
                 animGroup.containerToPulse.transform.localPosition = animGroup.originalPosition;
             }
+            if (animGroup.matInstance != null)
+                animGroup.matInstance.SetColor("_EmissionColor", animGroup.originalEmissionColor);
         }
     }
 
@@ -621,6 +663,19 @@ public class DeviceSetupMenu : MonoBehaviour
         g.color = c;
     }
 
+    IEnumerator FadeMaterialEmission(Material mat, Color startCol, Color endCol, float duration)
+    {
+        if (mat == null) yield break;
+        float t = 0f;
+        while (t < 1f)
+        {
+            t += Time.unscaledDeltaTime / duration;
+            mat.SetColor("_EmissionColor", Color.Lerp(startCol, endCol, t));
+            yield return null;
+        }
+        mat.SetColor("_EmissionColor", endCol);
+    }
+
     private void SetCGAlpha(CanvasGroup cg, float alpha)
     {
         if (cg == null) return;
@@ -657,8 +712,10 @@ public class DeviceSetupMenu : MonoBehaviour
 
     IEnumerator FadeOutAndSwitch(AudioClip playedClip)
     {
-        laser.SetBool("Callibration?", false);
-        transforplayer2.SetTrigger("TransForPlayer2");
+        // 🚨 YOUR CUSTOM TRANSITION TRIGGERS 🚨
+        if (laser != null) laser.SetBool("Callibration?", false);
+        if (transforplayer2 != null) transforplayer2.SetTrigger("TransForPlayer2");
+
         float timer = 0f;
         float startAlpha = (rootCanvasGroup_Internal != null) ? rootCanvasGroup_Internal.alpha : 1f;
         
@@ -683,7 +740,6 @@ public class DeviceSetupMenu : MonoBehaviour
         {
             if (nextMenuForPlayer2 != null)
             {
-                
                 nextMenuForPlayer2.SetActive(true); 
                 gameObject.SetActive(false); 
             }
