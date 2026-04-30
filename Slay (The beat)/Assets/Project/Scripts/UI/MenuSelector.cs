@@ -38,6 +38,12 @@ public class MenuSelector : MonoBehaviour
     public GameObject[] selectionParticles;
     public GameObject[] selectionSprites;
 
+    //animator
+     Animator laser; 
+     Animator spotlights;
+     public GameObject laserObj;
+     public GameObject spotlightObj;
+
     // Input
     private InputActions input;
     private InputAction left;
@@ -68,6 +74,10 @@ public class MenuSelector : MonoBehaviour
             audioSource = GetComponent<AudioSource>();
     }
 
+    private void Start() {
+        laser = laserObj.GetComponent<Animator>();
+        spotlights = spotlightObj.GetComponent<Animator>();
+    }
     void OnEnable()
     {
         left.performed += ctx => Move(-1);
@@ -218,10 +228,15 @@ public class MenuSelector : MonoBehaviour
 
     private void ActivateIndex(int idx)
     {
+
+
         if (isFading || hasSelected)
             return;
 
         hasSelected = true; // LOCK THE MENU
+
+        laser.SetBool("PlayerSelection", true);
+        spotlights.SetBool("SpotlightGone?", true);
 
         // 1. Force Disable ALL Particles
         for (int i = 0; i < selectionParticles.Length; i++)

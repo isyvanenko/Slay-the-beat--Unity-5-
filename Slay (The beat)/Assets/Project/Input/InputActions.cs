@@ -136,6 +136,15 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""ResetInput"",
+                    ""type"": ""Button"",
+                    ""id"": ""394f06d3-1150-4ec2-8f3e-d0533783da8d"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -334,6 +343,17 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Cancel"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""78b88001-ec9b-4bcd-a2b8-06c76017ca50"",
+                    ""path"": ""<Keyboard>/l"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ResetInput"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -602,6 +622,7 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
         m_UI_NavigateLeft = m_UI.FindAction("NavigateLeft", throwIfNotFound: true);
         m_UI_NavigateRight = m_UI.FindAction("NavigateRight", throwIfNotFound: true);
         m_UI_Cancel = m_UI.FindAction("Cancel", throwIfNotFound: true);
+        m_UI_ResetInput = m_UI.FindAction("ResetInput", throwIfNotFound: true);
         // Gameplay
         m_Gameplay = asset.FindActionMap("Gameplay", throwIfNotFound: true);
         m_Gameplay_Left = m_Gameplay.FindAction("Left", throwIfNotFound: true);
@@ -694,6 +715,7 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_UI_NavigateLeft;
     private readonly InputAction m_UI_NavigateRight;
     private readonly InputAction m_UI_Cancel;
+    private readonly InputAction m_UI_ResetInput;
     /// <summary>
     /// Provides access to input actions defined in input action map "UI".
     /// </summary>
@@ -725,6 +747,10 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "UI/Cancel".
         /// </summary>
         public InputAction @Cancel => m_Wrapper.m_UI_Cancel;
+        /// <summary>
+        /// Provides access to the underlying input action "UI/ResetInput".
+        /// </summary>
+        public InputAction @ResetInput => m_Wrapper.m_UI_ResetInput;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -766,6 +792,9 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
             @Cancel.started += instance.OnCancel;
             @Cancel.performed += instance.OnCancel;
             @Cancel.canceled += instance.OnCancel;
+            @ResetInput.started += instance.OnResetInput;
+            @ResetInput.performed += instance.OnResetInput;
+            @ResetInput.canceled += instance.OnResetInput;
         }
 
         /// <summary>
@@ -792,6 +821,9 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
             @Cancel.started -= instance.OnCancel;
             @Cancel.performed -= instance.OnCancel;
             @Cancel.canceled -= instance.OnCancel;
+            @ResetInput.started -= instance.OnResetInput;
+            @ResetInput.performed -= instance.OnResetInput;
+            @ResetInput.canceled -= instance.OnResetInput;
         }
 
         /// <summary>
@@ -1022,6 +1054,13 @@ public partial class @InputActions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnCancel(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "ResetInput" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnResetInput(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Gameplay" which allows adding and removing callbacks.
