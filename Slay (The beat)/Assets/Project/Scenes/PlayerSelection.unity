@@ -9374,6 +9374,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1145900474}
   m_CullTransparentMesh: 1
+--- !u!23 &1182731622 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -2964225117148605397, guid: 41bc46ac4be4e4dc7a73039087669dc4, type: 3}
+  m_PrefabInstance: {fileID: 303824230}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1201782068
 GameObject:
   m_ObjectHideFlags: 0
@@ -24957,8 +24962,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74d00a7bce09e4038963c8dc2cb65dfb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  laserobj: {fileID: 0}
-  transforplayer2obj: {fileID: 0}
+  laserobj: {fileID: 408586789}
+  transforplayer2obj: {fileID: 1664180173}
   playerIndexToAssign: 0
   confirmationDelay: 0.5
   uiResetButton: {fileID: 0}
@@ -24985,7 +24990,7 @@ MonoBehaviour:
     arrowIconImage: {fileID: 0}
     lockIconImage: {fileID: 0}
     containerToPulse: {fileID: 246652534}
-    target3DModel: {fileID: 0}
+    target3DModel: {fileID: 1182731622}
     matInstance: {fileID: 0}
     originalEmissionColor: {r: 0, g: 0, b: 0, a: 0}
     originalScale: {x: 0, y: 0, z: 0}
@@ -24995,7 +25000,7 @@ MonoBehaviour:
     arrowIconImage: {fileID: 0}
     lockIconImage: {fileID: 0}
     containerToPulse: {fileID: 1357100714}
-    target3DModel: {fileID: 0}
+    target3DModel: {fileID: 1182731622}
     matInstance: {fileID: 0}
     originalEmissionColor: {r: 0, g: 0, b: 0, a: 0}
     originalScale: {x: 0, y: 0, z: 0}
