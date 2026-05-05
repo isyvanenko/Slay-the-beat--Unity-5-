@@ -2598,7 +2598,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: d39354803a2244022ad96612fa3b952f, type: 2}
   - {fileID: 11400000, guid: fb019d42e9268433892c1739d041e352, type: 2}
   - {fileID: 11400000, guid: f909891f6031c4bd395d00701af9b612, type: 2}
-  - {fileID: 11400000, guid: ee9753e08e39e4dd28b1aee2a5f3ab73, type: 2}
+  - {fileID: 11400000, guid: d201054395afa4ba3837cc8df5881379, type: 2}
+  - {fileID: 11400000, guid: cefe5cc68da774fdc8df0302bd041b25, type: 2}
   splashCanvasGroup: {fileID: 169825820}
   splashStageText: {fileID: 1017940129}
   splashDuration: 2.5

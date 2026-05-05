@@ -45,11 +45,14 @@ EditorBuildSettings:
     path: Assets/Project/Scenes/ST_FollowMyRhytm.unity
     guid: 28c56dfb47c674de58f6bbf7d4519b31
   - enabled: 1
-    path: Assets/Project/Scenes/ST_FallenInLove.unity
+    path: Assets/Project/Scenes/ST_BadBEnergy.unity
     guid: 3b3292c05c8164c9d88dcc8851807b34
   - enabled: 1
     path: Assets/Project/Scenes/StageFeedback.unity
     guid: 77f42c6875fc948d8b15d200ef272248
+  - enabled: 1
+    path: Assets/Project/Scenes/ST_GlamoutAndBeart.unity
+    guid: 30231c4934cfc48be8d0491db1bc3898
   - enabled: 1
     path: Assets/Project/Scenes/AmountOfStagesSelection.unity
     guid: 5a17c328d0f59a74a9e1e9e524c33908
