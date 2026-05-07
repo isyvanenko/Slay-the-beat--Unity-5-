@@ -54,6 +54,9 @@ EditorBuildSettings:
     path: Assets/Project/Scenes/ST_GlamoutAndBeart.unity
     guid: 30231c4934cfc48be8d0491db1bc3898
   - enabled: 1
+    path: Assets/Project/Scenes/ST_NewLevel.unity
+    guid: 51d06a0edd1dd44b9af41d1106d721ec
+  - enabled: 1
     path: Assets/Project/Scenes/AmountOfStagesSelection.unity
     guid: 5a17c328d0f59a74a9e1e9e524c33908
   m_configObjects:
