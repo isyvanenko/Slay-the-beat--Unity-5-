@@ -18,7 +18,7 @@ MonoBehaviour:
   gameplaySceneName: ST_GetItRight
   easySteps: 70
   mediumSteps: 111
-  hardSteps: 111
+  hardSteps: 0
   easyChart: {fileID: 4900000, guid: b73c4fcdb57dc44e9a389bdfe5588942, type: 3}
   mediumChart: {fileID: 4900000, guid: 1bf2f5ea69cf44372a9df8bb8faa0613, type: 3}
   hardChart: {fileID: 4900000, guid: 1bf2f5ea69cf44372a9df8bb8faa0613, type: 3}

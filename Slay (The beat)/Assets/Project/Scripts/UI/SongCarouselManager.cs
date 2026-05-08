@@ -16,7 +16,7 @@ public class SongCarouselManager : MonoBehaviour
 
     [Header("Splash Screen")]
     public CanvasGroup splashCanvasGroup;
-    public TextMeshProUGUI splashStageText;
+    public TextMeshProUGUI splashText;
     public float splashDuration = 2.5f; 
 
     [Header("Arcade Timer & Warnings")]
@@ -75,6 +75,9 @@ public class SongCarouselManager : MonoBehaviour
     public AudioClip cancelSound; 
     public float musicMaxVolume = 0.5f;
 
+    [Header("Pause System")]
+    public PauseMenu pauseMenu; // <-- THIS IS THE MISSING FIELD
+
     private List<RectTransform> spawnedBlocks = new List<RectTransform>();
     private List<CanvasGroup> spawnedGroups = new List<CanvasGroup>(); 
     private List<Vector3> originalScales = new List<Vector3>(); 
@@ -84,6 +87,7 @@ public class SongCarouselManager : MonoBehaviour
     private InputActions input;
     private bool isTransitioning = false;
     private bool wasAutoSelected = false; 
+    private bool isPaused = false;
     
     private SongGradeData secretRandomSong = null;
     
@@ -112,6 +116,27 @@ public class SongCarouselManager : MonoBehaviour
         {
             splashCanvasGroup.alpha = 1f;
             splashCanvasGroup.gameObject.SetActive(true);
+        }
+
+        // Set welcome text instead of stage info
+        if (splashText != null)
+        {
+            splashText.text = "SELECT YOUR SONG";
+        }
+
+        // Find Pause Menu if not assigned
+        if (pauseMenu == null)
+            pauseMenu = FindObjectOfType<PauseMenu>(true);
+
+        // Setup Pause Menu Actions
+        if (pauseMenu != null)
+        {
+            pauseMenu.onResume.RemoveAllListeners();
+            pauseMenu.onRestart.RemoveAllListeners();
+            pauseMenu.onBackToMenu.RemoveAllListeners();
+            
+            pauseMenu.onResume.AddListener(ResumeGame);
+            pauseMenu.onBackToMenu.AddListener(QuitToMenu);
         }
 
         if (musicSource != null) musicSource.Stop();
@@ -152,18 +177,6 @@ public class SongCarouselManager : MonoBehaviour
     private IEnumerator SplashSequenceRoutine()
     {
         isTransitioning = true;
-
-        if (splashStageText != null)
-        {
-            if (SessionConfig.CurrentStage >= SessionConfig.MaxStages)
-            {
-                splashStageText.text = "STAGE " + SessionConfig.CurrentStage + "\n<color=yellow>FINAL STAGE</color>";
-            }
-            else
-            {
-                splashStageText.text = "STAGE " + SessionConfig.CurrentStage;
-            }
-        }
 
         yield return new WaitForSeconds(splashDuration);
         
@@ -207,6 +220,26 @@ public class SongCarouselManager : MonoBehaviour
 
     void Update()
     {
+        // Check for pause input (Escape or Start button) - ONLY when not paused and not transitioning
+        if (!isPaused && !isTransitioning && (pauseMenu == null || !pauseMenu.IsPaused()))
+        {
+            bool pausePressed = false;
+            
+            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+                pausePressed = true;
+            
+            if (Gamepad.current != null && Gamepad.current.startButton.wasPressedThisFrame)
+                pausePressed = true;
+            
+            if (pausePressed)
+            {
+                PauseGame();
+                return;
+            }
+        }
+        
+        if (isPaused || (pauseMenu != null && pauseMenu.IsPaused())) return;
+        
         if (isTransitioning) return;
 
         HandleArcadeTimer();
@@ -322,7 +355,7 @@ public class SongCarouselManager : MonoBehaviour
 
     void OnMove(int dir)
     {
-        if (isTransitioning || currentState == MenuState.Confirming || currentState == MenuState.Splash) return;
+        if (isTransitioning || currentState == MenuState.Confirming || currentState == MenuState.Splash || isPaused || (pauseMenu != null && pauseMenu.IsPaused())) return;
 
         if (currentState == MenuState.Carousel)
         {
@@ -384,7 +417,7 @@ public class SongCarouselManager : MonoBehaviour
         if (mainCharacterDisplay != null) mainCharacterDisplay.sprite = currentData.characterSprite;
         if (mainBackgroundDisplay != null) mainBackgroundDisplay.sprite = currentData.environmentSprite;
 
-        if (musicSource && currentData.songPreviewClip)
+        if (musicSource && currentData.songPreviewClip && !isPaused && (pauseMenu == null || !pauseMenu.IsPaused()))
         {
             musicSource.Stop();
             musicSource.clip = currentData.songPreviewClip;
@@ -395,7 +428,7 @@ public class SongCarouselManager : MonoBehaviour
 
     void OnConfirm(bool isAuto = false)
     {
-        if (isTransitioning || currentState == MenuState.Splash) return;
+        if (isTransitioning || currentState == MenuState.Splash || isPaused || (pauseMenu != null && pauseMenu.IsPaused())) return;
 
         if (currentState == MenuState.Carousel)
         {
@@ -434,7 +467,7 @@ public class SongCarouselManager : MonoBehaviour
 
     void OnCancel()
     {
-        if (isTransitioning || currentState == MenuState.Confirming || currentState == MenuState.Splash) return;
+        if (isTransitioning || currentState == MenuState.Confirming || currentState == MenuState.Splash || isPaused || (pauseMenu != null && pauseMenu.IsPaused())) return;
 
         if (currentState == MenuState.Difficulty)
         {
@@ -443,6 +476,70 @@ public class SongCarouselManager : MonoBehaviour
             if (sfxSource && cancelSound) sfxSource.PlayOneShot(cancelSound);
             StartCoroutine(TransitionToCarousel());
         }
+    }
+
+    // ========== PAUSE SYSTEM METHODS (Using PauseMenu) ==========
+    
+    private void PauseGame()
+    {
+        if (isPaused || (pauseMenu != null && pauseMenu.IsPaused())) return;
+        
+        isPaused = true;
+        
+        // Pause music
+        if (musicSource != null && musicSource.isPlaying)
+            musicSource.Pause();
+        
+        // Pause sfx
+        if (sfxSource != null && sfxSource.isPlaying)
+            sfxSource.Pause();
+        
+        // Open pause menu
+        if (pauseMenu != null)
+            pauseMenu.OpenPauseMenu(null); // Pass null since this isn't GameplayManager
+        
+        // Disable input
+        input.UI.Disable();
+        
+        Time.timeScale = 0f;
+        
+        Debug.Log("Song Carousel Paused");
+    }
+    
+    private void ResumeGame()
+    {
+        if (!isPaused) return;
+        
+        // Resume music
+        if (musicSource != null && musicSource.clip != null)
+            musicSource.UnPause();
+        
+        // Resume sfx
+        if (sfxSource != null)
+            sfxSource.UnPause();
+        
+        // Re-enable input
+        input.UI.Enable();
+        
+        Time.timeScale = 1f;
+        
+        isPaused = false;
+        
+        Debug.Log("Song Carousel Resumed");
+    }
+    
+    private void QuitToMenu()
+    {
+        Debug.Log("Quitting to Main Menu from Song Carousel");
+        
+        // Reset time scale
+        Time.timeScale = 1f;
+        
+        // Load main menu
+        if (TransitionManager.Instance != null)
+            TransitionManager.Instance.LoadScene("MainMenu");
+        else
+            SceneManager.LoadScene("MainMenu");
     }
 
     IEnumerator TransitionToDifficulty()
@@ -551,6 +648,8 @@ public class SongCarouselManager : MonoBehaviour
 
     void UpdateCarouselMovement()
     {
+        if (isPaused || (pauseMenu != null && pauseMenu.IsPaused())) return;
+        
         for (int i = 0; i < spawnedBlocks.Count; i++)
         {
             int rawDiff = i - currentSongIndex;
@@ -589,6 +688,8 @@ public class SongCarouselManager : MonoBehaviour
 
     void UpdateDifficultyVisuals()
     {
+        if (isPaused || (pauseMenu != null && pauseMenu.IsPaused())) return;
+        
         for (int i = 0; i < difficultyBoxes.Length; i++)
         {
             if (lockedDifficulties[i]) continue;

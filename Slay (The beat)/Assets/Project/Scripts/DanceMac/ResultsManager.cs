@@ -7,9 +7,6 @@ using System.Collections.Generic;
 [RequireComponent(typeof(AudioSource))]
 public class ResultsManager : MonoBehaviour
 {
-    [Header("Stage UI")]
-    public TextMeshProUGUI stageTextDisplay; // <--- NEW: Drag your Stage Text here!
-
     [Header("Character Silhouettes")]
     public Image p1Silhouette;
     public Image p2Silhouette;
@@ -109,9 +106,6 @@ public class ResultsManager : MonoBehaviour
 
     void Start()
     {
-        // --- NEW: Update the Stage Text ---
-        UpdateStageText();
-
         p1ScoreText.text = "00000000";
         p1ComboText.text = "";
         if (p2Panel != null) p2Panel.SetActive(GameSessionData.IsTwoPlayer);
@@ -125,16 +119,6 @@ public class ResultsManager : MonoBehaviour
         p2FinalTotalScore = GameSessionData.P2Score + p2Bonus;
 
         StartCoroutine(ResultsSequence());
-    }
-
-    // --- NEW: Function to handle the Stage Text logic ---
-    void UpdateStageText()
-    {
-        if (stageTextDisplay != null)
-        {
-            // This will automatically say "STAGE 1", "STAGE 2", etc., based on SessionConfig
-            stageTextDisplay.text = "STAGE " + SessionConfig.CurrentStage;
-        }
     }
 
     void Update()
@@ -264,10 +248,8 @@ public class ResultsManager : MonoBehaviour
 
         yield return new WaitForSeconds(1.0f);
 
-        if (SessionConfig.CurrentStage < SessionConfig.MaxStages)
-            PlayOneShot(voiceNextSong);
-        else
-            PlayOneShot(voiceThankYou);
+        // Always play "next song" voice since there's no stage limit
+        PlayOneShot(voiceNextSong);
 
         if (progressSlider != null) {
             progressSlider.gameObject.SetActive(true);
@@ -283,6 +265,7 @@ public class ResultsManager : MonoBehaviour
     }
 
     void PlayOneShot(AudioClip clip) { if(clip != null) mainAudioSource.PlayOneShot(clip); }
+    
     void StartLoop(AudioClip clip) {
         if (clip == null) return;
         if (loopAudioSource == null) {
@@ -293,6 +276,7 @@ public class ResultsManager : MonoBehaviour
         loopAudioSource.clip = clip;
         loopAudioSource.Play();
     }
+    
     void StopLoop() { if(loopAudioSource != null) loopAudioSource.Stop(); }
 
     IEnumerator CountNumberRoutine(TextMeshProUGUI textObj, int start, int target, string format)
@@ -372,14 +356,7 @@ public class ResultsManager : MonoBehaviour
 
     void AutoProgress()
     {
-        if (SessionConfig.CurrentStage < SessionConfig.MaxStages) 
-        {
-            SessionConfig.CurrentStage++;
-            TransitionManager.Instance.LoadScene(songSelectScene);
-        } 
-        else 
-        {
-            TransitionManager.Instance.LoadScene(thankYouScene);
-        }
+        // Always go back to song selection after results (no stage system)
+        TransitionManager.Instance.LoadScene(songSelectScene);
     }
 }

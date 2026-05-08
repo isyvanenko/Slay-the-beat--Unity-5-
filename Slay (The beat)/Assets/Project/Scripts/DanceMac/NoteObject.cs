@@ -9,11 +9,11 @@ public class NoteObject : MonoBehaviour
     public float speed = 300f; 
     public GameplayManager manager; 
     public PlayerScoreManager myScoreManager;
+    private LaneController parentLane;
 
     [Header("Visuals")]
     public Transform arrowGraphic; 
     public RectTransform tailRect;
-    // Drag all images (Arrows and Tail) into this array in the Inspector
     public Image[] imagesToColor; 
     private CanvasGroup canvasGroup; 
 
@@ -29,6 +29,10 @@ public class NoteObject : MonoBehaviour
     private float missTriggerY; 
     private RectTransform rectTransform;
     private float startY; 
+    
+    // Pause state
+    private bool isPaused = false;
+    private Vector2 frozenPosition;
 
     void Awake()
     {
@@ -36,7 +40,7 @@ public class NoteObject : MonoBehaviour
         canvasGroup = GetComponent<CanvasGroup>() ?? gameObject.AddComponent<CanvasGroup>();
     }
 
-    public void Init(double songHitTime, double songSpawnTime, float noteSpeed, GameplayManager gameManager, PlayerScoreManager scoreMgr, float missY)
+    public void Init(double songHitTime, double songSpawnTime, float noteSpeed, GameplayManager gameManager, PlayerScoreManager scoreMgr, float missY, LaneController lane)
     {
         targetTime = songHitTime;
         spawnTime = songSpawnTime;
@@ -44,12 +48,11 @@ public class NoteObject : MonoBehaviour
         manager = gameManager;
         myScoreManager = scoreMgr;
         missTriggerY = missY;
+        parentLane = lane;
         
-        // Cache the Y position from the SpawnPoint where it was instantiated
         startY = rectTransform.anchoredPosition.y; 
     }
 
-    // This is called by the LaneController to set the color
     public void SetColor(Color c)
     {
         foreach (Image img in imagesToColor)
@@ -57,11 +60,28 @@ public class NoteObject : MonoBehaviour
             if (img != null)
             {
                 img.color = c;
-                // Ensure Alpha is 1 in case it was previously ghosted
                 Color temp = img.color;
                 temp.a = 1f;
                 img.color = temp;
             }
+        }
+    }
+
+    public void SetPaused(bool paused)
+    {
+        if (paused == isPaused) return;
+        
+        if (paused)
+        {
+            // Store current position when pausing
+            frozenPosition = rectTransform.anchoredPosition;
+            isPaused = true;
+        }
+        else
+        {
+            // Restore the exact position when resuming
+            rectTransform.anchoredPosition = frozenPosition;
+            isPaused = false;
         }
     }
 
@@ -88,28 +108,30 @@ public class NoteObject : MonoBehaviour
         {
             tailRect.gameObject.SetActive(true);
             
-            // Calculate total math length
             float mathLength = duration * noteSpeed;
-            
-            // Offset Adjustment for your -50px design
             float finalLength = mathLength - 50f; 
             if (finalLength < 0) finalLength = 0;
 
             tailRect.sizeDelta = new Vector2(tailRect.sizeDelta.x, finalLength);
-            tailRect.SetAsFirstSibling(); // Put behind the arrow
+            tailRect.SetAsFirstSibling();
         }
     }
 
     void Update()
     {
-        if (manager == null) return;
-
-        // 1. MOVEMENT
-        double timeAlive = manager.GetSongTime() - spawnTime;
+        // CRITICAL: Don't move or process anything while paused
+        if (isPaused || manager == null || manager.IsPaused())
+        {
+            return;
+        }
+        
+        // Only move if not paused
+        double currentSongTime = manager.GetAdjustedSongTime();
+        double timeAlive = currentSongTime - spawnTime;
         float newY = startY + (float)(timeAlive * speed);
         rectTransform.anchoredPosition = new Vector2(rectTransform.anchoredPosition.x, newY);
 
-        // 2. MISS DETECTION
+        // MISS DETECTION - only if not being held and not paused
         if (!hasMissed && !isBeingHeld)
         {
             if (newY > missTriggerY)
@@ -118,14 +140,18 @@ public class NoteObject : MonoBehaviour
             }
         }
 
-        // 3. CLEANUP
+        // Clean up off-screen notes
         if (!isBeingHeld && newY > startY + 2500f) 
         {
             Destroy(gameObject);
         }
     }
 
-    public void SetRotation(Quaternion rotation) { if (arrowGraphic != null) arrowGraphic.rotation = rotation; }
+    public void SetRotation(Quaternion rotation) 
+    { 
+        if (arrowGraphic != null) 
+            arrowGraphic.rotation = rotation; 
+    }
 
     void TriggerMiss()
     {
@@ -140,7 +166,6 @@ public class NoteObject : MonoBehaviour
 
     void TriggerMissVisuals()
     {
-        // Make the note faint and gray when missed or dropped
         if (canvasGroup != null) canvasGroup.alpha = 0.3f; 
         foreach (Image img in imagesToColor)
         {

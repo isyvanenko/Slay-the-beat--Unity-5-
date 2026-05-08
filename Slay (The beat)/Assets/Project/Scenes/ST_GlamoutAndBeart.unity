@@ -13689,6 +13689,10 @@ MonoBehaviour:
     laneIndex: 0
     holdLength: 2
   thisSongGrades: {fileID: 11400000, guid: 4b1bce4e9b55d461fa0b82be0286640e, type: 2}
+  pauseMenu: {fileID: 2078110569}
+  songSelectionSceneName: SongSelection
+  mainMenuSceneName: MainMenu
+  resultsSceneName: ResultsScene
   spawnOffset: 0
 --- !u!4 &1556716740
 Transform:
@@ -16505,6 +16509,82 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!1001 &2078110568
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4778152468671956244, guid: bb681565104e5483ea8abf52a27883bb, type: 3}
+      propertyPath: onRestart.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1556716739}
+    - target: {fileID: 4778152468671956244, guid: bb681565104e5483ea8abf52a27883bb, type: 3}
+      propertyPath: onRestart.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: RestartGame
+      objectReference: {fileID: 0}
+    - target: {fileID: 6200348321670789341, guid: bb681565104e5483ea8abf52a27883bb, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1126.2083
+      objectReference: {fileID: 0}
+    - target: {fileID: 6200348321670789341, guid: bb681565104e5483ea8abf52a27883bb, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.00001
+      objectReference: {fileID: 0}
+    - target: {fileID: 6200348321670789341, guid: bb681565104e5483ea8abf52a27883bb, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 2212.4236
+      objectReference: {fileID: 0}
+    - target: {fileID: 6200348321670789341, guid: bb681565104e5483ea8abf52a27883bb, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6200348321670789341, guid: bb681565104e5483ea8abf52a27883bb, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6200348321670789341, guid: bb681565104e5483ea8abf52a27883bb, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6200348321670789341, guid: bb681565104e5483ea8abf52a27883bb, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6200348321670789341, guid: bb681565104e5483ea8abf52a27883bb, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6200348321670789341, guid: bb681565104e5483ea8abf52a27883bb, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6200348321670789341, guid: bb681565104e5483ea8abf52a27883bb, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7644000982459482515, guid: bb681565104e5483ea8abf52a27883bb, type: 3}
+      propertyPath: m_Name
+      value: PAUSE MANAGER GROUP (IMPORTANT)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: bb681565104e5483ea8abf52a27883bb, type: 3}
+--- !u!114 &2078110569 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4778152468671956244, guid: bb681565104e5483ea8abf52a27883bb, type: 3}
+  m_PrefabInstance: {fileID: 2078110568}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ecca0b8515afd4a65bd867197dbfbe1e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PauseMenu
 --- !u!1 &2078703080 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3351462997267180038, guid: ccab6c8306a6dae4d9688eb372e59639, type: 3}
@@ -18722,6 +18802,7 @@ SceneRoots:
   - {fileID: 2037020265}
   - {fileID: 1249442782}
   - {fileID: 807714060}
+  - {fileID: 2078110568}
   - {fileID: 1556716740}
   - {fileID: 1336225363}
   - {fileID: 799702711}

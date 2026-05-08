@@ -50,6 +50,9 @@ public class LaneController : MonoBehaviour
     public float inputCooldown = 0.05f; 
 
     private RectTransform rectTransform;
+    
+    // Pause state - simple boolean to ignore updates
+    private bool isPaused = false;
 
     void Awake() => rectTransform = GetComponent<RectTransform>();
 
@@ -71,10 +74,13 @@ public class LaneController : MonoBehaviour
 
     private void OnActionTriggered(InputAction.CallbackContext context)
     {
-        if (context.ReadValueAsButton()) OnPress();
+        if (!isPaused && context.ReadValueAsButton()) OnPress();
     }
 
-    private void OnActionCanceled(InputAction.CallbackContext context) => OnRelease();
+    private void OnActionCanceled(InputAction.CallbackContext context)
+    {
+        if (!isPaused) OnRelease();
+    }
 
     public void SpawnNote(float duration, float noteTime, GameplayManager manager)
     {
@@ -91,13 +97,42 @@ public class LaneController : MonoBehaviour
             float receptorY = receptorImage != null ? receptorImage.rectTransform.anchoredPosition.y : rectTransform.anchoredPosition.y;
             float missY = receptorY + mehThreshold; 
 
-            newNote.Init(noteTime, songSpawnTime, noteSpeed, manager, scoreManager, missY); 
+            newNote.Init(noteTime, songSpawnTime, noteSpeed, manager, scoreManager, missY, this); 
             newNote.SetRotation(transform.rotation); 
             newNote.SetupHold(duration, noteSpeed);
             
-            // Set the lane's main color to the note
             newNote.SetColor(targetColor);
         }
+    }
+
+    public void PauseMovement()
+    {
+        isPaused = true;
+        
+        // Tell all notes they are paused (they will freeze position)
+        foreach (NoteObject note in activeNotes)
+        {
+            if (note != null)
+                note.SetPaused(true);
+        }
+        
+        if (currentHoldNote != null)
+            currentHoldNote.SetPaused(true);
+    }
+
+    public void ResumeMovement()
+    {
+        isPaused = false;
+        
+        // Tell all notes to resume (they will stay at frozen position)
+        foreach (NoteObject note in activeNotes)
+        {
+            if (note != null)
+                note.SetPaused(false);
+        }
+        
+        if (currentHoldNote != null)
+            currentHoldNote.SetPaused(false);
     }
 
     private void OnPress()
@@ -109,6 +144,12 @@ public class LaneController : MonoBehaviour
         if (activeNotes.Count == 0) return;
 
         NoteObject targetNote = activeNotes[0];
+        if (targetNote == null) 
+        {
+            activeNotes.RemoveAt(0);
+            return;
+        }
+        
         float distance = Mathf.Abs(targetNote.GetComponent<RectTransform>().anchoredPosition.y - rectTransform.anchoredPosition.y);
 
         if (distance < mehThreshold)
@@ -125,7 +166,6 @@ public class LaneController : MonoBehaviour
             if (charAnimator != null && !string.IsNullOrEmpty(laneDirectionName))
                 charAnimator.TriggerAnimation(laneDirectionName);
 
-            // STOP PULSE AND SET SOLID COLOR ON HIT
             targetNote.StartHold(); 
 
             if (targetNote.holdDuration <= 0)
@@ -157,27 +197,29 @@ public class LaneController : MonoBehaviour
 
     void Update()
     {
-        // Lerp scale back to normal
+        if (isPaused) return;
+        
         if (currentHoldNote == null)
         {
             transform.localScale = Vector3.Lerp(transform.localScale, Vector3.one, Time.deltaTime * 10f);
             return; 
         }
 
-        // HARD INPUT GUARD: Kills hold if button is physically released
         if (laneAction != null && !laneAction.IsPressed())
         {
             OnRelease();
             return;
         }
 
-        if (currentHoldNote.gameObject == null) { currentHoldNote = null; return; }
+        if (currentHoldNote == null || currentHoldNote.gameObject == null) 
+        { 
+            currentHoldNote = null; 
+            return; 
+        }
 
-        // Rotation effect and pulsing scale for holding
         if (holdFlashObject != null) holdFlashObject.transform.Rotate(0, 0, 300 * Time.deltaTime);
         transform.localScale = Vector3.one * 1.1f;
 
-        // Hold Score Ticks
         if (scoreManager != null)
         {
             holdScoreTimer += Time.deltaTime;
@@ -188,13 +230,11 @@ public class LaneController : MonoBehaviour
             }
         }
 
-        // TAIL END MARKER CHECK (World Space)
         if (currentHoldNote.tailEndMarker != null)
         {
             float tailBottomY = currentHoldNote.tailEndMarker.position.y;
             float receptorY = receptorImage.transform.position.y;
 
-            // When the bottom marker crosses the receptor (assuming scrolling UP)
             if (tailBottomY >= receptorY)
             {
                 if (scoreManager != null)
