@@ -2595,11 +2595,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: d39354803a2244022ad96612fa3b952f, type: 2}
   - {fileID: 11400000, guid: ea944ebd1a1414746935112efba1033c, type: 2}
   - {fileID: 11400000, guid: 0ba9aa76fb6f94388a19e4930cd5dc2b, type: 2}
-  - {fileID: 11400000, guid: d39354803a2244022ad96612fa3b952f, type: 2}
-  - {fileID: 11400000, guid: fb019d42e9268433892c1739d041e352, type: 2}
-  - {fileID: 11400000, guid: f909891f6031c4bd395d00701af9b612, type: 2}
-  - {fileID: 11400000, guid: d201054395afa4ba3837cc8df5881379, type: 2}
+  - {fileID: 11400000, guid: aee1f8ff73274412c9f32e816ccae585, type: 2}
   - {fileID: 11400000, guid: cefe5cc68da774fdc8df0302bd041b25, type: 2}
+  - {fileID: 11400000, guid: fb019d42e9268433892c1739d041e352, type: 2}
+  - {fileID: 11400000, guid: d201054395afa4ba3837cc8df5881379, type: 2}
+  - {fileID: 11400000, guid: f909891f6031c4bd395d00701af9b612, type: 2}
   splashCanvasGroup: {fileID: 169825820}
   splashStageText: {fileID: 1017940129}
   splashDuration: 2.5
@@ -2641,6 +2641,10 @@ MonoBehaviour:
   - {fileID: 1428319129}
   diffSongTitle: {fileID: 849033590}
   pressAgainText: {fileID: 986881371}
+  lockedSprite: {fileID: 21300000, guid: ffb7b8fe166db47ccb61382aefec25f5, type: 3}
+  unlockedTextColor: {r: 0, g: 0, b: 0, a: 1}
+  lockedTextColor: {r: 0, g: 0, b: 0, a: 1}
+  lockedSound: {fileID: 0}
   lerpSpeed: 10
   normalScale: 0.4
   selectedScale: 0.5
@@ -4543,7 +4547,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.6928552, g: 1, b: 0.5424528, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -5027,8 +5031,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4280558628
-  m_fontColor: {r: 0.14117648, g: 0.14117648, b: 0.14117648, a: 1}
+    rgba: 4278190306
+  m_fontColor: {r: 0.8867924, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:

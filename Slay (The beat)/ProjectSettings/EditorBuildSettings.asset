@@ -12,6 +12,9 @@ EditorBuildSettings:
     path: Assets/Project/Scenes/PreLaunch.unity
     guid: f0809b30a76f3354ca9cb26cc2518d9b
   - enabled: 1
+    path: Assets/Project/Scenes/MainMenu.unity
+    guid: 4a43aedb81c0944ca8b056ebc3b4aaee
+  - enabled: 1
     path: Assets/Project/Scenes/PlayerSelection.unity
     guid: ec393415eba9b476785341bbbe6f1468
   - enabled: 1
@@ -22,7 +25,7 @@ EditorBuildSettings:
     guid: a093b2bf2550844be8ebcc45616cc716
   - enabled: 1
     path: Assets/Project/Scenes/ResultsScene.unity
-    guid: 920bdf7f51f174fcfbc4638d76ca92f7
+    guid: c16a69fc57f564193a305934c7419bde
   - enabled: 1
     path: Assets/Project/Scenes/SongSelection.unity
     guid: 080621964840d4b54a3f6eb40c00e984
@@ -54,7 +57,7 @@ EditorBuildSettings:
     path: Assets/Project/Scenes/ST_GlamoutAndBeart.unity
     guid: 30231c4934cfc48be8d0491db1bc3898
   - enabled: 1
-    path: Assets/Project/Scenes/ST_NewLevel.unity
+    path: Assets/Project/Scenes/ST_FallenInLove.unity
     guid: 51d06a0edd1dd44b9af41d1106d721ec
   - enabled: 1
     path: Assets/Project/Scenes/AmountOfStagesSelection.unity

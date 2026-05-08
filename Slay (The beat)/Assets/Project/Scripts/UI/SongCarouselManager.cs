@@ -53,6 +53,12 @@ public class SongCarouselManager : MonoBehaviour
     public TextMeshProUGUI diffSongTitle;
     public GameObject pressAgainText; 
 
+    [Header("Difficulty Lock System")]
+    public Sprite lockedSprite;
+    public Color unlockedTextColor = Color.black;
+    public Color lockedTextColor = Color.gray;
+    public AudioClip lockedSound;
+
     [Header("Visual Settings")]
     public float lerpSpeed = 10f;
     public float normalScale = 1.0f;
@@ -79,8 +85,10 @@ public class SongCarouselManager : MonoBehaviour
     private bool isTransitioning = false;
     private bool wasAutoSelected = false; 
     
-    // --- NEW: Secret variable to hold the hidden track ---
     private SongGradeData secretRandomSong = null;
+    
+    private bool[] lockedDifficulties = new bool[3];
+    private Sprite[] originalSprites = new Sprite[3];
 
     void Awake()
     {
@@ -120,8 +128,20 @@ public class SongCarouselManager : MonoBehaviour
             go.GetComponent<SongBlock>()?.UpdateData(allSongData[i]);
         }
         
-        Canvas.ForceUpdateCanvases();
-        SnapToPositions();
+        for (int i = 0; i < difficultyBoxes.Length && i < 3; i++)
+        {
+            Image img = difficultyBoxes[i].GetComponent<Image>();
+            if (img != null && img.sprite != null)
+            {
+                originalSprites[i] = img.sprite;
+            }
+            
+            if (diffStepTexts[i] != null)
+            {
+                diffStepTexts[i].color = unlockedTextColor;
+                diffStepTexts[i].raycastTarget = false;
+            }
+        }
         
         if (pressAgainText) pressAgainText.SetActive(false);
         UpdateControlCanvases(); 
@@ -146,6 +166,16 @@ public class SongCarouselManager : MonoBehaviour
         }
 
         yield return new WaitForSeconds(splashDuration);
+        
+        Canvas.ForceUpdateCanvases();
+        
+        foreach (RectTransform slot in slots)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(slot);
+        }
+        
+        SnapToPositions();
+        
         yield return StartCoroutine(FadeGroups(splashCanvasGroup, carouselCanvasGroup));
 
         currentState = MenuState.Carousel;
@@ -153,7 +183,26 @@ public class SongCarouselManager : MonoBehaviour
         
         UpdateSelectionVisuals(); 
         ResetTimer(); 
-        UpdateControlCanvases(); 
+        UpdateControlCanvases();
+        
+        // Force a position refresh to fix the initial placement
+        StartCoroutine(ForcePositionRefresh());
+    }
+    
+    private IEnumerator ForcePositionRefresh()
+    {
+        yield return null; // Wait one frame
+        
+        // Simulate a tiny movement to trigger the position correction
+        int oldIndex = currentSongIndex;
+        currentSongIndex = (currentSongIndex + 1) % allSongData.Count;
+        SnapToPositions(); // Snap to new position
+        yield return null;
+        currentSongIndex = oldIndex;
+        SnapToPositions(); // Snap back to original position
+        
+        // Update visuals after refreshing
+        UpdateSelectionVisuals();
     }
 
     void Update()
@@ -230,9 +279,8 @@ public class SongCarouselManager : MonoBehaviour
         }
         else if (currentState == MenuState.Difficulty || currentState == MenuState.Confirming)
         {
-            currentDiffIndex = 0; 
+            currentDiffIndex = GetFirstUnlockedDifficulty();
             
-            // --- UPDATED: Pass the secret song if we land on random! ---
             SongGradeData finalSong = allSongData[currentSongIndex].isRandomOption ? secretRandomSong : allSongData[currentSongIndex];
             GameDataBridge.SelectedSong = finalSong;
             GameDataBridge.SelectedDifficulty = currentDiffIndex;
@@ -284,11 +332,23 @@ public class SongCarouselManager : MonoBehaviour
         }
         else if (currentState == MenuState.Difficulty)
         {
-            int next = Mathf.Clamp(currentDiffIndex + dir, 0, difficultyBoxes.Length - 1);
-            if (next != currentDiffIndex)
+            int next = currentDiffIndex + dir;
+            
+            while (next >= 0 && next < difficultyBoxes.Length && lockedDifficulties[next])
+            {
+                next += dir;
+            }
+            
+            next = Mathf.Clamp(next, 0, difficultyBoxes.Length - 1);
+            
+            if (next != currentDiffIndex && !lockedDifficulties[next])
             {
                 currentDiffIndex = next;
                 if (sfxSource && moveSound) sfxSource.PlayOneShot(moveSound);
+            }
+            else if (lockedDifficulties[next] && sfxSource && lockedSound)
+            {
+                sfxSource.PlayOneShot(lockedSound);
             }
         }
     }
@@ -299,19 +359,16 @@ public class SongCarouselManager : MonoBehaviour
 
         SongGradeData currentData = allSongData[currentSongIndex];
 
-        // --- NEW: Secret Song Generation ---
         if (currentData.isRandomOption)
         {
             if (secretRandomSong == null)
             {
-                // Gather all valid songs that ARE NOT the random block
                 List<SongGradeData> validSongs = new List<SongGradeData>();
                 foreach (var s in allSongData) 
                 {
                     if (!s.isRandomOption) validSongs.Add(s);
                 }
 
-                // Pick one randomly
                 if (validSongs.Count > 0)
                 {
                     secretRandomSong = validSongs[Random.Range(0, validSongs.Count)];
@@ -320,11 +377,9 @@ public class SongCarouselManager : MonoBehaviour
         }
         else
         {
-            // Clear the secret song if we move off the random block
             secretRandomSong = null; 
         }
 
-        // Visually, display the currentData (the question marks and mysterious text/music)
         if (mainSongTitleText != null) mainSongTitleText.text = currentData.songName;
         if (mainCharacterDisplay != null) mainCharacterDisplay.sprite = currentData.characterSprite;
         if (mainBackgroundDisplay != null) mainBackgroundDisplay.sprite = currentData.environmentSprite;
@@ -345,11 +400,16 @@ public class SongCarouselManager : MonoBehaviour
         if (currentState == MenuState.Carousel)
         {
             wasAutoSelected = isAuto; 
-            // We wait to set the actual bridge until they pick difficulty
             StartCoroutine(TransitionToDifficulty());
         }
         else if (currentState == MenuState.Difficulty)
         {
+            if (lockedDifficulties[currentDiffIndex])
+            {
+                if (sfxSource && lockedSound) sfxSource.PlayOneShot(lockedSound);
+                return;
+            }
+            
             currentState = MenuState.Confirming;
             if (sfxSource && selectSound) sfxSource.PlayOneShot(selectSound);
             if (pressAgainText) pressAgainText.SetActive(true);
@@ -361,7 +421,6 @@ public class SongCarouselManager : MonoBehaviour
         {
             if (sfxSource && confirmSound) sfxSource.PlayOneShot(confirmSound);
             
-            // --- UPDATED: Assign the real song to the bridge right before loading ---
             SongGradeData finalSong = allSongData[currentSongIndex].isRandomOption ? secretRandomSong : allSongData[currentSongIndex];
             
             GameDataBridge.SelectedSong = finalSong;
@@ -393,18 +452,64 @@ public class SongCarouselManager : MonoBehaviour
         if (sfxSource && selectSound) sfxSource.PlayOneShot(selectSound);
         
         SongGradeData currentData = allSongData[currentSongIndex];
-        
-        // --- NEW: Grab the stats of the SECRET song if we are on random ---
         SongGradeData statsData = currentData.isRandomOption ? secretRandomSong : currentData;
 
-        // Display the Title and Jacket of the Random Block, but the Numbers of the Secret Song
         diffSongTitle.text = currentData.songName; 
         
         if (statsData != null)
         {
-            diffStepTexts[0].text = statsData.easySteps.ToString();
-            diffStepTexts[1].text = statsData.mediumSteps.ToString();
-            diffStepTexts[2].text = statsData.hardSteps.ToString();
+            if (diffStepTexts[0] != null)
+            {
+                diffStepTexts[0].text = statsData.easySteps.ToString();
+                diffStepTexts[0].color = unlockedTextColor;
+                diffStepTexts[0].fontStyle = FontStyles.Bold;
+            }
+            if (diffStepTexts[1] != null)
+            {
+                diffStepTexts[1].text = statsData.mediumSteps.ToString();
+                diffStepTexts[1].color = unlockedTextColor;
+                diffStepTexts[1].fontStyle = FontStyles.Bold;
+            }
+            if (diffStepTexts[2] != null)
+            {
+                diffStepTexts[2].text = statsData.hardSteps.ToString();
+                diffStepTexts[2].color = unlockedTextColor;
+                diffStepTexts[2].fontStyle = FontStyles.Bold;
+            }
+            
+            lockedDifficulties[0] = (statsData.easySteps == 0);
+            lockedDifficulties[1] = (statsData.mediumSteps == 0);
+            lockedDifficulties[2] = (statsData.hardSteps == 0);
+            
+            for (int i = 0; i < difficultyBoxes.Length && i < 3; i++)
+            {
+                Image boxImg = difficultyBoxes[i].GetComponent<Image>();
+                if (boxImg != null)
+                {
+                    if (lockedDifficulties[i] && lockedSprite != null)
+                    {
+                        boxImg.sprite = lockedSprite;
+                    }
+                    else if (originalSprites[i] != null)
+                    {
+                        boxImg.sprite = originalSprites[i];
+                    }
+                }
+                
+                if (diffStepTexts[i] != null)
+                {
+                    if (lockedDifficulties[i])
+                    {
+                        diffStepTexts[i].color = lockedTextColor;
+                    }
+                    else
+                    {
+                        diffStepTexts[i].color = unlockedTextColor;
+                    }
+                }
+            }
+            
+            currentDiffIndex = GetFirstUnlockedDifficulty();
         }
 
         if (diffJacketDisplay != null)
@@ -417,6 +522,16 @@ public class SongCarouselManager : MonoBehaviour
         UpdateControlCanvases(); 
         difficultyCanvasGroup.blocksRaycasts = true;
         isTransitioning = false;
+    }
+    
+    private int GetFirstUnlockedDifficulty()
+    {
+        for (int i = 0; i < lockedDifficulties.Length; i++)
+        {
+            if (!lockedDifficulties[i])
+                return i;
+        }
+        return 0;
     }
 
     IEnumerator TransitionToCarousel()
@@ -476,6 +591,8 @@ public class SongCarouselManager : MonoBehaviour
     {
         for (int i = 0; i < difficultyBoxes.Length; i++)
         {
+            if (lockedDifficulties[i]) continue;
+            
             bool isCurrent = (i == currentDiffIndex);
             float targetScale = isCurrent ? selectedScale : normalScale;
             difficultyBoxes[i].localScale = Vector3.Lerp(difficultyBoxes[i].localScale, Vector3.one * targetScale, Time.deltaTime * lerpSpeed);
