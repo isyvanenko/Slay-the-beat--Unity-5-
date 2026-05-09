@@ -15403,7 +15403,7 @@ GameObject:
   - component: {fileID: 1529658791}
   - component: {fileID: 1529658790}
   m_Layer: 0
-  m_Name: Text (TMP) (1)
+  m_Name: 2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -15418,14 +15418,14 @@ RectTransform:
   m_GameObject: {fileID: 1529658788}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 10.681892, y: 10.681892, z: 10.681892}
+  m_LocalScale: {x: 9.294921, y: 9.294921, z: 9.294921}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 208918631}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 99}
+  m_AnchoredPosition: {x: 322, y: 0}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1529658790
@@ -15448,7 +15448,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 2
+  m_text: PLAYER 1 COMFIRED
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 6f672174073f1db42844f1a86f728857, type: 2}
   m_sharedMaterial: {fileID: -2383535902019007609, guid: 6f672174073f1db42844f1a86f728857, type: 2}
@@ -15475,10 +15475,10 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 19.2
+  m_fontSizeBase: 14.06
   m_fontWeight: 400
-  m_enableAutoSizing: 0
+  m_enableAutoSizing: 1
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
@@ -15514,7 +15514,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_margin: {x: 0, y: 0, z: 71.6737, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -24567,12 +24567,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74d00a7bce09e4038963c8dc2cb65dfb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  laserobj: {fileID: 0}
-  transforplayer2obj: {fileID: 0}
+  laserobj: {fileID: 408586789}
+  transforplayer2obj: {fileID: 1664180173}
   playerIndexToAssign: 1
   confirmationDelay: 0.5
   uiResetButton: {fileID: 0}
   promptText: {fileID: 314604459}
+  playerCountText: {fileID: 1529658790}
+  calibrationStatusText: {fileID: 1529658790}
   resetActionReference: {fileID: 0}
   playerInputToMap: {fileID: 762709669}
   requiredHoldTime: 1
@@ -24587,45 +24589,46 @@ MonoBehaviour:
   lockedWhiteColor: {r: 1, g: 1, b: 1, a: 1}
   flashGoldColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   errorRedColor: {r: 1, g: 0.2, b: 0.2, a: 1}
+  confirmedGreenColor: {r: 1, g: 1, b: 1, a: 1}
   goldEmissionColor: {r: 2, g: 1.6, b: 0, a: 2}
   redEmissionColor: {r: 3, g: 0.6, b: 0.6, a: 3}
   calibrationAnimations:
   - actionName: Left
-    backgroundBaseImage: {fileID: 0}
-    arrowIconImage: {fileID: 0}
-    lockIconImage: {fileID: 0}
+    backgroundBaseImage: {fileID: 839336192}
+    arrowIconImage: {fileID: 1875166470}
+    lockIconImage: {fileID: 1796360636}
     containerToPulse: {fileID: 45591700}
-    target3DModel: {fileID: 0}
+    target3DModel: {fileID: 1182731622}
     matInstance: {fileID: 0}
     originalEmissionColor: {r: 0, g: 0, b: 0, a: 0}
     originalScale: {x: 0, y: 0, z: 0}
     originalPosition: {x: 0, y: 0, z: 0}
   - actionName: Down
-    backgroundBaseImage: {fileID: 0}
-    arrowIconImage: {fileID: 0}
-    lockIconImage: {fileID: 0}
+    backgroundBaseImage: {fileID: 229250707}
+    arrowIconImage: {fileID: 1418337054}
+    lockIconImage: {fileID: 878425805}
     containerToPulse: {fileID: 35013339}
-    target3DModel: {fileID: 0}
+    target3DModel: {fileID: 1182731622}
     matInstance: {fileID: 0}
     originalEmissionColor: {r: 0, g: 0, b: 0, a: 0}
     originalScale: {x: 0, y: 0, z: 0}
     originalPosition: {x: 0, y: 0, z: 0}
   - actionName: Up
-    backgroundBaseImage: {fileID: 0}
-    arrowIconImage: {fileID: 0}
-    lockIconImage: {fileID: 0}
+    backgroundBaseImage: {fileID: 252366455}
+    arrowIconImage: {fileID: 1558682307}
+    lockIconImage: {fileID: 960955224}
     containerToPulse: {fileID: 898061960}
-    target3DModel: {fileID: 0}
+    target3DModel: {fileID: 1182731622}
     matInstance: {fileID: 0}
     originalEmissionColor: {r: 0, g: 0, b: 0, a: 0}
     originalScale: {x: 0, y: 0, z: 0}
     originalPosition: {x: 0, y: 0, z: 0}
   - actionName: Right
-    backgroundBaseImage: {fileID: 0}
-    arrowIconImage: {fileID: 0}
-    lockIconImage: {fileID: 0}
+    backgroundBaseImage: {fileID: 74454563}
+    arrowIconImage: {fileID: 1007111852}
+    lockIconImage: {fileID: 1034043148}
     containerToPulse: {fileID: 679630528}
-    target3DModel: {fileID: 0}
+    target3DModel: {fileID: 1182731622}
     matInstance: {fileID: 0}
     originalEmissionColor: {r: 0, g: 0, b: 0, a: 0}
     originalScale: {x: 0, y: 0, z: 0}
@@ -24968,6 +24971,8 @@ MonoBehaviour:
   confirmationDelay: 0.5
   uiResetButton: {fileID: 0}
   promptText: {fileID: 898718613}
+  playerCountText: {fileID: 1529658790}
+  calibrationStatusText: {fileID: 1529658790}
   resetActionReference: {fileID: 0}
   playerInputToMap: {fileID: 9202530}
   requiredHoldTime: 1
@@ -24982,13 +24987,14 @@ MonoBehaviour:
   lockedWhiteColor: {r: 1, g: 1, b: 1, a: 1}
   flashGoldColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   errorRedColor: {r: 1, g: 0.2, b: 0.2, a: 1}
+  confirmedGreenColor: {r: 0.2, g: 0.8, b: 0.2, a: 1}
   goldEmissionColor: {r: 2, g: 1.6, b: 0, a: 2}
   redEmissionColor: {r: 3, g: 0.6, b: 0.6, a: 3}
   calibrationAnimations:
   - actionName: Left
-    backgroundBaseImage: {fileID: 0}
-    arrowIconImage: {fileID: 0}
-    lockIconImage: {fileID: 0}
+    backgroundBaseImage: {fileID: 1594083214}
+    arrowIconImage: {fileID: 1290473825}
+    lockIconImage: {fileID: 525787202}
     containerToPulse: {fileID: 246652534}
     target3DModel: {fileID: 1182731622}
     matInstance: {fileID: 0}
@@ -24996,9 +25002,9 @@ MonoBehaviour:
     originalScale: {x: 0, y: 0, z: 0}
     originalPosition: {x: 0, y: 0, z: 0}
   - actionName: Down
-    backgroundBaseImage: {fileID: 0}
-    arrowIconImage: {fileID: 0}
-    lockIconImage: {fileID: 0}
+    backgroundBaseImage: {fileID: 485322373}
+    arrowIconImage: {fileID: 1742155158}
+    lockIconImage: {fileID: 1525229810}
     containerToPulse: {fileID: 1357100714}
     target3DModel: {fileID: 1182731622}
     matInstance: {fileID: 0}
@@ -25006,21 +25012,21 @@ MonoBehaviour:
     originalScale: {x: 0, y: 0, z: 0}
     originalPosition: {x: 0, y: 0, z: 0}
   - actionName: Up
-    backgroundBaseImage: {fileID: 0}
-    arrowIconImage: {fileID: 0}
-    lockIconImage: {fileID: 0}
+    backgroundBaseImage: {fileID: 378105741}
+    arrowIconImage: {fileID: 1428361698}
+    lockIconImage: {fileID: 804397969}
     containerToPulse: {fileID: 1084644919}
-    target3DModel: {fileID: 0}
+    target3DModel: {fileID: 1182731622}
     matInstance: {fileID: 0}
     originalEmissionColor: {r: 0, g: 0, b: 0, a: 0}
     originalScale: {x: 0, y: 0, z: 0}
     originalPosition: {x: 0, y: 0, z: 0}
   - actionName: Right
-    backgroundBaseImage: {fileID: 0}
-    arrowIconImage: {fileID: 0}
-    lockIconImage: {fileID: 0}
+    backgroundBaseImage: {fileID: 1625595546}
+    arrowIconImage: {fileID: 25573485}
+    lockIconImage: {fileID: 338035700}
     containerToPulse: {fileID: 1110565578}
-    target3DModel: {fileID: 0}
+    target3DModel: {fileID: 1182731622}
     matInstance: {fileID: 0}
     originalEmissionColor: {r: 0, g: 0, b: 0, a: 0}
     originalScale: {x: 0, y: 0, z: 0}
@@ -31048,7 +31054,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'PLAYER '
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 6f672174073f1db42844f1a86f728857, type: 2}
   m_sharedMaterial: {fileID: -2383535902019007609, guid: 6f672174073f1db42844f1a86f728857, type: 2}
@@ -31953,6 +31959,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5878146915844224935}
   - component: {fileID: 2217625430298203929}
+  - component: {fileID: 5878146915844224936}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -32264,6 +32271,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5878146915844224936
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4436250625935549466}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b8f36d0aca594aea8152c556c27db2c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ClubBackgroundMusic
 --- !u!224 &5971025266435508852
 RectTransform:
   m_ObjectHideFlags: 0

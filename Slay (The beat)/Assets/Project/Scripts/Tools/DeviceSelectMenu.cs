@@ -23,6 +23,10 @@ public class DeviceSetupMenu : MonoBehaviour
     [Header("UI Controls")]
     public Button uiResetButton; 
     public TextMeshProUGUI promptText; 
+    
+    [Header("Player Count Text Objects")]
+    public TextMeshProUGUI playerCountText; // Text that shows "2 PLAYER" or nothing
+    public TextMeshProUGUI calibrationStatusText; // Text that shows "PLAYER 1 CONFIRMED" or "PLAYER 2 CONFIRMED"
 
     [Header("Hardware Controls")]
     public InputActionReference resetActionReference;
@@ -47,6 +51,7 @@ public class DeviceSetupMenu : MonoBehaviour
     public Color lockedWhiteColor = Color.white;
     public Color flashGoldColor = new Color(1f, 0.8f, 0f); 
     public Color errorRedColor = new Color(1f, 0.2f, 0.2f); 
+    public Color confirmedGreenColor = new Color(0.2f, 0.8f, 0.2f);
 
     [Header("3D Emission Settings")]
     [ColorUsage(true, true)] public Color goldEmissionColor = new Color(1f, 0.8f, 0f, 1f) * 2f; 
@@ -141,6 +146,47 @@ public class DeviceSetupMenu : MonoBehaviour
     {
         if (laserobj != null) laser = laserobj.GetComponent<Animator>();
         if (transforplayer2obj != null) transforplayer2 = transforplayer2obj.GetComponent<Animator>();
+        
+        // Update player count text based on SessionConfig
+        UpdatePlayerCountText();
+        UpdateCalibrationStatusText(false);
+    }
+
+    private void UpdatePlayerCountText()
+    {
+        if (playerCountText == null) return;
+        
+        if (SessionConfig.PlayerCount == 2)
+        {
+            playerCountText.text = "2 PLAYER";
+        }
+        else
+        {
+            playerCountText.text = ""; // Nothing for single player
+        }
+    }
+    
+    private void UpdateCalibrationStatusText(bool isConfirmed)
+    {
+        if (calibrationStatusText == null) return;
+        
+        if (isConfirmed)
+        {
+            // Show specific player confirmation text
+            if (playerIndexToAssign == 0)
+            {
+                calibrationStatusText.text = "PLAYER 1 CONFIRMED";
+            }
+            else
+            {
+                calibrationStatusText.text = "PLAYER 2 CONFIRMED";
+            }
+            calibrationStatusText.color = confirmedGreenColor;
+        }
+        else
+        {
+            calibrationStatusText.text = ""; // Nothing before calibration
+        }
     }
 
     private void OnEnable()
@@ -168,6 +214,9 @@ public class DeviceSetupMenu : MonoBehaviour
         joinAction.Enable();
 
         if (rootCanvasGroup_Internal) StartCoroutine(FadeIn(rootCanvasGroup_Internal, 1f));
+        
+        // Reset calibration status text when menu opens
+        UpdateCalibrationStatusText(false);
     }
 
     private void OnDisable()
@@ -252,6 +301,9 @@ public class DeviceSetupMenu : MonoBehaviour
         if (rootCanvasGroup_Internal != null) rootCanvasGroup_Internal.alpha = 1f;
         if (promptText != null) promptText.text = $"Player {playerIndexToAssign + 1}\nPRESS ANY BUTTON TO START";
         if (joinAction != null && !joinAction.enabled) joinAction.Enable();
+        
+        // Reset calibration status text
+        UpdateCalibrationStatusText(false);
     }
 
     private void ResetAllVisuals()
@@ -573,6 +625,9 @@ public class DeviceSetupMenu : MonoBehaviour
     private void FinishCalibration()
     {
         if (promptText != null) promptText.text = "<color=green>CALIBRATION COMPLETE!</color>";
+        
+        // Update calibration status text with player-specific confirmation
+        UpdateCalibrationStatusText(true);
         
         if (playerInputToMap != null)
         {

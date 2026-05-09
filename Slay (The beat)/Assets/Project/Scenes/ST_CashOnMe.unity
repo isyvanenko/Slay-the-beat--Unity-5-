@@ -9083,79 +9083,10 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 593205206}
   m_CullTransparentMesh: 1
---- !u!1001 &620997180
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: -8679921383154817045, guid: f3af36f45466444949f9722aa3ce70a6, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -0.08
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f3af36f45466444949f9722aa3ce70a6, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.879
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f3af36f45466444949f9722aa3ce70a6, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -0.24
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f3af36f45466444949f9722aa3ce70a6, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f3af36f45466444949f9722aa3ce70a6, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f3af36f45466444949f9722aa3ce70a6, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f3af36f45466444949f9722aa3ce70a6, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f3af36f45466444949f9722aa3ce70a6, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f3af36f45466444949f9722aa3ce70a6, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f3af36f45466444949f9722aa3ce70a6, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -5808569527584735643, guid: f3af36f45466444949f9722aa3ce70a6, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: d88c79fc572d94f179b211c2f7ff5c77, type: 2}
-    - target: {fileID: 919132149155446097, guid: f3af36f45466444949f9722aa3ce70a6, type: 3}
-      propertyPath: m_Name
-      value: Cash On me Character + animation
-      objectReference: {fileID: 0}
-    - target: {fileID: 3206586309912135921, guid: f3af36f45466444949f9722aa3ce70a6, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: d874318f4aae34de6b81d54d25bbbe79, type: 2}
-    - target: {fileID: 5866666021909216657, guid: f3af36f45466444949f9722aa3ce70a6, type: 3}
-      propertyPath: m_Controller
-      value: 
-      objectReference: {fileID: 9100000, guid: 516ab92f3adb3450c9fb0d01778dbedb, type: 2}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: f3af36f45466444949f9722aa3ce70a6, type: 3}
 --- !u!95 &620997181 stripped
 Animator:
-  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: f3af36f45466444949f9722aa3ce70a6, type: 3}
-  m_PrefabInstance: {fileID: 620997180}
+  m_CorrespondingSourceObject: {fileID: 6265591018559757732, guid: 1aad5b35f4378469db8f64f730788925, type: 3}
+  m_PrefabInstance: {fileID: 8762067907279306013}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &658083464
 GameObject:
@@ -17337,6 +17268,63 @@ RectTransform:
   m_AnchoredPosition: {x: 70, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1001 &8762067907279306013
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 5617410213939166, guid: 1aad5b35f4378469db8f64f730788925, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.08
+      objectReference: {fileID: 0}
+    - target: {fileID: 5617410213939166, guid: 1aad5b35f4378469db8f64f730788925, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.879
+      objectReference: {fileID: 0}
+    - target: {fileID: 5617410213939166, guid: 1aad5b35f4378469db8f64f730788925, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.24
+      objectReference: {fileID: 0}
+    - target: {fileID: 5617410213939166, guid: 1aad5b35f4378469db8f64f730788925, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5617410213939166, guid: 1aad5b35f4378469db8f64f730788925, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5617410213939166, guid: 1aad5b35f4378469db8f64f730788925, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5617410213939166, guid: 1aad5b35f4378469db8f64f730788925, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5617410213939166, guid: 1aad5b35f4378469db8f64f730788925, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5617410213939166, guid: 1aad5b35f4378469db8f64f730788925, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5617410213939166, guid: 1aad5b35f4378469db8f64f730788925, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 817444760127823204, guid: 1aad5b35f4378469db8f64f730788925, type: 3}
+      propertyPath: m_Name
+      value: Cash On me Character + animation
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1aad5b35f4378469db8f64f730788925, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -17375,7 +17363,7 @@ SceneRoots:
   - {fileID: 913206588}
   - {fileID: 1634302116}
   - {fileID: 1699698349}
-  - {fileID: 620997180}
+  - {fileID: 8762067907279306013}
   - {fileID: 1453342782}
   - {fileID: 153421704}
   - {fileID: 416779425}
