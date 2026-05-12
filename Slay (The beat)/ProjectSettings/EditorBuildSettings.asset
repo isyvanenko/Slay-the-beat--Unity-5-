@@ -48,6 +48,9 @@ EditorBuildSettings:
     path: Assets/Project/Scenes/ST_FollowMyRhytm.unity
     guid: 28c56dfb47c674de58f6bbf7d4519b31
   - enabled: 1
+    path: Assets/Project/Scenes/ST_Denied.unity
+    guid: b39e5c7d937ab4c398a92d1cbdf6506f
+  - enabled: 1
     path: Assets/Project/Scenes/ST_StolenHeart.unity
     guid: b98f7b89c322d4f45b0a56068812732c
   - enabled: 1

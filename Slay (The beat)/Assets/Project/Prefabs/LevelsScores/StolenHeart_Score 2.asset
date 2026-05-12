@@ -16,12 +16,12 @@ MonoBehaviour:
   songName: Stolen Heart
   songJacketSprite: {fileID: 21300000, guid: 225def834968c4f2180b2ce729adf319, type: 3}
   gameplaySceneName: ST_StolenHeart
-  easySteps: 68
-  mediumSteps: 102
-  hardSteps: 150
-  easyChart: {fileID: 4900000, guid: d4d7b41e1210d49e79e986268f38cbfc, type: 3}
-  mediumChart: {fileID: 4900000, guid: a9bd3e9252fd0494bb2bba6fc0db35e7, type: 3}
-  hardChart: {fileID: 4900000, guid: cbeac781477da4e68ba85756fd6bf556, type: 3}
+  easySteps: 176
+  mediumSteps: 229
+  hardSteps: 303
+  easyChart: {fileID: 4900000, guid: c867d8056446a4bae8f5b74c25787bd2, type: 3}
+  mediumChart: {fileID: 4900000, guid: ddd8d0d7bb0ca421081f825a9621a16a, type: 3}
+  hardChart: {fileID: 4900000, guid: e63c36b8d09e54f919d36513478cdcdb, type: 3}
   songPreviewClip: {fileID: 8300000, guid: 5d89e6388bdce43b29a44778528d6bec, type: 3}
   characterSprite: {fileID: 21300000, guid: d24fa1fa69f174a70ab893e9a2c7bd82, type: 3}
   p1CharacterSprite: {fileID: 21300000, guid: 585e261395ef34994812ab63cdf2c602, type: 3}
