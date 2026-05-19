@@ -76,7 +76,15 @@ public class SongCarouselManager : MonoBehaviour
     public float musicMaxVolume = 0.5f;
 
     [Header("Pause System")]
-    public PauseMenu pauseMenu; // <-- THIS IS THE MISSING FIELD
+    public PauseMenu pauseMenu;
+
+    [Header("Visual Pulse Objects")]
+    [Tooltip("First object with SpireMusicVisualPulse component")]
+    public SpireMusicVisualPulse visualPulseObject1;
+    [Tooltip("Second object with SpireMusicVisualPulse component")]
+    public SpireMusicVisualPulse visualPulseObject2;
+    [Tooltip("Auto-update visual pulses when song changes")]
+    public bool autoUpdateVisualPulses = true;
 
     private List<RectTransform> spawnedBlocks = new List<RectTransform>();
     private List<CanvasGroup> spawnedGroups = new List<CanvasGroup>(); 
@@ -417,6 +425,12 @@ public class SongCarouselManager : MonoBehaviour
         if (mainCharacterDisplay != null) mainCharacterDisplay.sprite = currentData.characterSprite;
         if (mainBackgroundDisplay != null) mainBackgroundDisplay.sprite = currentData.environmentSprite;
 
+        // Update visual pulses when song changes
+        if (autoUpdateVisualPulses)
+        {
+            UpdateVisualPulses();
+        }
+
         if (musicSource && currentData.songPreviewClip && !isPaused && (pauseMenu == null || !pauseMenu.IsPaused()))
         {
             musicSource.Stop();
@@ -424,6 +438,73 @@ public class SongCarouselManager : MonoBehaviour
             musicSource.volume = musicMaxVolume;
             musicSource.Play();
         }
+    }
+
+    /// <summary>
+    /// Updates both visual pulse objects with the current song's gradient
+    /// </summary>
+    private void UpdateVisualPulses()
+    {
+        SongGradeData currentData = allSongData[currentSongIndex];
+        SongGradeData actualData = currentData.isRandomOption ? secretRandomSong : currentData;
+        
+        if (actualData == null) return;
+        
+        // Update first visual pulse object
+        if (visualPulseObject1 != null)
+        {
+            if (actualData.visualGradient != null)
+            {
+                visualPulseObject1.UpdateGradientFromSong(actualData);
+                Debug.Log($"Updated Visual Pulse 1 with gradient from song: {actualData.songName}");
+            }
+            else
+            {
+                Debug.LogWarning($"Song {actualData.songName} has no visual gradient assigned for Visual Pulse 1");
+            }
+        }
+        
+        // Update second visual pulse object
+        if (visualPulseObject2 != null)
+        {
+            if (actualData.visualGradient != null)
+            {
+                visualPulseObject2.UpdateGradientFromSong(actualData);
+                Debug.Log($"Updated Visual Pulse 2 with gradient from song: {actualData.songName}");
+            }
+            else
+            {
+                Debug.LogWarning($"Song {actualData.songName} has no visual gradient assigned for Visual Pulse 2");
+            }
+        }
+        
+        // If both are null, log warning
+        if (visualPulseObject1 == null && visualPulseObject2 == null)
+        {
+            Debug.LogWarning("Both Visual Pulse objects are not assigned in SongCarouselManager");
+        }
+    }
+
+    /// <summary>
+    /// Manually force update visual pulses with a specific song data
+    /// </summary>
+    public void ForceUpdateVisualPulses(SongGradeData songData)
+    {
+        if (songData == null) return;
+        
+        if (visualPulseObject1 != null)
+            visualPulseObject1.UpdateGradientFromSong(songData);
+        
+        if (visualPulseObject2 != null)
+            visualPulseObject2.UpdateGradientFromSong(songData);
+    }
+
+    /// <summary>
+    /// Manually force update visual pulses with the current selected song
+    /// </summary>
+    public void ForceUpdateVisualPulsesWithCurrentSong()
+    {
+        UpdateVisualPulses();
     }
 
     void OnConfirm(bool isAuto = false)

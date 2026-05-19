@@ -31,6 +31,11 @@ public class SongGradeData : ScriptableObject
     public Sprite p2CharacterSprite;    
     public Sprite environmentSprite; 
 
+    // --- NEW: Gradient for visual effects ---
+    [Header("Visual Effects")]
+    [Tooltip("Gradient that controls color pulsing for this song")]
+    public Gradient visualGradient;
+
     [Header("Star Thresholds")]
     public int fiveStars = 900000;
     public int fourStars = 800000;

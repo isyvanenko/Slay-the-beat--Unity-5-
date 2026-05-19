@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using System.Collections;
-using UnityEngine.Events;
+using TMPro;
 
 public class ArcadeMainMenu : MonoBehaviour
 {
@@ -11,31 +11,45 @@ public class ArcadeMainMenu : MonoBehaviour
     public Image[] outlines;
     public Image[] backgrounds;
 
-    [Header("Visual Settings")]
-    public float selectedScale = 1.2f;
-    public float normalScale = 1f;
+    [Header("Selection Text")]
+    public TMP_Text selectionText;
+    public string[] selectionNames;
+
+    [Header("Button Scale Settings")]
+
+    [Tooltip("Extra scale added to buttons 0,1,3,4 when selected")]
+    public float sideButtonZoomAmount = 0.08f;
+
+    [Tooltip("Extra scale added to START button (index 2) when selected")]
+    public float startButtonZoomAmount = 0.15f;
+
+    [Header("Animation")]
     public float animSpeed = 8f;
     public float bgSpeed = 6f;
     public float fadeSpeed = 2f;
 
+    [Header("Colors")]
     public Color outlineGold = new Color(1f, 0.85f, 0f);
     public Color outlineBlack = Color.black;
+
     public Color bgWhite = Color.white;
     public Color bgGrey = new Color(0.3f, 0.3f, 0.3f);
 
-    [Header("Input Cooldown")]
+    [Header("Input")]
     public float moveCooldown = 0.15f;
 
     [Header("Audio")]
     public AudioSource audioSource;
     public AudioClip switchSound;
 
-    [Header("Element 1 Specific Objects (Index 1)")]
-    public GameObject[] elementOneObjects; // These activate only when index 1 is selected
+    [Header("Special Objects For Start Button (Index 2)")]
+    public GameObject[] startButtonObjects;
 
     [Header("Scene Names")]
-    public string statsscene;
-    public string gameplayscene;
+    public string recordsScene;
+    public string newsScene;
+    public string gameplayScene;
+    public string settingsScene;
 
     // Input
     private InputActions input;
@@ -45,12 +59,18 @@ public class ArcadeMainMenu : MonoBehaviour
     private InputAction startBtn;
 
     // State
-    private int index = 1; // Start at index 1 (Element 1)
+    private int index = 2;
+
     private float lastMoveTime;
     private float pulseTime;
+
     private bool isFading = true;
     private bool hasSelected = false;
+
     private CanvasGroup canvasGroup;
+
+    // ORIGINAL SCALES
+    private Vector3[] originalScales;
 
     void Awake()
     {
@@ -65,17 +85,28 @@ public class ArcadeMainMenu : MonoBehaviour
 
         if (audioSource == null)
             audioSource = GetComponent<AudioSource>();
+
+        // Store original scales from inspector
+        originalScales = new Vector3[buttons.Length];
+
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            if (buttons[i] != null)
+                originalScales[i] = buttons[i].localScale;
+        }
     }
 
     void OnEnable()
     {
         left.performed += ctx => Move(-1);
         right.performed += ctx => Move(+1);
+
         select.performed += ctx => SelectCurrentItem();
         startBtn.performed += ctx => SelectCurrentItem();
 
         left.Enable();
         right.Enable();
+
         select.Enable();
         startBtn.Enable();
 
@@ -84,11 +115,12 @@ public class ArcadeMainMenu : MonoBehaviour
         canvasGroup.alpha = 0f;
         canvasGroup.interactable = false;
         canvasGroup.blocksRaycasts = false;
+
         isFading = true;
         hasSelected = false;
 
-        index = 1; // Start at Element 1 (index 1)
-        
+        index = 2;
+
         StartCoroutine(FadeInCanvas());
     }
 
@@ -96,6 +128,7 @@ public class ArcadeMainMenu : MonoBehaviour
     {
         left.Disable();
         right.Disable();
+
         select.Disable();
         startBtn.Disable();
 
@@ -105,24 +138,34 @@ public class ArcadeMainMenu : MonoBehaviour
     IEnumerator FadeInCanvas()
     {
         float alpha = 0f;
+
         while (alpha < 1f)
         {
-            alpha = Mathf.MoveTowards(alpha, 1f, fadeSpeed * Time.unscaledDeltaTime);
+            alpha = Mathf.MoveTowards(
+                alpha,
+                1f,
+                fadeSpeed * Time.unscaledDeltaTime
+            );
+
             canvasGroup.alpha = alpha;
+
             yield return null;
         }
 
         canvasGroup.alpha = 1f;
+
         canvasGroup.interactable = true;
         canvasGroup.blocksRaycasts = true;
+
         isFading = false;
-        
-        UpdateElementOneObjects();
+
+        UpdateStartButtonObjects();
+        UpdateSelectionText();
     }
 
     void Update()
     {
-        if (isFading || hasSelected) 
+        if (isFading || hasSelected)
             return;
 
         pulseTime += Time.unscaledDeltaTime;
@@ -131,29 +174,56 @@ public class ArcadeMainMenu : MonoBehaviour
         {
             bool selected = (i == index);
 
-            float targetScale = selected ? selectedScale : normalScale;
+            Vector3 baseScale = originalScales[i];
+            Vector3 targetScale = baseScale;
+
+            // START BUTTON
+            if (i == 2)
+            {
+                if (selected)
+                {
+                    targetScale = baseScale * (1f + startButtonZoomAmount);
+                }
+            }
+            // SIDE BUTTONS
+            else
+            {
+                if (selected)
+                {
+                    targetScale = baseScale * (1f + sideButtonZoomAmount);
+                }
+            }
+
             buttons[i].localScale = Vector3.Lerp(
                 buttons[i].localScale,
-                Vector3.one * targetScale,
+                targetScale,
                 Time.unscaledDeltaTime * animSpeed
             );
 
+            // BACKGROUNDS
             if (i < backgrounds.Length && backgrounds[i] != null)
             {
-                Color target = selected ? bgWhite : bgGrey;
+                Color targetColor = selected ? bgWhite : bgGrey;
+
                 backgrounds[i].color = Color.Lerp(
                     backgrounds[i].color,
-                    target,
+                    targetColor,
                     Time.unscaledDeltaTime * bgSpeed
                 );
             }
 
+            // OUTLINES
             if (i < outlines.Length && outlines[i] != null)
             {
                 if (selected)
                 {
                     float pulse = (Mathf.Sin(pulseTime * 3.5f) + 1f) * 0.5f;
-                    outlines[i].color = Color.Lerp(outlineBlack, outlineGold, pulse);
+
+                    outlines[i].color = Color.Lerp(
+                        outlineBlack,
+                        outlineGold,
+                        pulse
+                    );
                 }
                 else
                 {
@@ -174,11 +244,14 @@ public class ArcadeMainMenu : MonoBehaviour
         lastMoveTime = Time.unscaledTime;
 
         if (audioSource != null && switchSound != null)
+        {
             audioSource.PlayOneShot(switchSound);
+        }
 
         index = (index + direction + buttons.Length) % buttons.Length;
-        
-        UpdateElementOneObjects();
+
+        UpdateStartButtonObjects();
+        UpdateSelectionText();
     }
 
     private void SelectCurrentItem()
@@ -188,117 +261,121 @@ public class ArcadeMainMenu : MonoBehaviour
 
         hasSelected = true;
 
-        // Handle selection based on index
-        switch(index)
+        switch (index)
         {
+            // RECORDS
             case 0:
-                // Index 0 - Open Stats (Left button)
-                Debug.Log("Selected Index 0 - Opening Stats");
-                OpenStats();
+                Debug.Log("Opening Records");
+
+                if (!string.IsNullOrEmpty(recordsScene))
+                {
+                    if (TransitionManager.Instance != null)
+                        TransitionManager.Instance.LoadScene(recordsScene);
+                }
+
                 break;
+
+            // NEWS
             case 1:
-                // Index 1 - Element 1 (Your special middle button)
-                Debug.Log("Selected Index 1 - Starting Game");
-                StartTheGame();
+                Debug.Log("Opening News");
+
+                if (!string.IsNullOrEmpty(newsScene))
+                {
+                    if (TransitionManager.Instance != null)
+                        TransitionManager.Instance.LoadScene(newsScene);
+                }
+
                 break;
+
+            // START
             case 2:
-                // Index 2 - Start Game (Middle/Right button)
-                Debug.Log("Selected Index 2 - Starting Game");
-                StartTheGame();
+                Debug.Log("Starting Game");
+
+                if (!string.IsNullOrEmpty(gameplayScene))
+                {
+                    if (TransitionManager.Instance != null)
+                        TransitionManager.Instance.LoadScene(gameplayScene);
+                }
+
                 break;
+
+            // SETTINGS
             case 3:
-                // Index 3 - Exit (Right button)
-                Debug.Log("Selected Index 3 - Exiting");
-                Exit();
+                Debug.Log("Opening Settings");
+
+                if (!string.IsNullOrEmpty(settingsScene))
+                {
+                    if (TransitionManager.Instance != null)
+                        TransitionManager.Instance.LoadScene(settingsScene);
+                }
+
                 break;
+
+            // EXIT
+            case 4:
+                Debug.Log("Exit");
+
+#if UNITY_EDITOR
+                UnityEditor.EditorApplication.isPlaying = false;
+#else
+                Application.Quit();
+#endif
+                break;
+
             default:
-                Debug.LogWarning($"Unknown index selected: {index}");
                 hasSelected = false;
                 break;
         }
     }
 
-    private void UpdateElementOneObjects()
+    private void UpdateStartButtonObjects()
     {
-        // Activate special objects ONLY when index 1 is selected
-        bool isElementOneSelected = (index == 1);
-        
-        foreach (GameObject obj in elementOneObjects)
+        bool startSelected = (index == 2);
+
+        foreach (GameObject obj in startButtonObjects)
         {
             if (obj != null)
-                obj.SetActive(isElementOneSelected);
+            {
+                obj.SetActive(startSelected);
+            }
+        }
+    }
+
+    private void UpdateSelectionText()
+    {
+        if (selectionText == null)
+            return;
+
+        if (selectionNames != null && index < selectionNames.Length)
+        {
+            selectionText.text = selectionNames[index];
         }
     }
 
     private void SetInitialVisuals()
     {
         pulseTime = 0f;
+
         hasSelected = false;
-        index = 1; // Start at index 1
+
+        index = 2;
 
         for (int i = 0; i < buttons.Length; i++)
         {
-            buttons[i].localScale = Vector3.one * normalScale;
+            buttons[i].localScale = originalScales[i];
 
             if (i < backgrounds.Length && backgrounds[i] != null)
+            {
                 backgrounds[i].color = bgGrey;
+            }
 
             if (i < outlines.Length && outlines[i] != null)
+            {
                 outlines[i].color = outlineBlack;
+            }
         }
-        
-        // Set index 1 (Element 1) as selected at start
-        if (buttons.Length > 1)
-        {
-            buttons[1].localScale = Vector3.one * selectedScale;
-            
-            if (backgrounds.Length > 1 && backgrounds[1] != null)
-                backgrounds[1].color = bgWhite;
-        }
-        
-        UpdateElementOneObjects();
-    }
 
-    public void OpenStats()
-    {
-        Debug.Log($"OpenStats called with scene: '{statsscene}'");
-        
-        if (!string.IsNullOrEmpty(statsscene))
-        {
-            if (TransitionManager.Instance != null)
-                TransitionManager.Instance.LoadScene(statsscene, 0.5f);
-            else
-                Debug.LogError("TransitionManager.Instance is null!");
-        }
-        else
-        {
-            Debug.LogError("statsscene is empty! Please assign it in the Inspector.");
-        }
-    }
-
-    public void Exit()
-    {
-        #if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
-        #else
-            Application.Quit();
-        #endif
-    }
-
-    public void StartTheGame()
-    {
-        Debug.Log($"StartTheGame called with scene: '{gameplayscene}'");
-        
-        if (!string.IsNullOrEmpty(gameplayscene))
-        {
-            if (TransitionManager.Instance != null)
-                TransitionManager.Instance.LoadScene(gameplayscene);
-            else
-                Debug.LogError("TransitionManager.Instance is null!");
-        }
-        else
-        {
-            Debug.LogError("gameplayscene is empty! Please assign it in the Inspector.");
-        }
+        UpdateStartButtonObjects();
+        UpdateSelectionText();
     }
 }

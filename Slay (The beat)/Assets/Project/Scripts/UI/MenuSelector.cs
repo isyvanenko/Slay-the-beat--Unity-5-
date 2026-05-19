@@ -3,24 +3,35 @@ using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using UnityEngine.Events;
 using System.Collections;
+using TMPro;
 
 [RequireComponent(typeof(CanvasGroup))]
 public class MenuSelector : MonoBehaviour
 {
+    [Header("Pause Settings")]
+public bool canUsePauseAction = true;
     [Header("Buttons")]
     public RectTransform[] buttons;
     public Image[] outlines;
     public Image[] backgrounds;
 
+    [Header("Selection Text")]
+    public TMP_Text selectionText;
+
+    [TextArea]
+    public string[] selectionTexts;
+
     [Header("Visual Settings")]
     public float selectedScale = 1.2f;
     public float normalScale = 1f;
+
     public float animSpeed = 8f;
     public float bgSpeed = 6f;
     public float fadeSpeed = 2f;
 
     public Color outlineGold = new Color(1f, 0.85f, 0f);
     public Color outlineBlack = Color.black;
+
     public Color bgWhite = Color.white;
     public Color bgGrey = new Color(0.3f, 0.3f, 0.3f);
 
@@ -38,25 +49,38 @@ public class MenuSelector : MonoBehaviour
     public GameObject[] selectionParticles;
     public GameObject[] selectionSprites;
 
-    //animator
-     Animator laser; 
-     Animator spotlights;
-     public GameObject laserObj;
-     public GameObject spotlightObj;
+    [Header("Animators")]
+    public GameObject laserObj;
+    public GameObject spotlightObj;
 
-    // Input
+    [Header("Pause Menu Scene Loading")]
+    [Tooltip("If player uses Pause action map, load this scene")]
+    public string pauseSceneName;
+
+    private Animator laser;
+    private Animator spotlights;
+
+    // INPUT
     private InputActions input;
+
     private InputAction left;
     private InputAction right;
+
     private InputAction select;
     private InputAction startBtn;
 
-    // State
+    // NEW PAUSE ACTION
+    private InputAction pauseAction;
+
+    // STATE
     private int index = 0;
+
     private float lastMoveTime;
     private float pulseTime;
+
     private bool isFading = true;
-    private bool hasSelected = false; // <--- NEW FLAG
+    private bool hasSelected = false;
+
     private CanvasGroup canvasGroup;
 
     void Awake()
@@ -65,8 +89,12 @@ public class MenuSelector : MonoBehaviour
 
         left = input.UI.NavigateLeft;
         right = input.UI.NavigateRight;
+
         select = input.UI.Select;
         startBtn = input.UI.Start;
+
+        // ACTION MAP: Pause
+        pauseAction = input.UI.Pause;
 
         canvasGroup = GetComponent<CanvasGroup>();
 
@@ -74,29 +102,42 @@ public class MenuSelector : MonoBehaviour
             audioSource = GetComponent<AudioSource>();
     }
 
-    private void Start() {
-        laser = laserObj.GetComponent<Animator>();
-        spotlights = spotlightObj.GetComponent<Animator>();
+    private void Start()
+    {
+        if (laserObj != null)
+            laser = laserObj.GetComponent<Animator>();
+
+        if (spotlightObj != null)
+            spotlights = spotlightObj.GetComponent<Animator>();
     }
+
     void OnEnable()
     {
         left.performed += ctx => Move(-1);
         right.performed += ctx => Move(+1);
+
         select.performed += ctx => ActivateIndex(index);
         startBtn.performed += ctx => ActivateIndex(index);
 
+        // PAUSE INPUT
+        pauseAction.performed += HandlePausePressed;
+
         left.Enable();
         right.Enable();
+
         select.Enable();
         startBtn.Enable();
 
-        SetInitialVisuals(); // Resets everything
+        pauseAction.Enable();
+
+        SetInitialVisuals();
 
         canvasGroup.alpha = 0f;
         canvasGroup.interactable = false;
         canvasGroup.blocksRaycasts = false;
+
         isFading = true;
-        hasSelected = false; // <--- RESET FLAG
+        hasSelected = false;
 
         StartCoroutine(FadeInCanvas());
     }
@@ -105,8 +146,11 @@ public class MenuSelector : MonoBehaviour
     {
         left.Disable();
         right.Disable();
+
         select.Disable();
         startBtn.Disable();
+
+        pauseAction.Disable();
 
         StopAllCoroutines();
     }
@@ -114,23 +158,33 @@ public class MenuSelector : MonoBehaviour
     IEnumerator FadeInCanvas()
     {
         float alpha = 0f;
+
         while (alpha < 1f)
         {
-            alpha = Mathf.MoveTowards(alpha, 1f, fadeSpeed * Time.unscaledDeltaTime);
+            alpha = Mathf.MoveTowards(
+                alpha,
+                1f,
+                fadeSpeed * Time.unscaledDeltaTime
+            );
+
             canvasGroup.alpha = alpha;
+
             yield return null;
         }
 
         canvasGroup.alpha = 1f;
+
         canvasGroup.interactable = true;
         canvasGroup.blocksRaycasts = true;
+
         isFading = false;
+
+        UpdateSelectionText();
     }
 
     void Update()
     {
-        // If fading OR we have already selected, stop updating visuals
-        if (isFading || hasSelected) 
+        if (isFading || hasSelected)
             return;
 
         pulseTime += Time.unscaledDeltaTime;
@@ -139,18 +193,24 @@ public class MenuSelector : MonoBehaviour
         {
             bool selected = (i == index);
 
-            // -------- SCALE --------
-            float targetScale = selected ? selectedScale : normalScale;
+            // SCALE
+            float targetScale = selected
+                ? selectedScale
+                : normalScale;
+
             buttons[i].localScale = Vector3.Lerp(
                 buttons[i].localScale,
                 Vector3.one * targetScale,
                 Time.unscaledDeltaTime * animSpeed
             );
 
-            // -------- BACKGROUND --------
+            // BACKGROUND
             if (i < backgrounds.Length && backgrounds[i] != null)
             {
-                Color target = selected ? bgWhite : bgGrey;
+                Color target = selected
+                    ? bgWhite
+                    : bgGrey;
+
                 backgrounds[i].color = Color.Lerp(
                     backgrounds[i].color,
                     target,
@@ -158,13 +218,19 @@ public class MenuSelector : MonoBehaviour
                 );
             }
 
-            // -------- OUTLINE --------
+            // OUTLINES
             if (i < outlines.Length && outlines[i] != null)
             {
                 if (selected)
                 {
-                    float pulse = (Mathf.Sin(pulseTime * 3.5f) + 1f) * 0.5f;
-                    outlines[i].color = Color.Lerp(outlineBlack, outlineGold, pulse);
+                    float pulse =
+                        (Mathf.Sin(pulseTime * 3.5f) + 1f) * 0.5f;
+
+                    outlines[i].color = Color.Lerp(
+                        outlineBlack,
+                        outlineGold,
+                        pulse
+                    );
                 }
                 else
                 {
@@ -172,15 +238,16 @@ public class MenuSelector : MonoBehaviour
                 }
             }
 
-            // -------- PARTICLES --------
-            // Only update these if we haven't selected yet
-            if (i < selectionParticles.Length && selectionParticles[i] != null)
+            // PARTICLES
+            if (i < selectionParticles.Length &&
+                selectionParticles[i] != null)
             {
                 selectionParticles[i].SetActive(selected);
             }
 
-            // -------- SPRITES --------
-            if (i < selectionSprites.Length && selectionSprites[i] != null)
+            // SPRITES
+            if (i < selectionSprites.Length &&
+                selectionSprites[i] != null)
             {
                 selectionSprites[i].SetActive(selected);
             }
@@ -189,7 +256,7 @@ public class MenuSelector : MonoBehaviour
 
     private void Move(int direction)
     {
-        if (isFading || hasSelected) // Lock movement if selected
+        if (isFading || hasSelected)
             return;
 
         if (Time.unscaledTime - lastMoveTime < moveCooldown)
@@ -198,61 +265,131 @@ public class MenuSelector : MonoBehaviour
         lastMoveTime = Time.unscaledTime;
 
         if (audioSource != null && switchSound != null)
+        {
             audioSource.PlayOneShot(switchSound);
+        }
 
         index = (index + direction + buttons.Length) % buttons.Length;
+
+        UpdateSelectionText();
+    }
+
+    private void UpdateSelectionText()
+    {
+        if (selectionText == null)
+            return;
+
+        if (selectionTexts != null &&
+            index < selectionTexts.Length)
+        {
+            selectionText.text = selectionTexts[index];
+        }
     }
 
     private void SetInitialVisuals()
     {
         pulseTime = 0f;
+
         hasSelected = false;
 
         for (int i = 0; i < buttons.Length; i++)
         {
-            buttons[i].localScale = Vector3.one * normalScale;
+            buttons[i].localScale =
+                Vector3.one * normalScale;
 
-            if (i < backgrounds.Length && backgrounds[i] != null)
+            if (i < backgrounds.Length &&
+                backgrounds[i] != null)
+            {
                 backgrounds[i].color = bgGrey;
+            }
 
-            if (i < outlines.Length && outlines[i] != null)
+            if (i < outlines.Length &&
+                outlines[i] != null)
+            {
                 outlines[i].color = outlineBlack;
+            }
 
-            if (i < selectionParticles.Length && selectionParticles[i] != null)
+            if (i < selectionParticles.Length &&
+                selectionParticles[i] != null)
+            {
                 selectionParticles[i].SetActive(false);
+            }
 
-            if (i < selectionSprites.Length && selectionSprites[i] != null)
+            if (i < selectionSprites.Length &&
+                selectionSprites[i] != null)
+            {
                 selectionSprites[i].SetActive(false);
+            }
         }
+
+        UpdateSelectionText();
     }
 
     private void ActivateIndex(int idx)
     {
-
-
         if (isFading || hasSelected)
             return;
 
-        hasSelected = true; // LOCK THE MENU
+        hasSelected = true;
 
-        laser.SetBool("PlayerSelection", true);
-        spotlights.SetBool("SpotlightGone?", true);
+        if (laser != null)
+            laser.SetBool("PlayerSelection", true);
 
-        // 1. Force Disable ALL Particles
+        if (spotlights != null)
+            spotlights.SetBool("SpotlightGone?", true);
+
+        // DISABLE PARTICLES
         for (int i = 0; i < selectionParticles.Length; i++)
         {
             if (selectionParticles[i] != null)
+            {
                 selectionParticles[i].SetActive(false);
+            }
         }
 
-        // 2. Force Enable ALL Sprites (Show P1 AND P2 icons)
+        // ENABLE ALL SPRITES
         for (int i = 0; i < selectionSprites.Length; i++)
         {
             if (selectionSprites[i] != null)
+            {
                 selectionSprites[i].SetActive(true);
+            }
         }
 
-        // 3. Fire the event (PlayerCountMenu logic runs now)
+        // FIRE EVENT
         onSelectIndex?.Invoke(idx);
     }
+
+    // =========================
+    // PAUSE ACTION
+    // =========================
+   private void HandlePausePressed(InputAction.CallbackContext ctx)
+{
+    // ❌ BLOCK if feature disabled
+    if (!canUsePauseAction)
+        return;
+
+    // ❌ BLOCK if object is not active in hierarchy
+    if (!gameObject.activeInHierarchy)
+        return;
+
+    // ❌ BLOCK if menu is transitioning or locked
+    if (isFading || hasSelected)
+        return;
+
+    if (string.IsNullOrEmpty(pauseSceneName))
+    {
+        Debug.LogWarning("Pause Scene Name is empty!");
+        return;
+    }
+
+    if (TransitionManager.Instance != null)
+    {
+        TransitionManager.Instance.LoadScene(pauseSceneName);
+    }
+    else
+    {
+        Debug.LogError("TransitionManager.Instance is NULL!");
+    }
+}
 }

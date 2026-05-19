@@ -9,12 +9,22 @@ using System.Collections.Generic;
 [RequireComponent(typeof(CanvasGroup))]
 public class DeviceSetupMenu : MonoBehaviour
 {
-    // 🚨 YOUR CUSTOM ANIMATIONS 🚨
     [Header("Custom Animations")]
-    public GameObject laserobj;
     public GameObject transforplayer2obj;
-    private Animator laser;
     private Animator transforplayer2;
+
+    [Header("Arrow GameObjects (Activated by direction)")]
+    public GameObject upArrowSprite;
+    public GameObject downArrowSprite;
+    public GameObject leftArrowSprite;
+    public GameObject rightArrowSprite;
+    
+    [Header("Arrow Alpha Pulse Settings")]
+    public float pulseAlphaMin = 0.1f;
+    public float pulseAlphaMax = 0.3f;
+    public float pulseAlphaSpeed = 8f;
+    public Color arrowGoldColor = new Color(1f, 0.84f, 0f, 1f);
+    public Color arrowCompleteWhite = Color.white;
 
     [Header("Configuration")]
     public int playerIndexToAssign = 0;
@@ -25,13 +35,18 @@ public class DeviceSetupMenu : MonoBehaviour
     public TextMeshProUGUI promptText; 
     
     [Header("Player Count Text Objects")]
-    public TextMeshProUGUI playerCountText; // Text that shows "2 PLAYER" or nothing
-    public TextMeshProUGUI calibrationStatusText; // Text that shows "PLAYER 1 CONFIRMED" or "PLAYER 2 CONFIRMED"
+    public TextMeshProUGUI playerCountText;
+    public TextMeshProUGUI calibrationStatusText;
 
     [Header("Hardware Controls")]
     public InputActionReference resetActionReference;
 
-    [Header("🚨 Animation & Timing 🚨")]
+    [Header("ESC Hold to Return")]
+    public float escHoldRequiredTime = 3.0f;
+    public Slider escHoldProgressSlider;
+    public CanvasGroup mainMenuCanvas;
+
+    [Header("Animation & Timing")]
     public PlayerInput playerInputToMap; 
     public float requiredHoldTime = 3.0f; 
     public float slipForgivenessTime = 0.35f; 
@@ -61,6 +76,7 @@ public class DeviceSetupMenu : MonoBehaviour
     public class CalibrationAnimsGroup
     {
         public string actionName; 
+        public string direction; // "up", "down", "left", "right"
         
         [Header("2D UI Elements")]
         public Graphic backgroundBaseImage; 
@@ -79,7 +95,7 @@ public class DeviceSetupMenu : MonoBehaviour
 
     public List<CalibrationAnimsGroup> calibrationAnimations;
 
-    [Header("🎵 Audio Setup 🎵")]
+    [Header("Audio Setup")]
     public AudioSource globalAudioSource;   
     public AudioSource loopingAudioSource;  
     
@@ -98,6 +114,7 @@ public class DeviceSetupMenu : MonoBehaviour
     public float duckRestoreSpeed = 0.5f;    
     public float fadeDuration = 0.5f;
     public float subFadeSpeed = 8f;
+    public float sliderFadeSpeed = 5f;
     public string gameSceneName = "GameScene";
     public GameObject nextMenuForPlayer2; 
 
@@ -112,7 +129,17 @@ public class DeviceSetupMenu : MonoBehaviour
     private InputDevice myLockedDevice; 
     private Coroutine pulseRoutine;
     private bool isCurrentlyPulsing = false;
-    private Vector3 promptOriginalPos; 
+    private Vector3 promptOriginalPos;
+    
+    // Arrow alpha pulsing
+    private Coroutine arrowPulseRoutine;
+    private GameObject currentActiveArrow;
+
+    // ESC hold state
+    private bool isEscHeld = false;
+    private float escHoldTimer = 0f;
+    private bool wasEscPressedLastFrame = false;
+    private Coroutine escSliderFadeRoutine;
 
     // Music Ducking State
     private AudioSource bgmSource;
@@ -139,17 +166,305 @@ public class DeviceSetupMenu : MonoBehaviour
                 animGroup.originalEmissionColor = animGroup.matInstance.GetColor("_EmissionColor"); 
             }
         }
+        
+        // Deactivate all arrow sprites initially
+        DeactivateAllArrows();
+        
+        // Hide ESC slider initially
+        if (escHoldProgressSlider != null)
+        {
+            escHoldProgressSlider.gameObject.SetActive(true);
+            escHoldProgressSlider.value = 0f;
+            CanvasGroup sliderCG = escHoldProgressSlider.GetComponent<CanvasGroup>();
+            if (sliderCG == null) sliderCG = escHoldProgressSlider.gameObject.AddComponent<CanvasGroup>();
+            sliderCG.alpha = 0f;
+        }
     }
 
-    // 🚨 YOUR CUSTOM START METHOD 🚨
     private void Start() 
     {
-        if (laserobj != null) laser = laserobj.GetComponent<Animator>();
         if (transforplayer2obj != null) transforplayer2 = transforplayer2obj.GetComponent<Animator>();
         
-        // Update player count text based on SessionConfig
         UpdatePlayerCountText();
         UpdateCalibrationStatusText(false);
+    }
+
+    private void Update()
+    {
+        // Handle ESC press and hold
+        HandleEscInput();
+    }
+
+    private void HandleEscInput()
+    {
+        if (isTransitioning) return;
+        
+        bool escPressed = false;
+        
+        // Check keyboard ESC
+        if (Keyboard.current != null && Keyboard.current.escapeKey.isPressed)
+        {
+            escPressed = true;
+        }
+        
+        // Check if ESC was just pressed this frame (single press)
+        bool escJustPressed = escPressed && !wasEscPressedLastFrame;
+        
+        if (escJustPressed)
+        {
+            // Single press - reset calibration if we're mapping
+            if (isMapping)
+            {
+                OnEscPressed();
+            }
+        }
+        
+        if (escPressed)
+        {
+            if (!isEscHeld)
+            {
+                // Started holding ESC
+                isEscHeld = true;
+                escHoldTimer = 0f;
+            }
+            
+            escHoldTimer += Time.unscaledDeltaTime;
+            
+            // Show slider after a short delay to distinguish from single press
+            if (escHoldTimer > 0.3f && escHoldProgressSlider != null)
+            {
+                CanvasGroup sliderCG = escHoldProgressSlider.GetComponent<CanvasGroup>();
+                if (sliderCG != null && sliderCG.alpha < 0.5f)
+                {
+                    ShowEscSlider();
+                }
+            }
+            
+            // Update slider
+            if (escHoldProgressSlider != null && escHoldTimer > 0.3f)
+            {
+                escHoldProgressSlider.value = Mathf.Clamp01((escHoldTimer - 0.3f) / (escHoldRequiredTime - 0.3f));
+            }
+            
+            // Check if held long enough
+            if (escHoldTimer >= escHoldRequiredTime)
+            {
+                ReturnToMainMenu();
+            }
+        }
+        else
+        {
+            if (isEscHeld)
+            {
+                // Released ESC before completing
+                isEscHeld = false;
+                escHoldTimer = 0f;
+                HideEscSlider();
+            }
+        }
+        
+        wasEscPressedLastFrame = escPressed;
+    }
+
+    private void OnEscPressed()
+    {
+        // Single ESC press - reset calibration if mapping
+        if (isMapping)
+        {
+            ResetCalibration();
+        }
+    }
+
+    private void ShowEscSlider()
+    {
+        if (escHoldProgressSlider == null) return;
+        
+        if (escSliderFadeRoutine != null) StopCoroutine(escSliderFadeRoutine);
+        escSliderFadeRoutine = StartCoroutine(FadeSliderAlpha(escHoldProgressSlider, 1f));
+    }
+
+    private void HideEscSlider()
+    {
+        if (escHoldProgressSlider == null) return;
+        
+        if (escSliderFadeRoutine != null) StopCoroutine(escSliderFadeRoutine);
+        escSliderFadeRoutine = StartCoroutine(FadeSliderAlpha(escHoldProgressSlider, 0f));
+    }
+
+    IEnumerator FadeSliderAlpha(Slider slider, float targetAlpha)
+    {
+        CanvasGroup sliderCG = slider.GetComponent<CanvasGroup>();
+        if (sliderCG == null) yield break;
+        
+        float startAlpha = sliderCG.alpha;
+        float timer = 0f;
+        float duration = 1f / sliderFadeSpeed;
+        
+        while (timer < duration)
+        {
+            timer += Time.unscaledDeltaTime;
+            sliderCG.alpha = Mathf.Lerp(startAlpha, targetAlpha, timer / duration);
+            yield return null;
+        }
+        
+        sliderCG.alpha = targetAlpha;
+        
+        // Reset slider value if hiding
+        if (targetAlpha <= 0.01f)
+        {
+            slider.value = 0f;
+        }
+    }
+
+    private void ReturnToMainMenu()
+    {
+        isEscHeld = false;
+        escHoldTimer = 0f;
+        wasEscPressedLastFrame = false;
+        
+        if (escHoldProgressSlider != null)
+        {
+            escHoldProgressSlider.value = 1f;
+        }
+        
+        StartCoroutine(ReturnToMainMenuRoutine());
+    }
+
+    IEnumerator ReturnToMainMenuRoutine()
+    {
+        isTransitioning = true;
+        
+        // Reset ESC state
+        isEscHeld = false;
+        escHoldTimer = 0f;
+        wasEscPressedLastFrame = false;
+        
+        // Stop everything
+        StopPulse();
+        StopArrowPulse();
+        DeactivateAllArrows();
+        
+        if (loopingAudioSource != null) loopingAudioSource.Stop();
+        SetMusicDucked(false, duckRestoreSpeed);
+        
+        if (globalAudioSource != null && resetSfx != null)
+            globalAudioSource.PlayOneShot(resetSfx);
+        
+        // Fade out current menu
+        float timer = 0f;
+        float startAlpha = (rootCanvasGroup_Internal != null) ? rootCanvasGroup_Internal.alpha : 1f;
+        
+        while (timer < fadeDuration)
+        {
+            timer += Time.unscaledDeltaTime;
+            if (rootCanvasGroup_Internal) rootCanvasGroup_Internal.alpha = Mathf.Lerp(startAlpha, 0f, timer / fadeDuration);
+            yield return null;
+        }
+        
+        if (rootCanvasGroup_Internal) rootCanvasGroup_Internal.alpha = 0f;
+        
+        // Hide ESC slider
+        if (escHoldProgressSlider != null)
+        {
+            CanvasGroup sliderCG = escHoldProgressSlider.GetComponent<CanvasGroup>();
+            if (sliderCG != null) sliderCG.alpha = 0f;
+            escHoldProgressSlider.value = 0f;
+        }
+        
+        // Deactivate this menu
+        gameObject.SetActive(false);
+        
+        // Show main menu
+        if (mainMenuCanvas != null)
+        {
+            mainMenuCanvas.gameObject.SetActive(true);
+            mainMenuCanvas.alpha = 0f;
+            
+            timer = 0f;
+            while (timer < fadeDuration)
+            {
+                timer += Time.unscaledDeltaTime;
+                mainMenuCanvas.alpha = Mathf.Lerp(0f, 1f, timer / fadeDuration);
+                yield return null;
+            }
+            mainMenuCanvas.alpha = 1f;
+        }
+        
+        isTransitioning = false;
+    }
+
+    private void DeactivateAllArrows()
+    {
+        if (upArrowSprite != null) upArrowSprite.SetActive(false);
+        if (downArrowSprite != null) downArrowSprite.SetActive(false);
+        if (leftArrowSprite != null) leftArrowSprite.SetActive(false);
+        if (rightArrowSprite != null) rightArrowSprite.SetActive(false);
+    }
+
+    private GameObject GetArrowForDirection(string direction)
+    {
+        switch (direction.ToLower())
+        {
+            case "up":
+                return upArrowSprite;
+            case "down":
+                return downArrowSprite;
+            case "left":
+                return leftArrowSprite;
+            case "right":
+                return rightArrowSprite;
+            default:
+                return null;
+        }
+    }
+
+    private void ActivateArrowForDirection(string direction)
+    {
+        DeactivateAllArrows();
+        currentActiveArrow = GetArrowForDirection(direction);
+        if (currentActiveArrow != null)
+        {
+            currentActiveArrow.SetActive(true);
+            SetArrowAlpha(currentActiveArrow, pulseAlphaMin);
+        }
+    }
+
+    private void SetArrowAlpha(GameObject arrow, float alpha)
+    {
+        if (arrow == null) return;
+        
+        SpriteRenderer spriteRenderer = arrow.GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null)
+        {
+            Color color = spriteRenderer.color;
+            color.a = alpha;
+            spriteRenderer.color = color;
+        }
+        
+        Image image = arrow.GetComponent<Image>();
+        if (image != null)
+        {
+            Color color = image.color;
+            color.a = alpha;
+            image.color = color;
+        }
+    }
+
+    private void SetArrowColor(GameObject arrow, Color color)
+    {
+        if (arrow == null) return;
+        
+        SpriteRenderer spriteRenderer = arrow.GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = color;
+        }
+        
+        Image image = arrow.GetComponent<Image>();
+        if (image != null)
+        {
+            image.color = color;
+        }
     }
 
     private void UpdatePlayerCountText()
@@ -162,7 +477,7 @@ public class DeviceSetupMenu : MonoBehaviour
         }
         else
         {
-            playerCountText.text = ""; // Nothing for single player
+            playerCountText.text = "";
         }
     }
     
@@ -172,7 +487,6 @@ public class DeviceSetupMenu : MonoBehaviour
         
         if (isConfirmed)
         {
-            // Show specific player confirmation text
             if (playerIndexToAssign == 0)
             {
                 calibrationStatusText.text = "PLAYER 1 CONFIRMED";
@@ -185,7 +499,7 @@ public class DeviceSetupMenu : MonoBehaviour
         }
         else
         {
-            calibrationStatusText.text = ""; // Nothing before calibration
+            calibrationStatusText.text = "";
         }
     }
 
@@ -205,6 +519,9 @@ public class DeviceSetupMenu : MonoBehaviour
         isWaitingForCalibrationInput = false;
         lastInteractionTime = 0f;
         isTransitioning = false;
+        isEscHeld = false;
+        escHoldTimer = 0f;
+        wasEscPressedLastFrame = false;
         
         GrabBGMReference();
         ResetAllVisuals(); 
@@ -215,7 +532,6 @@ public class DeviceSetupMenu : MonoBehaviour
 
         if (rootCanvasGroup_Internal) StartCoroutine(FadeIn(rootCanvasGroup_Internal, 1f));
         
-        // Reset calibration status text when menu opens
         UpdateCalibrationStatusText(false);
     }
 
@@ -236,8 +552,13 @@ public class DeviceSetupMenu : MonoBehaviour
         }
 
         StopPulse();
+        StopArrowPulse();
         if (loopingAudioSource != null) loopingAudioSource.Stop();
         SetMusicDucked(false, duckRestoreSpeed);
+        
+        isEscHeld = false;
+        escHoldTimer = 0f;
+        wasEscPressedLastFrame = false;
     }
 
     private void GrabBGMReference()
@@ -267,8 +588,10 @@ public class DeviceSetupMenu : MonoBehaviour
 
     private void OnHardwareResetPressed(InputAction.CallbackContext ctx)
     {
-        if (!isMapping || isTransitioning) return;
-        if (myLockedDevice != null && ctx.control.device != myLockedDevice) return;
+        // This is for the reset action reference in inspector
+        // Don't double-handle ESC if it's bound to reset action
+        if (isTransitioning) return;
+        if (isMapping && myLockedDevice != null && ctx.control.device != myLockedDevice) return;
         ResetCalibration();
     }
 
@@ -278,6 +601,8 @@ public class DeviceSetupMenu : MonoBehaviour
 
         StopAllCoroutines(); 
         StopPulse();
+        StopArrowPulse();
+        DeactivateAllArrows();
 
         if (loopingAudioSource != null) loopingAudioSource.Stop();
         SetMusicDucked(false, duckRestoreSpeed);
@@ -289,6 +614,11 @@ public class DeviceSetupMenu : MonoBehaviour
         isWaitingForCalibrationInput = false;
         currentMapStep = 0;
         myLockedDevice = null;
+        
+        // Reset ESC hold state
+        isEscHeld = false;
+        escHoldTimer = 0f;
+        wasEscPressedLastFrame = false;
 
         if (playerInputToMap != null)
         {
@@ -299,20 +629,24 @@ public class DeviceSetupMenu : MonoBehaviour
         ResetAllVisuals();
         
         if (rootCanvasGroup_Internal != null) rootCanvasGroup_Internal.alpha = 1f;
-        if (promptText != null) promptText.text = $"Player {playerIndexToAssign + 1}\nPRESS ANY BUTTON TO START";
+        if (promptText != null) promptText.text = "PRESS ANY BUTTON TO START";
         if (joinAction != null && !joinAction.enabled) joinAction.Enable();
         
-        // Reset calibration status text
         UpdateCalibrationStatusText(false);
+        
+        // Hide ESC slider
+        HideEscSlider();
     }
 
     private void ResetAllVisuals()
     {
         if (promptText != null) 
         {
-            promptText.text = $"Player {playerIndexToAssign + 1}\nPRESS ANY BUTTON TO START";
+            promptText.text = "PRESS ANY BUTTON TO START";
             promptText.transform.localPosition = promptOriginalPos;
         }
+
+        DeactivateAllArrows();
 
         foreach (var animGroup in calibrationAnimations)
         {
@@ -356,14 +690,16 @@ public class DeviceSetupMenu : MonoBehaviour
         if (control.device is Mouse || control.device is Pointer) return;
         if (control.name == "anyKey" || control.path.Contains("anyKey")) return;
 
+        // Don't process ESC in join action (handled by Update)
         if (control is KeyControl keyControl)
         {
+            if (keyControl.keyCode == Key.Escape) return;
             if (keyControl.keyCode == Key.L)
             {
                 if (isMapping) ResetCalibration();
                 return; 
             }
-            if (keyControl.keyCode == Key.Escape || keyControl.keyCode == Key.P) return;
+            if (keyControl.keyCode == Key.P) return;
         }
         
         bool isPressed = false;
@@ -403,9 +739,6 @@ public class DeviceSetupMenu : MonoBehaviour
 
     private void StartMappingSequence(InputDevice device)
     {
-        // 🚨 YOUR CUSTOM LASER TRIGGER 🚨
-        if (laser != null) laser.SetBool("Callibration?", true);
-        
         isMapping = true;
         SessionConfig.SetPlayerDevice(playerIndexToAssign, device, "Custom");
 
@@ -424,7 +757,7 @@ public class DeviceSetupMenu : MonoBehaviour
 
     IEnumerator IntroPopUpAndInitialize()
     {
-        if (promptText != null) promptText.text = $"Player {playerIndexToAssign + 1}\nCALIBRATION";
+        if (promptText != null) promptText.text = "CALIBRATION";
         yield return new WaitForSecondsRealtime(introWaitDuration);
 
         foreach (var animGroup in calibrationAnimations)
@@ -449,11 +782,14 @@ public class DeviceSetupMenu : MonoBehaviour
 
         CalibrationAnimsGroup currentGroup = calibrationAnimations[currentMapStep];
         
-        if (promptText != null) promptText.text = $"PRESS AND HOLD:\n<color=yellow>{currentGroup.actionName.ToUpper()}</color>";
+        // Single line prompt
+        if (promptText != null) promptText.text = $"<color=yellow>HOLD {currentGroup.actionName.ToUpper()}</color>";
         
         if (globalAudioSource != null && stepPromptSfx != null)
             globalAudioSource.PlayOneShot(stepPromptSfx);
 
+        // Activate the correct arrow and start pulsing
+        ActivateArrowForDirection(currentGroup.direction);
         StartPulse(currentGroup);
         isWaitingForCalibrationInput = true; 
     }
@@ -495,6 +831,17 @@ public class DeviceSetupMenu : MonoBehaviour
                 holdTimer += Time.unscaledDeltaTime; 
                 float progress = holdTimer / requiredHoldTime; 
 
+                // Arrow goes from pulsing alpha to full gold
+                if (currentActiveArrow != null)
+                {
+                    Color targetColor = Color.Lerp(
+                        new Color(arrowGoldColor.r, arrowGoldColor.g, arrowGoldColor.b, pulseAlphaMin), 
+                        arrowGoldColor, 
+                        progress
+                    );
+                    SetArrowColor(currentActiveArrow, targetColor);
+                }
+
                 if (animGroup.backgroundBaseImage != null)
                     animGroup.backgroundBaseImage.color = Color.Lerp(normalBlackColor, lockedWhiteColor, progress);
 
@@ -518,6 +865,9 @@ public class DeviceSetupMenu : MonoBehaviour
                     wasStepping = false;
                     SetMusicDucked(false, duckRestoreSpeed);
                     if (loopingAudioSource != null) loopingAudioSource.Stop();
+                    
+                    // Reset arrow to pulsing state
+                    StartArrowPulse();
                 }
 
                 currentSlipTime += Time.unscaledDeltaTime;
@@ -534,6 +884,7 @@ public class DeviceSetupMenu : MonoBehaviour
         }
 
         StopPulse(); 
+        StopArrowPulse();
         
         if (loopingAudioSource != null) loopingAudioSource.Stop();
         SetMusicDucked(false, duckRestoreSpeed);
@@ -546,6 +897,12 @@ public class DeviceSetupMenu : MonoBehaviour
 
         if (animGroup.matInstance != null) animGroup.matInstance.SetColor("_EmissionColor", goldEmissionColor);
 
+        // Arrow is gold now, then fade to white
+        if (currentActiveArrow != null)
+        {
+            SetArrowColor(currentActiveArrow, arrowGoldColor);
+        }
+
         if (animGroup.backgroundBaseImage != null) animGroup.backgroundBaseImage.color = lockedWhiteColor;
         if (animGroup.arrowIconImage != null)
         {
@@ -554,10 +911,16 @@ public class DeviceSetupMenu : MonoBehaviour
             animGroup.arrowIconImage.color = c;
         }
 
-        if (promptText != null) promptText.text = $"<color=green>LOCKED!</color>";
+        if (promptText != null) promptText.text = $"<color=white>LOCKED!</color>";
         
         if (animGroup.backgroundBaseImage != null) animGroup.backgroundBaseImage.color = flashGoldColor;
         yield return new WaitForSecondsRealtime(0.15f); 
+
+        // Fade arrow from gold to white
+        if (currentActiveArrow != null)
+        {
+            StartCoroutine(FadeArrowColor(currentActiveArrow, arrowGoldColor, arrowCompleteWhite, 0.3f));
+        }
 
         Coroutine bgFade = null;
         if (animGroup.backgroundBaseImage != null)
@@ -569,20 +932,48 @@ public class DeviceSetupMenu : MonoBehaviour
         if (bgFade != null) yield return bgFade;
         else yield return new WaitForSecondsRealtime(0.3f);
         
+        // Fade arrow from white to transparent
+        if (currentActiveArrow != null)
+        {
+            yield return StartCoroutine(FadeArrowColor(currentActiveArrow, arrowCompleteWhite, new Color(1f, 1f, 1f, 0f), 0.3f));
+        }
+        
         yield return new WaitForSecondsRealtime(0.3f); 
 
         currentMapStep++;
         SequenceNextAction(); 
     }
 
+    IEnumerator FadeArrowColor(GameObject arrow, Color fromColor, Color toColor, float duration)
+    {
+        if (arrow == null) yield break;
+        
+        float timer = 0f;
+        while (timer < duration)
+        {
+            timer += Time.unscaledDeltaTime;
+            float t = timer / duration;
+            SetArrowColor(arrow, Color.Lerp(fromColor, toColor, t));
+            yield return null;
+        }
+        SetArrowColor(arrow, toColor);
+    }
+
     IEnumerator ErrorShakeRoutine(CalibrationAnimsGroup animGroup)
     {
         StopPulse(); 
+        StopArrowPulse();
         
         if (globalAudioSource != null && errorBuzzSfx != null) 
             globalAudioSource.PlayOneShot(errorBuzzSfx);
 
         if (promptText != null) promptText.text = $"<color=red>FOOT SLIPPED!</color>";
+
+        // Flash arrow red briefly
+        if (currentActiveArrow != null)
+        {
+            SetArrowColor(currentActiveArrow, errorRedColor);
+        }
 
         if (animGroup.backgroundBaseImage != null) 
             animGroup.backgroundBaseImage.color = errorRedColor;
@@ -615,6 +1006,16 @@ public class DeviceSetupMenu : MonoBehaviour
         target.localPosition = startPos;
         if (promptText != null) promptText.transform.localPosition = promptOriginalPos;
         
+        // Reset arrow color back to white with pulsing alpha, not staying red
+        if (currentActiveArrow != null)
+        {
+            Color resetColor = Color.white;
+            resetColor.a = pulseAlphaMin;
+            SetArrowColor(currentActiveArrow, resetColor);
+            // Restart the pulsing
+            StartArrowPulse();
+        }
+        
         if (animGroup.matInstance != null)
             StartCoroutine(FadeMaterialEmission(animGroup.matInstance, redEmissionColor, animGroup.originalEmissionColor, 0.2f));
 
@@ -624,9 +1025,10 @@ public class DeviceSetupMenu : MonoBehaviour
 
     private void FinishCalibration()
     {
-        if (promptText != null) promptText.text = "<color=green>CALIBRATION COMPLETE!</color>";
+        if (promptText != null) promptText.text = "<color=white>CALIBRATION COMPLETE!</color>";
         
-        // Update calibration status text with player-specific confirmation
+        DeactivateAllArrows();
+        
         UpdateCalibrationStatusText(true);
         
         if (playerInputToMap != null)
@@ -650,6 +1052,7 @@ public class DeviceSetupMenu : MonoBehaviour
     {
         StopPulse(); 
         pulseRoutine = StartCoroutine(PulseTarget(animGroup));
+        StartArrowPulse();
     }
 
     private void StopPulse()
@@ -667,6 +1070,35 @@ public class DeviceSetupMenu : MonoBehaviour
             }
             if (animGroup.matInstance != null)
                 animGroup.matInstance.SetColor("_EmissionColor", animGroup.originalEmissionColor);
+        }
+    }
+
+    private void StartArrowPulse()
+    {
+        StopArrowPulse();
+        if (currentActiveArrow != null)
+        {
+            arrowPulseRoutine = StartCoroutine(PulseArrowAlpha());
+        }
+    }
+
+    private void StopArrowPulse()
+    {
+        if (arrowPulseRoutine != null)
+        {
+            StopCoroutine(arrowPulseRoutine);
+            arrowPulseRoutine = null;
+        }
+    }
+
+    IEnumerator PulseArrowAlpha()
+    {
+        while (currentActiveArrow != null && currentActiveArrow.activeInHierarchy)
+        {
+            float lerp = (Mathf.Sin(Time.unscaledTime * pulseAlphaSpeed) + 1f) / 2f;
+            float alpha = Mathf.Lerp(pulseAlphaMin, pulseAlphaMax, lerp);
+            SetArrowAlpha(currentActiveArrow, alpha);
+            yield return null;
         }
     }
 
@@ -767,8 +1199,6 @@ public class DeviceSetupMenu : MonoBehaviour
 
     IEnumerator FadeOutAndSwitch(AudioClip playedClip)
     {
-        // 🚨 YOUR CUSTOM TRANSITION TRIGGERS 🚨
-        if (laser != null) laser.SetBool("Callibration?", false);
         if (transforplayer2 != null) transforplayer2.SetTrigger("TransForPlayer2");
 
         float timer = 0f;
