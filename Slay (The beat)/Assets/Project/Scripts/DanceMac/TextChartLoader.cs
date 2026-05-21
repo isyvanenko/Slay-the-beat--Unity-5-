@@ -2,8 +2,51 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Parses text-based chart files into lists of NoteEvent objects for gameplay.
+/// </summary>
+/// <remarks>
+/// This component bridges the gap between plain text chart files and the game's runtime
+/// note representation. It reads chart data from SongGradeData assets based on the
+/// selected difficulty and converts formatted text lines into NoteEvent structures.
+/// 
+/// Chart File Format:
+/// - Tab or space-separated values
+/// - Column 1: Time in seconds (float)
+/// - Column 2: Direction and optional hold length (comma-separated)
+/// 
+/// Example lines:
+/// - Tap note:    "1.23    left"
+/// - Hold note:   "2.45    up,2.5"    (2.5 second hold duration)
+/// - Alternative: "3.67    right"
+/// 
+/// The parser supports both tab and space delimiters for flexibility with
+/// different text editor configurations.
+/// </remarks>
 public class TextChartLoader : MonoBehaviour
 {
+    /// <summary>
+    /// Loads and parses the chart file for the currently selected song and difficulty.
+    /// </summary>
+    /// <returns>
+    /// List of NoteEvent objects containing all notes from the chart, sorted by time.
+    /// Returns an empty list if loading fails (no data, missing file, or parsing errors).
+    /// </returns>
+    /// <remarks>
+    /// Loading process:
+    /// 1. Retrieve selected song data from GameDataBridge
+    /// 2. Select the appropriate chart file based on difficulty index
+    /// 3. Read and parse each line of the chart file
+    /// 4. Convert direction strings to lane indices (0-3)
+    /// 5. Parse optional hold durations for long notes
+    /// 6. Sort all notes chronologically
+    /// 
+    /// Error handling:
+    /// - Logs error if no song data is present (likely launched outside normal flow)
+    /// - Logs error if chart file is missing for the selected difficulty
+    /// - Skips malformed lines without crashing
+    /// - Returns empty list on failure to prevent null reference exceptions
+    /// </remarks>
     public List<NoteEvent> LoadChart()
     {
         List<NoteEvent> newChart = new List<NoteEvent>();
@@ -86,6 +129,23 @@ public class TextChartLoader : MonoBehaviour
         return newChart;
     }
 
+    /// <summary>
+    /// Converts a direction string to its corresponding lane index.
+    /// </summary>
+    /// <param name="dir">Direction string (case-insensitive). Valid values: "left", "down", "up", "right".</param>
+    /// <returns>
+    /// Lane index mapping:
+    /// - "left" → 0
+    /// - "down" → 1
+    /// - "up" → 2
+    /// - "right" → 3
+    /// - Any other value → -1 (invalid)
+    /// </returns>
+    /// <remarks>
+    /// The method uses ToLower() to ensure case-insensitive matching, making the chart
+    /// files more forgiving (e.g., "LEFT", "Left", or "left" all work correctly).
+    /// Returns -1 for invalid directions, which causes the parser to skip that note.
+    /// </remarks>
     private int GetLaneIndex(string dir)
     {
         switch (dir.ToLower())

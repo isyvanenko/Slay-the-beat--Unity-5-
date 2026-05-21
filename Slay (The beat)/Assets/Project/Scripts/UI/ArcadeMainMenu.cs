@@ -4,51 +4,101 @@ using UnityEngine.UI;
 using System.Collections;
 using TMPro;
 
+/// <summary>
+/// Main menu for arcade mode with animated button selection and scene navigation.
+/// </summary>
+/// <remarks>
+/// This component controls a horizontal menu with 5 buttons: RECORDS, NEWS, START, SETTINGS, EXIT.
+/// It supports keyboard/gamepad navigation (left/right), selection, and provides visual feedback
+/// including scaling, color changes, and a pulsing outline on the selected button.
+/// 
+/// Key Features:
+/// - Smooth button scaling animations with different zoom amounts for side buttons vs start button
+/// - Background and outline color transitions based on selection
+/// - Input cooldown to prevent rapid navigation
+/// - Audio feedback on selection change
+/// - Fade-in effect when the menu becomes active
+/// - Special handling for the START button (extra scaling, separate object activation)
+/// - Scene transitions using TransitionManager or direct SceneManager
+/// - Editor and build quit handling for EXIT button
+/// </remarks>
 public class ArcadeMainMenu : MonoBehaviour
 {
     [Header("Buttons")]
+    /// <summary>Array of button RectTransforms (order: 0=RECORDS,1=NEWS,2=START,3=SETTINGS,4=EXIT).</summary>
     public RectTransform[] buttons;
+    
+    /// <summary>Array of outline Image components for each button.</summary>
     public Image[] outlines;
+    
+    /// <summary>Array of background Image components for each button.</summary>
     public Image[] backgrounds;
 
     [Header("Selection Text")]
+    /// <summary>Text component that displays the name of the currently selected menu item.</summary>
     public TMP_Text selectionText;
+    
+    /// <summary>Array of display names corresponding to each button index.</summary>
     public string[] selectionNames;
 
     [Header("Button Scale Settings")]
-
     [Tooltip("Extra scale added to buttons 0,1,3,4 when selected")]
+    /// <summary>Additional scale multiplier for side buttons (index 0,1,3,4) when selected.</summary>
     public float sideButtonZoomAmount = 0.08f;
 
     [Tooltip("Extra scale added to START button (index 2) when selected")]
+    /// <summary>Additional scale multiplier for the START button (index 2) when selected.</summary>
     public float startButtonZoomAmount = 0.15f;
 
     [Header("Animation")]
+    /// <summary>Speed of button scale animation (Lerp factor per second).</summary>
     public float animSpeed = 8f;
+    
+    /// <summary>Speed of background color transitions.</summary>
     public float bgSpeed = 6f;
+    
+    /// <summary>Speed of fade-in effect when menu appears.</summary>
     public float fadeSpeed = 2f;
 
     [Header("Colors")]
+    /// <summary>Gold color for the selected button's outline (pulsing).</summary>
     public Color outlineGold = new Color(1f, 0.85f, 0f);
+    
+    /// <summary>Black color for deselected button outlines.</summary>
     public Color outlineBlack = Color.black;
 
+    /// <summary>White color for the background of the selected button.</summary>
     public Color bgWhite = Color.white;
+    
+    /// <summary>Grey color for backgrounds of deselected buttons.</summary>
     public Color bgGrey = new Color(0.3f, 0.3f, 0.3f);
 
     [Header("Input")]
+    /// <summary>Cooldown time in seconds between navigation moves to prevent rapid scrolling.</summary>
     public float moveCooldown = 0.15f;
 
     [Header("Audio")]
+    /// <summary>AudioSource used to play navigation sound effects.</summary>
     public AudioSource audioSource;
+    
+    /// <summary>Sound clip played when switching selection to a different button.</summary>
     public AudioClip switchSound;
 
     [Header("Special Objects For Start Button (Index 2)")]
+    /// <summary>GameObjects that are shown/hidden when the START button is selected.</summary>
     public GameObject[] startButtonObjects;
 
     [Header("Scene Names")]
+    /// <summary>Scene name for the RECORDS menu.</summary>
     public string recordsScene;
+    
+    /// <summary>Scene name for the NEWS menu.</summary>
     public string newsScene;
+    
+    /// <summary>Scene name for the main gameplay (song selection or arcade).</summary>
     public string gameplayScene;
+    
+    /// <summary>Scene name for the SETTINGS menu.</summary>
     public string settingsScene;
 
     // Input
@@ -59,19 +109,30 @@ public class ArcadeMainMenu : MonoBehaviour
     private InputAction startBtn;
 
     // State
+    /// <summary>Currently selected button index (0-4).</summary>
     private int index = 2;
 
+    /// <summary>Timestamp of the last navigation input.</summary>
     private float lastMoveTime;
+    
+    /// <summary>Time accumulator for outline pulsing animation.</summary>
     private float pulseTime;
 
+    /// <summary>Flag indicating if the fade-in animation is still running.</summary>
     private bool isFading = true;
+    
+    /// <summary>Flag indicating if a selection has been made (prevents double selection).</summary>
     private bool hasSelected = false;
 
+    /// <summary>CanvasGroup for controlling menu fade-in.</summary>
     private CanvasGroup canvasGroup;
 
-    // ORIGINAL SCALES
+    /// <summary>Stores original local scales of buttons for animation reset.</summary>
     private Vector3[] originalScales;
 
+    /// <summary>
+    /// Initializes input actions, caches references, and stores original button scales.
+    /// </summary>
     void Awake()
     {
         input = new InputActions();
@@ -96,6 +157,9 @@ public class ArcadeMainMenu : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Enables input actions, sets up initial visuals, and starts fade-in coroutine.
+    /// </summary>
     void OnEnable()
     {
         left.performed += ctx => Move(-1);
@@ -124,6 +188,9 @@ public class ArcadeMainMenu : MonoBehaviour
         StartCoroutine(FadeInCanvas());
     }
 
+    /// <summary>
+    /// Disables input actions and stops coroutines when the menu is disabled.
+    /// </summary>
     void OnDisable()
     {
         left.Disable();
@@ -135,6 +202,10 @@ public class ArcadeMainMenu : MonoBehaviour
         StopAllCoroutines();
     }
 
+    /// <summary>
+    /// Coroutine that smoothly fades in the menu canvas.
+    /// </summary>
+    /// <returns>IEnumerator for coroutine execution.</returns>
     IEnumerator FadeInCanvas()
     {
         float alpha = 0f;
@@ -163,6 +234,9 @@ public class ArcadeMainMenu : MonoBehaviour
         UpdateSelectionText();
     }
 
+    /// <summary>
+    /// Updates button animations (scale, background color, outline pulse) every frame.
+    /// </summary>
     void Update()
     {
         if (isFading || hasSelected)
@@ -233,6 +307,10 @@ public class ArcadeMainMenu : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Moves the selection left or right.
+    /// </summary>
+    /// <param name="direction">-1 for left, +1 for right.</param>
     private void Move(int direction)
     {
         if (isFading || hasSelected)
@@ -254,6 +332,17 @@ public class ArcadeMainMenu : MonoBehaviour
         UpdateSelectionText();
     }
 
+    /// <summary>
+    /// Executes the action associated with the currently selected button.
+    /// </summary>
+    /// <remarks>
+    /// Button actions:
+    /// - Index 0 (RECORDS): Loads recordsScene
+    /// - Index 1 (NEWS): Loads newsScene
+    /// - Index 2 (START): Loads gameplayScene
+    /// - Index 3 (SETTINGS): Loads settingsScene
+    /// - Index 4 (EXIT): Quits the application (or stops play in editor)
+    /// </remarks>
     private void SelectCurrentItem()
     {
         if (isFading || hasSelected)
@@ -328,6 +417,9 @@ public class ArcadeMainMenu : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Shows or hides the start button special objects based on whether START is selected.
+    /// </summary>
     private void UpdateStartButtonObjects()
     {
         bool startSelected = (index == 2);
@@ -341,6 +433,9 @@ public class ArcadeMainMenu : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Updates the selection text to show the name of the current menu item.
+    /// </summary>
     private void UpdateSelectionText()
     {
         if (selectionText == null)
@@ -352,6 +447,9 @@ public class ArcadeMainMenu : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Resets all visuals to their initial state (scales, colors, selection to START).
+    /// </summary>
     private void SetInitialVisuals()
     {
         pulseTime = 0f;

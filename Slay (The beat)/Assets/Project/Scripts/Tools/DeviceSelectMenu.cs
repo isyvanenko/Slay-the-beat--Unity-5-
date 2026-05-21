@@ -6,116 +6,187 @@ using TMPro;
 using System.Collections;
 using System.Collections.Generic;
 
+/// <summary>
+/// Controls the player device selection and dance mat calibration menu.
+/// </summary>
 [RequireComponent(typeof(CanvasGroup))]
 public class DeviceSetupMenu : MonoBehaviour
 {
     [Header("Custom Animations")]
+    /// <summary>Object containing the transition animator used before player two setup.</summary>
     public GameObject transforplayer2obj;
     private Animator transforplayer2;
 
     [Header("Arrow GameObjects (Activated by direction)")]
+    /// <summary>Arrow object shown while calibrating the upward direction.</summary>
     public GameObject upArrowSprite;
+    /// <summary>Arrow object shown while calibrating the downward direction.</summary>
     public GameObject downArrowSprite;
+    /// <summary>Arrow object shown while calibrating the left direction.</summary>
     public GameObject leftArrowSprite;
+    /// <summary>Arrow object shown while calibrating the right direction.</summary>
     public GameObject rightArrowSprite;
     
     [Header("Arrow Alpha Pulse Settings")]
+    /// <summary>Minimum alpha used during arrow pulse animation.</summary>
     public float pulseAlphaMin = 0.1f;
+    /// <summary>Maximum alpha used during arrow pulse animation.</summary>
     public float pulseAlphaMax = 0.3f;
+    /// <summary>Speed multiplier for the arrow alpha pulse.</summary>
     public float pulseAlphaSpeed = 8f;
+    /// <summary>Color used while the player is successfully holding a calibration input.</summary>
     public Color arrowGoldColor = new Color(1f, 0.84f, 0f, 1f);
+    /// <summary>Color used when a calibration arrow has completed successfully.</summary>
     public Color arrowCompleteWhite = Color.white;
 
     [Header("Configuration")]
+    /// <summary>Zero-based player index whose device and bindings should be assigned.</summary>
     public int playerIndexToAssign = 0;
+    /// <summary>Minimum delay before another input can be accepted after a transition.</summary>
     public float confirmationDelay = 0.5f;
 
     [Header("UI Controls")]
+    /// <summary>Button that resets the current calibration process.</summary>
     public Button uiResetButton; 
+    /// <summary>Main prompt text used to guide the player through setup.</summary>
     public TextMeshProUGUI promptText; 
     
     [Header("Player Count Text Objects")]
+    /// <summary>Text label that displays two-player mode status.</summary>
     public TextMeshProUGUI playerCountText;
+    /// <summary>Text label that displays player calibration confirmation status.</summary>
     public TextMeshProUGUI calibrationStatusText;
 
     [Header("Hardware Controls")]
+    /// <summary>Input action used for hardware reset controls.</summary>
     public InputActionReference resetActionReference;
 
     [Header("ESC Hold to Return")]
+    /// <summary>Time in seconds Escape must be held to return to the main menu.</summary>
     public float escHoldRequiredTime = 3.0f;
+    /// <summary>Progress slider shown while Escape is held.</summary>
     public Slider escHoldProgressSlider;
+    /// <summary>Main menu CanvasGroup to fade in when returning from setup.</summary>
     public CanvasGroup mainMenuCanvas;
 
     [Header("Animation & Timing")]
+    /// <summary>PlayerInput asset whose action bindings receive calibration overrides.</summary>
     public PlayerInput playerInputToMap; 
+    /// <summary>Time in seconds each calibration input must be held.</summary>
     public float requiredHoldTime = 3.0f; 
+    /// <summary>Grace period in seconds before a released input counts as a slip.</summary>
     public float slipForgivenessTime = 0.35f; 
 
     [Header("Visual Tuning")]
+    /// <summary>Delay before the calibration intro elements begin appearing.</summary>
     public float introWaitDuration = 0.5f;   
+    /// <summary>Duration for fading in each intro calibration element.</summary>
     public float introFadeDuration = 0.3f;   
+    /// <summary>Speed multiplier for calibration target pulsing.</summary>
     public float pulseSpeed = 8f;            
+    /// <summary>Scale multiplier applied at the peak of target pulsing.</summary>
     public float pulseScaleMultiplier = 1.15f; 
     
     [Header("Error Shake Settings")]
+    /// <summary>Duration of the failed-hold shake animation.</summary>
     public float shakeDuration = 0.3f;
+    /// <summary>Horizontal displacement range used during the failed-hold shake.</summary>
     public float shakeIntensity = 15f; 
 
     [Header("UI State Colors")]
+    /// <summary>Default color for unconfirmed calibration backgrounds.</summary>
     public Color normalBlackColor = Color.black; 
+    /// <summary>Color for locked or completed calibration backgrounds.</summary>
     public Color lockedWhiteColor = Color.white;
+    /// <summary>Flash color used when a calibration input locks successfully.</summary>
     public Color flashGoldColor = new Color(1f, 0.8f, 0f); 
+    /// <summary>Error color used when the player releases an input too long.</summary>
     public Color errorRedColor = new Color(1f, 0.2f, 0.2f); 
+    /// <summary>Text color used when a player calibration is confirmed.</summary>
     public Color confirmedGreenColor = new Color(0.2f, 0.8f, 0.2f);
 
     [Header("3D Emission Settings")]
+    /// <summary>Emission color applied to 3D targets during successful holds.</summary>
     [ColorUsage(true, true)] public Color goldEmissionColor = new Color(1f, 0.8f, 0f, 1f) * 2f; 
+    /// <summary>Emission color applied to 3D targets during error feedback.</summary>
     [ColorUsage(true, true)] public Color redEmissionColor = new Color(1f, 0.2f, 0.2f, 1f) * 3f;
 
+    /// <summary>
+    /// Stores the UI and 3D objects that represent one calibration direction.
+    /// </summary>
     [System.Serializable]
     public class CalibrationAnimsGroup
     {
+        /// <summary>Name of the Input System action that this step binds.</summary>
         public string actionName; 
+        /// <summary>Direction keyword that chooses the matching arrow object.</summary>
         public string direction; // "up", "down", "left", "right"
         
         [Header("2D UI Elements")]
+        /// <summary>Background graphic that changes color during calibration.</summary>
         public Graphic backgroundBaseImage; 
+        /// <summary>Arrow icon graphic that fades as the input is held.</summary>
         public Graphic arrowIconImage;      
+        /// <summary>Lock icon graphic shown after successful calibration.</summary>
         public Graphic lockIconImage;       
+        /// <summary>Container CanvasGroup used for fade and pulse animations.</summary>
         public CanvasGroup containerToPulse; 
         
         [Header("3D Object")]
+        /// <summary>Optional 3D model that receives emission feedback for this step.</summary>
         public Renderer target3DModel;
+        /// <summary>Instanced material cached from the target renderer.</summary>
         [HideInInspector] public Material matInstance;
+        /// <summary>Original emission color restored when this step resets.</summary>
         [HideInInspector] public Color originalEmissionColor;
         
+        /// <summary>Original local scale restored after pulsing finishes.</summary>
         [HideInInspector] public Vector3 originalScale; 
+        /// <summary>Original local position restored after shake feedback finishes.</summary>
         [HideInInspector] public Vector3 originalPosition; 
     }
 
+    /// <summary>Ordered list of calibration actions and their matching visuals.</summary>
     public List<CalibrationAnimsGroup> calibrationAnimations;
 
     [Header("Audio Setup")]
+    /// <summary>Audio source used for one-shot menu sound effects.</summary>
     public AudioSource globalAudioSource;   
+    /// <summary>Audio source used for looping hold feedback.</summary>
     public AudioSource loopingAudioSource;  
     
     [Space(10)]
+    /// <summary>Sound played when prompting the next calibration step.</summary>
     public AudioClip stepPromptSfx;         
+    /// <summary>Looping sound played while an input is held.</summary>
     public AudioClip continuousHoldSfx;     
+    /// <summary>Sound played when a calibration input is accepted.</summary>
     public AudioClip controllerSelectedSfx; 
+    /// <summary>Sound played when a dance mat or non-keyboard device is selected.</summary>
     public AudioClip dancematSelectedSfx;   
+    /// <summary>Sound played after the full calibration sequence completes.</summary>
     public AudioClip selectionConfirmedSfx; 
+    /// <summary>Sound played when calibration is reset.</summary>
     public AudioClip resetSfx;              
+    /// <summary>Sound played when the hold verification fails.</summary>
     public AudioClip errorBuzzSfx;          
 
     [Header("Transitions & Ducking")]
+    /// <summary>Background music volume while calibration feedback is active.</summary>
     public float duckedMusicVolume = 0.2f;   
+    /// <summary>Duration for lowering background music volume.</summary>
     public float duckDropSpeed = 0.15f;      
+    /// <summary>Duration for restoring background music volume.</summary>
     public float duckRestoreSpeed = 0.5f;    
+    /// <summary>Duration used by menu fade transitions.</summary>
     public float fadeDuration = 0.5f;
+    /// <summary>Default speed for CanvasGroup fade helpers.</summary>
     public float subFadeSpeed = 8f;
+    /// <summary>Speed used when fading the Escape hold slider.</summary>
     public float sliderFadeSpeed = 5f;
+    /// <summary>Name of the gameplay scene to load after calibration.</summary>
     public string gameSceneName = "GameScene";
+    /// <summary>Optional setup menu activated for player two before loading the game scene.</summary>
     public GameObject nextMenuForPlayer2; 
 
     // Internal State
@@ -146,6 +217,9 @@ public class DeviceSetupMenu : MonoBehaviour
     private float originalBgmVolume = 1f;
     private Coroutine duckingRoutine;
 
+    /// <summary>
+    /// Caches component references and stores the initial visual state for calibration elements.
+    /// </summary>
     private void Awake()
     {
         rootCanvasGroup_Internal = GetComponent<CanvasGroup>();
@@ -181,6 +255,9 @@ public class DeviceSetupMenu : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Initializes optional animation references and refreshes player status labels.
+    /// </summary>
     private void Start() 
     {
         if (transforplayer2obj != null) transforplayer2 = transforplayer2obj.GetComponent<Animator>();
@@ -189,12 +266,18 @@ public class DeviceSetupMenu : MonoBehaviour
         UpdateCalibrationStatusText(false);
     }
 
+    /// <summary>
+    /// Polls per-frame escape input for reset and return-to-menu behavior.
+    /// </summary>
     private void Update()
     {
         // Handle ESC press and hold
         HandleEscInput();
     }
 
+    /// <summary>
+    /// Handles short and held Escape key input while the menu is active.
+    /// </summary>
     private void HandleEscInput()
     {
         if (isTransitioning) return;
@@ -266,6 +349,9 @@ public class DeviceSetupMenu : MonoBehaviour
         wasEscPressedLastFrame = escPressed;
     }
 
+    /// <summary>
+    /// Resets the current calibration when Escape is tapped during mapping.
+    /// </summary>
     private void OnEscPressed()
     {
         // Single ESC press - reset calibration if mapping
@@ -275,6 +361,9 @@ public class DeviceSetupMenu : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Fades in the Escape hold progress slider.
+    /// </summary>
     private void ShowEscSlider()
     {
         if (escHoldProgressSlider == null) return;
@@ -283,6 +372,9 @@ public class DeviceSetupMenu : MonoBehaviour
         escSliderFadeRoutine = StartCoroutine(FadeSliderAlpha(escHoldProgressSlider, 1f));
     }
 
+    /// <summary>
+    /// Fades out the Escape hold progress slider.
+    /// </summary>
     private void HideEscSlider()
     {
         if (escHoldProgressSlider == null) return;
@@ -291,6 +383,12 @@ public class DeviceSetupMenu : MonoBehaviour
         escSliderFadeRoutine = StartCoroutine(FadeSliderAlpha(escHoldProgressSlider, 0f));
     }
 
+    /// <summary>
+    /// Animates a slider CanvasGroup alpha to the requested value.
+    /// </summary>
+    /// <param name="slider">Slider whose CanvasGroup should be faded.</param>
+    /// <param name="targetAlpha">Alpha value to fade toward.</param>
+    /// <returns>Coroutine enumerator for the fade animation.</returns>
     IEnumerator FadeSliderAlpha(Slider slider, float targetAlpha)
     {
         CanvasGroup sliderCG = slider.GetComponent<CanvasGroup>();
@@ -316,6 +414,9 @@ public class DeviceSetupMenu : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Starts the transition back to the main menu after Escape is held long enough.
+    /// </summary>
     private void ReturnToMainMenu()
     {
         isEscHeld = false;
@@ -330,6 +431,10 @@ public class DeviceSetupMenu : MonoBehaviour
         StartCoroutine(ReturnToMainMenuRoutine());
     }
 
+    /// <summary>
+    /// Fades out this menu, resets active calibration effects, and fades in the main menu.
+    /// </summary>
+    /// <returns>Coroutine enumerator for the menu transition.</returns>
     IEnumerator ReturnToMainMenuRoutine()
     {
         isTransitioning = true;
@@ -393,6 +498,9 @@ public class DeviceSetupMenu : MonoBehaviour
         isTransitioning = false;
     }
 
+    /// <summary>
+    /// Disables every directional arrow object.
+    /// </summary>
     private void DeactivateAllArrows()
     {
         if (upArrowSprite != null) upArrowSprite.SetActive(false);
@@ -401,6 +509,11 @@ public class DeviceSetupMenu : MonoBehaviour
         if (rightArrowSprite != null) rightArrowSprite.SetActive(false);
     }
 
+    /// <summary>
+    /// Gets the arrow GameObject assigned to a calibration direction.
+    /// </summary>
+    /// <param name="direction">Direction name: up, down, left, or right.</param>
+    /// <returns>The matching arrow object, or null when the direction is unknown.</returns>
     private GameObject GetArrowForDirection(string direction)
     {
         switch (direction.ToLower())
@@ -418,6 +531,10 @@ public class DeviceSetupMenu : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Shows the arrow for a direction and prepares it for alpha pulsing.
+    /// </summary>
+    /// <param name="direction">Direction whose arrow should be activated.</param>
     private void ActivateArrowForDirection(string direction)
     {
         DeactivateAllArrows();
@@ -429,6 +546,11 @@ public class DeviceSetupMenu : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Sets the alpha channel on an arrow rendered by either SpriteRenderer or UI Image.
+    /// </summary>
+    /// <param name="arrow">Arrow object to update.</param>
+    /// <param name="alpha">New alpha value.</param>
     private void SetArrowAlpha(GameObject arrow, float alpha)
     {
         if (arrow == null) return;
@@ -450,6 +572,11 @@ public class DeviceSetupMenu : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Sets the full color on an arrow rendered by either SpriteRenderer or UI Image.
+    /// </summary>
+    /// <param name="arrow">Arrow object to update.</param>
+    /// <param name="color">New arrow color.</param>
     private void SetArrowColor(GameObject arrow, Color color)
     {
         if (arrow == null) return;
@@ -467,6 +594,9 @@ public class DeviceSetupMenu : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Updates the UI label that indicates whether two-player mode is active.
+    /// </summary>
     private void UpdatePlayerCountText()
     {
         if (playerCountText == null) return;
@@ -481,6 +611,10 @@ public class DeviceSetupMenu : MonoBehaviour
         }
     }
     
+    /// <summary>
+    /// Updates the calibration confirmation label for the currently assigned player.
+    /// </summary>
+    /// <param name="isConfirmed">True when calibration has completed successfully.</param>
     private void UpdateCalibrationStatusText(bool isConfirmed)
     {
         if (calibrationStatusText == null) return;
@@ -503,6 +637,9 @@ public class DeviceSetupMenu : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Subscribes input handlers, resets menu state, and starts the menu fade-in.
+    /// </summary>
     private void OnEnable()
     {
         if (rootCanvasGroup_Internal) rootCanvasGroup_Internal.alpha = 0f;
@@ -535,6 +672,9 @@ public class DeviceSetupMenu : MonoBehaviour
         UpdateCalibrationStatusText(false);
     }
 
+    /// <summary>
+    /// Unsubscribes input handlers and stops active audio, pulsing, and hold state.
+    /// </summary>
     private void OnDisable()
     {
         if (joinAction != null)
@@ -561,6 +701,9 @@ public class DeviceSetupMenu : MonoBehaviour
         wasEscPressedLastFrame = false;
     }
 
+    /// <summary>
+    /// Finds the music manager audio source and records its original volume.
+    /// </summary>
     private void GrabBGMReference()
     {
         if (bgmSource == null && MusicManager.Instance != null)
@@ -570,6 +713,11 @@ public class DeviceSetupMenu : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Fades background music between normal and ducked volume.
+    /// </summary>
+    /// <param name="isDucked">True to lower the music volume; false to restore it.</param>
+    /// <param name="duration">Fade duration in seconds.</param>
     private void SetMusicDucked(bool isDucked, float duration)
     {
         if (bgmSource == null) return;
@@ -586,6 +734,10 @@ public class DeviceSetupMenu : MonoBehaviour
         duckingRoutine = StartCoroutine(FadeMusicVolume(bgmSource, bgmSource.volume, targetVol, duration));
     }
 
+    /// <summary>
+    /// Handles reset input from the configured hardware reset action.
+    /// </summary>
+    /// <param name="ctx">Input callback context for the reset action.</param>
     private void OnHardwareResetPressed(InputAction.CallbackContext ctx)
     {
         // This is for the reset action reference in inspector
@@ -595,6 +747,9 @@ public class DeviceSetupMenu : MonoBehaviour
         ResetCalibration();
     }
 
+    /// <summary>
+    /// Clears the current calibration, restores visuals, and returns to the initial prompt.
+    /// </summary>
     public void ResetCalibration()
     {
         if (isTransitioning) return; 
@@ -638,6 +793,9 @@ public class DeviceSetupMenu : MonoBehaviour
         HideEscSlider();
     }
 
+    /// <summary>
+    /// Restores all calibration UI, arrows, and emission colors to their idle state.
+    /// </summary>
     private void ResetAllVisuals()
     {
         if (promptText != null) 
@@ -680,6 +838,10 @@ public class DeviceSetupMenu : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Detects the device to map and captures calibration inputs from that locked device.
+    /// </summary>
+    /// <param name="ctx">Input callback context containing the actuated control.</param>
     private void OnInputDetected(InputAction.CallbackContext ctx)
     {
         if (isTransitioning) return;
@@ -737,6 +899,10 @@ public class DeviceSetupMenu : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Locks a device to the selected player and begins the calibration sequence.
+    /// </summary>
+    /// <param name="device">Input device being assigned to the player.</param>
     private void StartMappingSequence(InputDevice device)
     {
         isMapping = true;
@@ -755,6 +921,10 @@ public class DeviceSetupMenu : MonoBehaviour
         StartCoroutine(IntroPopUpAndInitialize());
     }
 
+    /// <summary>
+    /// Displays the calibration intro and fades in each calibration target.
+    /// </summary>
+    /// <returns>Coroutine enumerator for the intro animation.</returns>
     IEnumerator IntroPopUpAndInitialize()
     {
         if (promptText != null) promptText.text = "CALIBRATION";
@@ -772,6 +942,9 @@ public class DeviceSetupMenu : MonoBehaviour
         SequenceNextAction();
     }
 
+    /// <summary>
+    /// Advances to the next calibration action or finishes when all actions are mapped.
+    /// </summary>
     private void SequenceNextAction()
     {
         if (currentMapStep >= calibrationAnimations.Count)
@@ -794,6 +967,12 @@ public class DeviceSetupMenu : MonoBehaviour
         isWaitingForCalibrationInput = true; 
     }
 
+    /// <summary>
+    /// Verifies that the selected control is held long enough and animates progress feedback.
+    /// </summary>
+    /// <param name="animGroup">Visual group associated with the current calibration step.</param>
+    /// <param name="control">Input control being verified for this action.</param>
+    /// <returns>Coroutine enumerator for the hold verification and success animation.</returns>
     IEnumerator VerifyHoldAndCrossFadeRoutine(CalibrationAnimsGroup animGroup, InputControl control)
     {
         float holdTimer = 0f;
@@ -944,6 +1123,14 @@ public class DeviceSetupMenu : MonoBehaviour
         SequenceNextAction(); 
     }
 
+    /// <summary>
+    /// Fades an arrow from one color to another.
+    /// </summary>
+    /// <param name="arrow">Arrow object to fade.</param>
+    /// <param name="fromColor">Starting color.</param>
+    /// <param name="toColor">Target color.</param>
+    /// <param name="duration">Fade duration in seconds.</param>
+    /// <returns>Coroutine enumerator for the color fade.</returns>
     IEnumerator FadeArrowColor(GameObject arrow, Color fromColor, Color toColor, float duration)
     {
         if (arrow == null) yield break;
@@ -959,6 +1146,11 @@ public class DeviceSetupMenu : MonoBehaviour
         SetArrowColor(arrow, toColor);
     }
 
+    /// <summary>
+    /// Plays the failed-hold feedback animation and restores the current step visuals.
+    /// </summary>
+    /// <param name="animGroup">Visual group to shake and reset.</param>
+    /// <returns>Coroutine enumerator for the error animation.</returns>
     IEnumerator ErrorShakeRoutine(CalibrationAnimsGroup animGroup)
     {
         StopPulse(); 
@@ -1023,6 +1215,9 @@ public class DeviceSetupMenu : MonoBehaviour
             yield return StartCoroutine(FadeGraphicColor(animGroup.backgroundBaseImage, errorRedColor, normalBlackColor, 0.2f));
     }
 
+    /// <summary>
+    /// Saves binding overrides and transitions to the next player menu or game scene.
+    /// </summary>
     private void FinishCalibration()
     {
         if (promptText != null) promptText.text = "<color=white>CALIBRATION COMPLETE!</color>";
@@ -1048,6 +1243,10 @@ public class DeviceSetupMenu : MonoBehaviour
         StartCoroutine(FadeOutAndSwitch(selectionConfirmedSfx));
     }
 
+    /// <summary>
+    /// Starts the pulsing animation for the active calibration target and arrow.
+    /// </summary>
+    /// <param name="animGroup">Visual group to pulse.</param>
     private void StartPulse(CalibrationAnimsGroup animGroup)
     {
         StopPulse(); 
@@ -1055,6 +1254,9 @@ public class DeviceSetupMenu : MonoBehaviour
         StartArrowPulse();
     }
 
+    /// <summary>
+    /// Stops calibration target pulsing and restores cached transforms and emission colors.
+    /// </summary>
     private void StopPulse()
     {
         if (pulseRoutine != null) StopCoroutine(pulseRoutine);
@@ -1073,6 +1275,9 @@ public class DeviceSetupMenu : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Starts alpha pulsing on the current active arrow.
+    /// </summary>
     private void StartArrowPulse()
     {
         StopArrowPulse();
@@ -1082,6 +1287,9 @@ public class DeviceSetupMenu : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Stops the active arrow alpha pulse coroutine.
+    /// </summary>
     private void StopArrowPulse()
     {
         if (arrowPulseRoutine != null)
@@ -1091,6 +1299,10 @@ public class DeviceSetupMenu : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Continuously pulses the active arrow alpha between configured limits.
+    /// </summary>
+    /// <returns>Coroutine enumerator for the arrow pulse.</returns>
     IEnumerator PulseArrowAlpha()
     {
         while (currentActiveArrow != null && currentActiveArrow.activeInHierarchy)
@@ -1102,6 +1314,11 @@ public class DeviceSetupMenu : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Continuously scales the current calibration target for attention feedback.
+    /// </summary>
+    /// <param name="animGroup">Visual group whose container should pulse.</param>
+    /// <returns>Coroutine enumerator for the target pulse.</returns>
     IEnumerator PulseTarget(CalibrationAnimsGroup animGroup)
     {
         if (animGroup.containerToPulse == null) yield break;
@@ -1121,6 +1338,14 @@ public class DeviceSetupMenu : MonoBehaviour
         targetTransform.localScale = baseScale; 
     }
 
+    /// <summary>
+    /// Fades a UI Graphic from one color to another.
+    /// </summary>
+    /// <param name="g">Graphic to fade.</param>
+    /// <param name="startCol">Starting color.</param>
+    /// <param name="endCol">Target color.</param>
+    /// <param name="duration">Fade duration in seconds.</param>
+    /// <returns>Coroutine enumerator for the color fade.</returns>
     IEnumerator FadeGraphicColor(Graphic g, Color startCol, Color endCol, float duration)
     {
         if (g == null) yield break;
@@ -1134,6 +1359,14 @@ public class DeviceSetupMenu : MonoBehaviour
         g.color = endCol;
     }
 
+    /// <summary>
+    /// Fades only the alpha channel of a UI Graphic.
+    /// </summary>
+    /// <param name="g">Graphic to fade.</param>
+    /// <param name="startAlpha">Starting alpha value.</param>
+    /// <param name="endAlpha">Target alpha value.</param>
+    /// <param name="duration">Fade duration in seconds.</param>
+    /// <returns>Coroutine enumerator for the alpha fade.</returns>
     IEnumerator FadeGraphicAlpha(Graphic g, float startAlpha, float endAlpha, float duration)
     {
         if (g == null) yield break;
@@ -1150,6 +1383,14 @@ public class DeviceSetupMenu : MonoBehaviour
         g.color = c;
     }
 
+    /// <summary>
+    /// Fades the emission color of a material.
+    /// </summary>
+    /// <param name="mat">Material whose emission color should change.</param>
+    /// <param name="startCol">Starting emission color.</param>
+    /// <param name="endCol">Target emission color.</param>
+    /// <param name="duration">Fade duration in seconds.</param>
+    /// <returns>Coroutine enumerator for the emission fade.</returns>
     IEnumerator FadeMaterialEmission(Material mat, Color startCol, Color endCol, float duration)
     {
         if (mat == null) yield break;
@@ -1163,6 +1404,11 @@ public class DeviceSetupMenu : MonoBehaviour
         mat.SetColor("_EmissionColor", endCol);
     }
 
+    /// <summary>
+    /// Sets a CanvasGroup alpha and updates its interaction flags to match visibility.
+    /// </summary>
+    /// <param name="cg">CanvasGroup to update.</param>
+    /// <param name="alpha">Target alpha value.</param>
     private void SetCGAlpha(CanvasGroup cg, float alpha)
     {
         if (cg == null) return;
@@ -1171,6 +1417,13 @@ public class DeviceSetupMenu : MonoBehaviour
         cg.blocksRaycasts = alpha > 0.1f;
     }
 
+    /// <summary>
+    /// Fades a CanvasGroup from transparent to a target alpha.
+    /// </summary>
+    /// <param name="cg">CanvasGroup to fade.</param>
+    /// <param name="targetAlpha">Target alpha value.</param>
+    /// <param name="duration">Fade duration in seconds, or automatic duration when zero.</param>
+    /// <returns>Coroutine enumerator for the fade.</returns>
     IEnumerator FadeIn(CanvasGroup cg, float targetAlpha, float duration = 0f)
     {
         if (cg == null) yield break;
@@ -1185,6 +1438,14 @@ public class DeviceSetupMenu : MonoBehaviour
         SetCGAlpha(cg, targetAlpha);
     }
 
+    /// <summary>
+    /// Fades an AudioSource volume between two levels.
+    /// </summary>
+    /// <param name="source">Audio source to adjust.</param>
+    /// <param name="startVol">Starting volume.</param>
+    /// <param name="endVol">Target volume.</param>
+    /// <param name="duration">Fade duration in seconds.</param>
+    /// <returns>Coroutine enumerator for the volume fade.</returns>
     IEnumerator FadeMusicVolume(AudioSource source, float startVol, float endVol, float duration)
     {
         float t = 0f;
@@ -1197,6 +1458,11 @@ public class DeviceSetupMenu : MonoBehaviour
         source.volume = endVol; 
     }
 
+    /// <summary>
+    /// Fades out this menu after successful calibration and switches to the next destination.
+    /// </summary>
+    /// <param name="playedClip">Confirmation clip used to time the transition delay.</param>
+    /// <returns>Coroutine enumerator for the fade and scene/menu switch.</returns>
     IEnumerator FadeOutAndSwitch(AudioClip playedClip)
     {
         if (transforplayer2 != null) transforplayer2.SetTrigger("TransForPlayer2");
