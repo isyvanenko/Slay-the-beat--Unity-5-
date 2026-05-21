@@ -1,0 +1,15 @@
+/* Small readability tweaks for generated Doxygen pages. */
+
+:root {
+  --page-background-color: #ffffff;
+  --primary-color: #7427d1;
+  --primary-dark-color: #4e1b91;
+}
+
+body {
+  line-height: 1.55;
+}
+
+.contents {
+  max-width: 1120px;
+}

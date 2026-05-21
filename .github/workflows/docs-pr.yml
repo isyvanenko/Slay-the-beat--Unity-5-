@@ -1,0 +1,40 @@
+name: Validate Documentation
+
+on:
+  pull_request:
+    paths:
+      - "Slay (The beat)/Assets/Project/Scripts/**"
+      - "docs/**"
+      - "Scripts/Docs/**"
+      - "Doxyfile"
+      - ".github/workflows/docs-pr.yml"
+      - ".github/workflows/docs.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-docs:
+    name: Validate Doxygen docs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Doxygen and Graphviz
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y doxygen graphviz
+
+      - name: Run Doxygen validation
+        shell: pwsh
+        run: ./Scripts/Docs/validate-doxygen.ps1
+
+      - name: Upload generated docs artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doxygen-html-pr
+          path: docs/generated/html
+          if-no-files-found: warn

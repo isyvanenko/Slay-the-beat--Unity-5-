@@ -1,0 +1,16 @@
+/**
+@defgroup ui UI Systems
+Menus, selectors, transitions, pause flow, and other player-facing interface scripts.
+
+@defgroup gameplay Gameplay Systems
+Runtime rhythm gameplay, note handling, scoring, chart loading, and session flow.
+
+@defgroup audio Audio Systems
+Music, sound effects, background ambience, and audio playback helpers.
+
+@defgroup tools Tools and Utilities
+Reusable helper scripts, scene utilities, persistence helpers, and editor-facing support code.
+
+@defgroup data Data and Configuration
+Shared data holders, bridge classes, configuration objects, and song metadata.
+*/

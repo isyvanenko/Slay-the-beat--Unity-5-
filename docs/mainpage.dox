@@ -1,0 +1,24 @@
+/**
+@page documentation_workflow Documentation Workflow
+
+@section intro_sec Overview
+
+This documentation is generated from the Unity C# scripts in
+`Slay (The beat)/Assets/Project/Scripts`.
+
+@section workflow_sec Documentation Workflow
+
+Pull requests validate Doxygen output without deploying it. Pushes to the
+default branch build the same output and publish `docs/generated/html` to
+GitHub Pages.
+
+@section groups_sec Groups
+
+Use the module list to browse related systems:
+
+- @ref ui
+- @ref gameplay
+- @ref audio
+- @ref tools
+- @ref data
+*/
