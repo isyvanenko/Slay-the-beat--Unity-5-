@@ -5,9 +5,12 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Project/Scenes/PromoScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Project/Scenes/WARNING.unity
+    guid: 86398c11b95024010b0b6477ce124ebe
   - enabled: 1
     path: Assets/Project/Scenes/PreLaunch.unity
     guid: f0809b30a76f3354ca9cb26cc2518d9b
@@ -17,7 +20,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Project/Scenes/PlayerSelection.unity
     guid: ec393415eba9b476785341bbbe6f1468
-  - enabled: 1
+  - enabled: 0
     path: Assets/Project/Scenes/Menu.unity
     guid: fbce9c1ced6634413a0638752db18afb
   - enabled: 1
@@ -29,10 +32,10 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Project/Scenes/SongSelection.unity
     guid: 080621964840d4b54a3f6eb40c00e984
-  - enabled: 1
+  - enabled: 0
     path: Assets/Project/Scenes/ST_AngelOfYourDreams.unity
     guid: ba763ffbbc74c4335aab9d25f01948df
-  - enabled: 1
+  - enabled: 0
     path: Assets/Project/Scenes/ST_PaintedSmile.unity
     guid: 40171102dd38f4a36b32e2c4d195e9cc
   - enabled: 1
@@ -41,13 +44,13 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Project/Scenes/ST_CashOnMe.unity
     guid: 2400cfe8df745458994769c38341d8f8
-  - enabled: 1
+  - enabled: 0
     path: Assets/Project/Scenes/Feedback_Scene.unity
     guid: 23d5fe574c9814d9d9c3779a854b4062
-  - enabled: 1
+  - enabled: 0
     path: Assets/Project/Scenes/ST_FollowMyRhytm.unity
     guid: 28c56dfb47c674de58f6bbf7d4519b31
-  - enabled: 1
+  - enabled: 0
     path: Assets/Project/Scenes/ST_Denied.unity
     guid: b39e5c7d937ab4c398a92d1cbdf6506f
   - enabled: 1
@@ -56,16 +59,16 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Project/Scenes/ST_BadBEnergy.unity
     guid: 3b3292c05c8164c9d88dcc8851807b34
-  - enabled: 1
+  - enabled: 0
     path: Assets/Project/Scenes/StageFeedback.unity
     guid: 77f42c6875fc948d8b15d200ef272248
-  - enabled: 1
+  - enabled: 0
     path: Assets/Project/Scenes/ST_GlamoutAndBeart.unity
     guid: 30231c4934cfc48be8d0491db1bc3898
-  - enabled: 1
+  - enabled: 0
     path: Assets/Project/Scenes/ST_FallenInLove.unity
     guid: 51d06a0edd1dd44b9af41d1106d721ec
-  - enabled: 1
+  - enabled: 0
     path: Assets/Project/Scenes/AmountOfStagesSelection.unity
     guid: 5a17c328d0f59a74a9e1e9e524c33908
   m_configObjects:

@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using System.Collections;
 using TMPro;
+using System;
 
 /// <summary>
 /// Main menu for arcade mode with animated button selection and scene navigation.
@@ -18,9 +19,10 @@ using TMPro;
 /// - Input cooldown to prevent rapid navigation
 /// - Audio feedback on selection change
 /// - Fade-in effect when the menu becomes active
-/// - Special handling for the START button (extra scaling, separate object activation)
+/// - Special handling for any button (configurable which index shows special objects)
 /// - Scene transitions using TransitionManager or direct SceneManager
 /// - Editor and build quit handling for EXIT button
+/// - Inspector controls for changing main index and button actions
 /// </remarks>
 public class ArcadeMainMenu : MonoBehaviour
 {
@@ -40,6 +42,14 @@ public class ArcadeMainMenu : MonoBehaviour
     
     /// <summary>Array of display names corresponding to each button index.</summary>
     public string[] selectionNames;
+
+    [Header("Main Index Control")]
+    [Tooltip("Currently selected button index (0-4). Can be changed in inspector.")]
+    [Range(0, 4)]
+    public int mainIndex = 2;
+    
+    [Tooltip("If enabled, the main index will be reset to the inspector value when the menu becomes active.")]
+    public bool resetIndexOnEnable = true;
 
     [Header("Button Scale Settings")]
     [Tooltip("Extra scale added to buttons 0,1,3,4 when selected")]
@@ -84,9 +94,23 @@ public class ArcadeMainMenu : MonoBehaviour
     /// <summary>Sound clip played when switching selection to a different button.</summary>
     public AudioClip switchSound;
 
-    [Header("Special Objects For Start Button (Index 2)")]
-    /// <summary>GameObjects that are shown/hidden when the START button is selected.</summary>
-    public GameObject[] startButtonObjects;
+    [Header("Special Objects For Selected Button")]
+    [Tooltip("GameObjects that are shown/hidden based on which button index is selected.")]
+    public SpecialObjectMapping[] specialObjectsPerIndex;
+
+    [Serializable]
+    public class SpecialObjectMapping
+    {
+        [Tooltip("Which button index triggers these objects (0-4)")]
+        [Range(0, 4)]
+        public int buttonIndex;
+        
+        [Tooltip("GameObjects to show/hide when this button index is selected")]
+        public GameObject[] objectsToControl;
+        
+        [Tooltip("Should these objects be shown (true) or hidden (false) when this button is selected?")]
+        public bool showWhenSelected = true;
+    }
 
     [Header("Scene Names")]
     /// <summary>Scene name for the RECORDS menu.</summary>
@@ -100,6 +124,23 @@ public class ArcadeMainMenu : MonoBehaviour
     
     /// <summary>Scene name for the SETTINGS menu.</summary>
     public string settingsScene;
+
+    [Header("Custom Button Actions")]
+    [Tooltip("Custom UnityEvents for each button index. These will be triggered instead of default scene loading.")]
+    public ButtonActionEvent[] customButtonActions;
+
+    [Serializable]
+    public class ButtonActionEvent
+    {
+        public string buttonName;
+        public UnityEngine.Events.UnityEvent onButtonSelected;
+        
+        public ButtonActionEvent(string name)
+        {
+            buttonName = name;
+            onButtonSelected = new UnityEngine.Events.UnityEvent();
+        }
+    }
 
     // Input
     private InputActions input;
@@ -155,6 +196,26 @@ public class ArcadeMainMenu : MonoBehaviour
             if (buttons[i] != null)
                 originalScales[i] = buttons[i].localScale;
         }
+
+        // Initialize custom button actions if needed
+        if (customButtonActions == null || customButtonActions.Length == 0)
+        {
+            InitializeDefaultButtonActions();
+        }
+    }
+
+    /// <summary>
+    /// Initializes default button actions if none are set in the inspector.
+    /// </summary>
+    private void InitializeDefaultButtonActions()
+    {
+        customButtonActions = new ButtonActionEvent[5];
+        string[] defaultNames = { "Records", "News", "Start", "Settings", "Exit" };
+        
+        for (int i = 0; i < 5; i++)
+        {
+            customButtonActions[i] = new ButtonActionEvent(defaultNames[i]);
+        }
     }
 
     /// <summary>
@@ -174,6 +235,12 @@ public class ArcadeMainMenu : MonoBehaviour
         select.Enable();
         startBtn.Enable();
 
+        // Reset index if specified
+        if (resetIndexOnEnable)
+        {
+            index = Mathf.Clamp(mainIndex, 0, buttons.Length - 1);
+        }
+
         SetInitialVisuals();
 
         canvasGroup.alpha = 0f;
@@ -182,8 +249,6 @@ public class ArcadeMainMenu : MonoBehaviour
 
         isFading = true;
         hasSelected = false;
-
-        index = 2;
 
         StartCoroutine(FadeInCanvas());
     }
@@ -230,7 +295,7 @@ public class ArcadeMainMenu : MonoBehaviour
 
         isFading = false;
 
-        UpdateStartButtonObjects();
+        UpdateSpecialObjects();
         UpdateSelectionText();
     }
 
@@ -242,6 +307,14 @@ public class ArcadeMainMenu : MonoBehaviour
         if (isFading || hasSelected)
             return;
 
+        // Sync inspector main index with current index (allows runtime changes)
+        if (mainIndex != index && !isFading && !hasSelected)
+        {
+            index = Mathf.Clamp(mainIndex, 0, buttons.Length - 1);
+            UpdateSpecialObjects();
+            UpdateSelectionText();
+        }
+
         pulseTime += Time.unscaledDeltaTime;
 
         for (int i = 0; i < buttons.Length; i++)
@@ -251,7 +324,7 @@ public class ArcadeMainMenu : MonoBehaviour
             Vector3 baseScale = originalScales[i];
             Vector3 targetScale = baseScale;
 
-            // START BUTTON
+            // START BUTTON (index 2)
             if (i == 2)
             {
                 if (selected)
@@ -327,8 +400,11 @@ public class ArcadeMainMenu : MonoBehaviour
         }
 
         index = (index + direction + buttons.Length) % buttons.Length;
+        
+        // Update the inspector-visible main index
+        mainIndex = index;
 
-        UpdateStartButtonObjects();
+        UpdateSpecialObjects();
         UpdateSelectionText();
     }
 
@@ -336,12 +412,13 @@ public class ArcadeMainMenu : MonoBehaviour
     /// Executes the action associated with the currently selected button.
     /// </summary>
     /// <remarks>
+    /// Supports both custom UnityEvents and default scene loading behavior.
     /// Button actions:
-    /// - Index 0 (RECORDS): Loads recordsScene
-    /// - Index 1 (NEWS): Loads newsScene
-    /// - Index 2 (START): Loads gameplayScene
-    /// - Index 3 (SETTINGS): Loads settingsScene
-    /// - Index 4 (EXIT): Quits the application (or stops play in editor)
+    /// - Index 0 (RECORDS): Loads recordsScene or triggers custom event
+    /// - Index 1 (NEWS): Loads newsScene or triggers custom event
+    /// - Index 2 (START): Loads gameplayScene or triggers custom event
+    /// - Index 3 (SETTINGS): Loads settingsScene or triggers custom event
+    /// - Index 4 (EXIT): Quits the application or triggers custom event
     /// </remarks>
     private void SelectCurrentItem()
     {
@@ -350,6 +427,19 @@ public class ArcadeMainMenu : MonoBehaviour
 
         hasSelected = true;
 
+        // Check for custom action first
+        if (customButtonActions != null && index < customButtonActions.Length)
+        {
+            var customAction = customButtonActions[index];
+            if (customAction != null && customAction.onButtonSelected != null && customAction.onButtonSelected.GetPersistentEventCount() > 0)
+            {
+                Debug.Log($"Executing custom action for {customAction.buttonName}");
+                customAction.onButtonSelected.Invoke();
+                return;
+            }
+        }
+
+        // Fall back to default actions
         switch (index)
         {
             // RECORDS
@@ -360,6 +450,12 @@ public class ArcadeMainMenu : MonoBehaviour
                 {
                     if (TransitionManager.Instance != null)
                         TransitionManager.Instance.LoadScene(recordsScene);
+                    else
+                        Debug.LogWarning("TransitionManager.Instance is null! Cannot load scene: " + recordsScene);
+                }
+                else
+                {
+                    Debug.LogWarning("Records scene name is empty!");
                 }
 
                 break;
@@ -372,6 +468,12 @@ public class ArcadeMainMenu : MonoBehaviour
                 {
                     if (TransitionManager.Instance != null)
                         TransitionManager.Instance.LoadScene(newsScene);
+                    else
+                        Debug.LogWarning("TransitionManager.Instance is null! Cannot load scene: " + newsScene);
+                }
+                else
+                {
+                    Debug.LogWarning("News scene name is empty!");
                 }
 
                 break;
@@ -384,6 +486,12 @@ public class ArcadeMainMenu : MonoBehaviour
                 {
                     if (TransitionManager.Instance != null)
                         TransitionManager.Instance.LoadScene(gameplayScene);
+                    else
+                        Debug.LogWarning("TransitionManager.Instance is null! Cannot load scene: " + gameplayScene);
+                }
+                else
+                {
+                    Debug.LogWarning("Gameplay scene name is empty!");
                 }
 
                 break;
@@ -396,6 +504,12 @@ public class ArcadeMainMenu : MonoBehaviour
                 {
                     if (TransitionManager.Instance != null)
                         TransitionManager.Instance.LoadScene(settingsScene);
+                    else
+                        Debug.LogWarning("TransitionManager.Instance is null! Cannot load scene: " + settingsScene);
+                }
+                else
+                {
+                    Debug.LogWarning("Settings scene name is empty!");
                 }
 
                 break;
@@ -418,17 +532,80 @@ public class ArcadeMainMenu : MonoBehaviour
     }
 
     /// <summary>
-    /// Shows or hides the start button special objects based on whether START is selected.
+    /// Public method to set the selected index programmatically.
     /// </summary>
-    private void UpdateStartButtonObjects()
+    /// <param name="newIndex">The new index to select (0-4).</param>
+    public void SetSelectedIndex(int newIndex)
     {
-        bool startSelected = (index == 2);
+        if (isFading || hasSelected)
+            return;
 
-        foreach (GameObject obj in startButtonObjects)
+        newIndex = Mathf.Clamp(newIndex, 0, buttons.Length - 1);
+        
+        if (newIndex != index)
         {
-            if (obj != null)
+            index = newIndex;
+            mainIndex = index;
+            
+            if (audioSource != null && switchSound != null)
             {
-                obj.SetActive(startSelected);
+                audioSource.PlayOneShot(switchSound);
+            }
+            
+            UpdateSpecialObjects();
+            UpdateSelectionText();
+        }
+    }
+
+    /// <summary>
+    /// Public method to get the currently selected index.
+    /// </summary>
+    /// <returns>The current selected index.</returns>
+    public int GetSelectedIndex()
+    {
+        return index;
+    }
+
+    /// <summary>
+    /// Shows or hides special objects based on the currently selected button index.
+    /// Supports multiple object groups for different button indices.
+    /// </summary>
+    private void UpdateSpecialObjects()
+    {
+        // First, hide all special objects from all mappings
+        if (specialObjectsPerIndex != null)
+        {
+            foreach (var mapping in specialObjectsPerIndex)
+            {
+                if (mapping != null && mapping.objectsToControl != null)
+                {
+                    foreach (GameObject obj in mapping.objectsToControl)
+                    {
+                        if (obj != null)
+                        {
+                            // If this mapping's button index is NOT the current selection, hide its objects
+                            if (mapping.buttonIndex != index)
+                            {
+                                obj.SetActive(!mapping.showWhenSelected);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Then, show/hide objects for the current selection based on its showWhenSelected flag
+            foreach (var mapping in specialObjectsPerIndex)
+            {
+                if (mapping != null && mapping.buttonIndex == index && mapping.objectsToControl != null)
+                {
+                    foreach (GameObject obj in mapping.objectsToControl)
+                    {
+                        if (obj != null)
+                        {
+                            obj.SetActive(mapping.showWhenSelected);
+                        }
+                    }
+                }
             }
         }
     }
@@ -456,8 +633,6 @@ public class ArcadeMainMenu : MonoBehaviour
 
         hasSelected = false;
 
-        index = 2;
-
         for (int i = 0; i < buttons.Length; i++)
         {
             buttons[i].localScale = originalScales[i];
@@ -473,7 +648,23 @@ public class ArcadeMainMenu : MonoBehaviour
             }
         }
 
-        UpdateStartButtonObjects();
+        UpdateSpecialObjects();
         UpdateSelectionText();
+    }
+
+    /// <summary>
+    /// Called in the editor when the script is loaded or a value changes.
+    /// Validates the main index range.
+    /// </summary>
+    private void OnValidate()
+    {
+        mainIndex = Mathf.Clamp(mainIndex, 0, buttons != null ? buttons.Length - 1 : 4);
+        
+        if (buttons != null && index != mainIndex && Application.isPlaying && !isFading && !hasSelected)
+        {
+            index = mainIndex;
+            UpdateSpecialObjects();
+            UpdateSelectionText();
+        }
     }
 }
