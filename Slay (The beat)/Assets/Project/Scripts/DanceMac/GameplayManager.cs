@@ -212,6 +212,19 @@ public class GameplayManager : MonoBehaviour
             pauseMenu.onBackToMenu.AddListener(BackToSongSelection);
         }
 
+        // Pass song grade data to score managers for star achievements
+        if (p1ScoreManager != null && thisSongGrades != null)
+        {
+            p1ScoreManager.SetSongGradeData(thisSongGrades);
+            Debug.Log("<color=cyan>[STARS]</color> Star thresholds set for Player 1");
+        }
+        
+        if (p2ScoreManager != null && thisSongGrades != null && SessionConfig.PlayerCount == 2)
+        {
+            p2ScoreManager.SetSongGradeData(thisSongGrades);
+            Debug.Log("<color=cyan>[STARS]</color> Star thresholds set for Player 2");
+        }
+
         dspSongStartTime = AudioSettings.dspTime + startDelay;
         if (musicSource != null && musicSource.clip != null)
             musicSource.PlayScheduled(dspSongStartTime);
