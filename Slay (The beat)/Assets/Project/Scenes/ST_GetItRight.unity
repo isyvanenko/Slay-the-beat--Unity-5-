@@ -8052,10 +8052,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1249442782}
     m_Modifications:
+    - target: {fileID: 616135148465323549, guid: af32502047b244e098119268780e83d5, type: 3}
+      propertyPath: charAnimator
+      value: 
+      objectReference: {fileID: 1636597703}
+    - target: {fileID: 1486013877271656053, guid: af32502047b244e098119268780e83d5, type: 3}
+      propertyPath: charAnimator
+      value: 
+      objectReference: {fileID: 1636597703}
     - target: {fileID: 2382928524789281845, guid: af32502047b244e098119268780e83d5, type: 3}
       propertyPath: m_text
       value: PLAYER 2
       objectReference: {fileID: 0}
+    - target: {fileID: 5004135473776595975, guid: af32502047b244e098119268780e83d5, type: 3}
+      propertyPath: charAnimator
+      value: 
+      objectReference: {fileID: 1636597703}
+    - target: {fileID: 8214761233098150145, guid: af32502047b244e098119268780e83d5, type: 3}
+      propertyPath: charAnimator
+      value: 
+      objectReference: {fileID: 1636597703}
     - target: {fileID: 8244087579663012006, guid: af32502047b244e098119268780e83d5, type: 3}
       propertyPath: m_Name
       value: PlayAreaContainer (1)
