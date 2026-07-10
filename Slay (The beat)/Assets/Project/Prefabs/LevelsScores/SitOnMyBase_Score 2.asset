@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7208081acd094876a0209816300d0c5, type: 3}
+  m_Name: SitOnMyBase_Score 2
+  m_EditorClassIdentifier: 
+  isRandomOption: 0
+  songName: Sit on my BASS
+  songJacketSprite: {fileID: 21300000, guid: 6ae2c3c859fc64faca2be82ca068ca98, type: 3}
+  gameplaySceneName: ST_SitOnMyFace
+  easySteps: 97
+  mediumSteps: 122
+  hardSteps: 179
+  easyChart: {fileID: 4900000, guid: 72c18b357dfa84d45a6c2020db6511fe, type: 3}
+  mediumChart: {fileID: 4900000, guid: ce634cf5dfd1743e5aa270d426de89ba, type: 3}
+  hardChart: {fileID: 4900000, guid: 8394413167a064a03ac966f09a2ba02a, type: 3}
+  songPreviewClip: {fileID: 8300000, guid: dd7ef322aec8d456493d79ed60c9735d, type: 3}
+  characterSprite: {fileID: 21300000, guid: e7b75e55f50da4ad083f832f31f99324, type: 3}
+  p1CharacterSprite: {fileID: 21300000, guid: 585e261395ef34994812ab63cdf2c602, type: 3}
+  p2CharacterSprite: {fileID: 21300000, guid: be2865f9c718849aaa78e2c37881f0b0, type: 3}
+  environmentSprite: {fileID: 21300000, guid: 08fdfb71d524f4c0d8505a21253e0af6, type: 3}
+  visualGradient:
+    serializedVersion: 2
+    key0: {r: 1, g: 0, b: 0, a: 1}
+    key1: {r: 0, g: 0, b: 0, a: 1}
+    key2: {r: 0, g: 0, b: 0, a: 0}
+    key3: {r: 0, g: 0, b: 0, a: 0}
+    key4: {r: 0, g: 0, b: 0, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 0
+    ctime1: 65535
+    ctime2: 0
+    ctime3: 0
+    ctime4: 0
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 65535
+    atime2: 0
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_ColorSpace: -1
+    m_NumColorKeys: 2
+    m_NumAlphaKeys: 2
+  fiveStars: 8500000
+  fourStars: 7000000
+  threeStars: 5550000
+  twoStars: 2000000
+  oneStar: 1000

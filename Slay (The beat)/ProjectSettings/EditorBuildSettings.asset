@@ -68,6 +68,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Project/Scenes/AmountOfStagesSelection.unity
     guid: 5a17c328d0f59a74a9e1e9e524c33908
+  - enabled: 1
+    path: Assets/Project/Scenes/ST_SitOnMyFace.unity
+    guid: 86bbd9629dba647fd98d48b830d57e40
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 5580f54f7e37f4a7095a2a8a5f9cc948, type: 2}
   m_UseUCBPForAssetBundles: 0
