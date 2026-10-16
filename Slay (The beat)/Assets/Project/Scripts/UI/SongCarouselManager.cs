@@ -5,6 +5,7 @@ using System.Collections;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.SceneManagement;
+using UnityEngine.Video;
 
 /// <summary>
 /// Manages the song selection carousel, splash intro, difficulty selection,
@@ -168,6 +169,96 @@ public class SongCarouselManager : MonoBehaviour
     /// <summary>Original difficulty box sprites restored when difficulties are unlocked.</summary>
     private Sprite[] originalSprites = new Sprite[3];
 
+    // ========== ANIMATION TUNING (code-only, nothing to assign in the Inspector) ==========
+
+    /// <summary>Duration of panel crossfades between splash, carousel, and difficulty screens.</summary>
+    private const float TransitionDuration = 0.4f;
+    /// <summary>How much the difficulty panel scales while entering or leaving.</summary>
+    private const float PanelScaleOffset = 0.06f;
+    /// <summary>Scale kick applied to a carousel block when it becomes selected.</summary>
+    private const float CarouselPunch = 0.08f;
+    /// <summary>Scale kick applied to a difficulty box when it becomes selected.</summary>
+    private const float DifficultyPunch = 0.1f;
+    /// <summary>How quickly scale kicks settle back to rest.</summary>
+    private const float PunchDecay = 10f;
+    /// <summary>Amplitude of the idle "breathing" on the selected item.</summary>
+    private const float BreathAmount = 0.015f;
+    /// <summary>Speed of the idle "breathing" on the selected item.</summary>
+    private const float BreathSpeed = 2.4f;
+    /// <summary>Duration of title, character, and background change animations.</summary>
+    private const float MainVisualDuration = 0.45f;
+    /// <summary>Horizontal distance the character slides in from when the song changes.</summary>
+    private const float CharacterSlideDistance = 90f;
+    /// <summary>Horizontal distance the title slides in from when the song changes.</summary>
+    private const float TitleSlideDistance = 40f;
+    /// <summary>Starting zoom of the background when it crossfades in.</summary>
+    private const float BackgroundZoom = 1.05f;
+    /// <summary>Seconds used to fade out the previous preview track.</summary>
+    private const float MusicFadeOutTime = 0.15f;
+    /// <summary>Seconds used to fade in the new preview track.</summary>
+    private const float MusicFadeInTime = 0.6f;
+    /// <summary>Number of LEDs across the width of the demo video.</summary>
+    private const float LedDotsAcross = 160f;
+    /// <summary>LED diameter as a fraction of its cell (1 = dots touch).</summary>
+    private const float LedDotSize = 0.8f;
+    /// <summary>Edge softness of each LED.</summary>
+    private const float LedDotSoftness = 0.2f;
+    /// <summary>Brightness boost so the dotted video doesn't look dimmer than the original.</summary>
+    private const float LedBrightness = 1.25f;
+
+    /// <summary>Smoothed carousel block scales before punch and breathing are applied.</summary>
+    private List<Vector3> blockBaseScales = new List<Vector3>();
+    /// <summary>Current scale kick per carousel block.</summary>
+    private List<float> blockPunch = new List<float>();
+    /// <summary>Slot each carousel block occupied last frame, or -1 when off-screen.</summary>
+    private List<int> blockSlots = new List<int>();
+    /// <summary>Reusable index list used to sort carousel blocks by depth.</summary>
+    private List<int> depthOrder = new List<int>();
+
+    /// <summary>Smoothed difficulty box scales before punch and breathing are applied.</summary>
+    private float[] diffBaseScales = new float[0];
+    /// <summary>Current scale kick per difficulty box.</summary>
+    private float[] diffPunch = new float[0];
+    /// <summary>Original rotations of the difficulty boxes, used to restore after a locked shake.</summary>
+    private Quaternion[] diffBaseRotations = new Quaternion[0];
+
+    /// <summary>Direction of the last carousel move, used to choose slide-in direction.</summary>
+    private int lastMoveDir = 0;
+    /// <summary>Song index currently shown in the main visuals, or -1 before the first display.</summary>
+    private int lastDisplayedSongIndex = -1;
+    /// <summary>Last whole second shown by the timer, used to trigger tick animations.</summary>
+    private int lastTimerSecond = -1;
+    /// <summary>Current scale kick on the timer text.</summary>
+    private float timerPunch = 0f;
+
+    /// <summary>Runtime-created image behind the background used to crossfade between songs.</summary>
+    private Image backgroundGhost;
+    /// <summary>Active preview music fade coroutine, if any.</summary>
+    private Coroutine musicRoutine;
+
+    /// <summary>Two runtime video players, swapped so the old video stays visible while the next one loads.</summary>
+    private VideoPlayer[] videoPlayers = new VideoPlayer[0];
+    /// <summary>Raw images that display each video player's render texture above the background.</summary>
+    private RawImage[] videoLayers = new RawImage[0];
+    /// <summary>Render textures each video player draws into.</summary>
+    private RenderTexture[] videoTextures = new RenderTexture[0];
+    /// <summary>Which video layer is currently showing, or -1 when no video is visible.</summary>
+    private int activeVideoLayer = -1;
+    /// <summary>Video players that were playing when the menu was paused.</summary>
+    private bool[] videoPausedByMenu = new bool[0];
+    /// <summary>Active preview video load/fade coroutine, if any.</summary>
+    private Coroutine videoRoutine;
+    /// <summary>LED screen materials created for the video layers.</summary>
+    private Material[] videoMaterials = new Material[0];
+    /// <summary>Running animation coroutines keyed by the object they animate.</summary>
+    private Dictionary<Object, Coroutine> runningAnimations = new Dictionary<Object, Coroutine>();
+    /// <summary>Rest scales captured the first time a transform is animated.</summary>
+    private Dictionary<Transform, Vector3> baseScales = new Dictionary<Transform, Vector3>();
+    /// <summary>Rest anchored positions captured the first time a rect is animated.</summary>
+    private Dictionary<RectTransform, Vector2> basePositions = new Dictionary<RectTransform, Vector2>();
+    /// <summary>Rest alpha values captured the first time a graphic is animated.</summary>
+    private Dictionary<Graphic, float> baseAlphas = new Dictionary<Graphic, float>();
+
     /// <summary>
     /// Creates input actions and registers UI navigation, confirm, and cancel callbacks.
     /// </summary>
@@ -229,10 +320,25 @@ public class SongCarouselManager : MonoBehaviour
             originalScales.Add(rt.localScale);
             spawnedBlocks.Add(rt);
             spawnedGroups.Add(go.GetComponent<CanvasGroup>() ?? go.AddComponent<CanvasGroup>());
-            
+            blockBaseScales.Add(rt.localScale);
+            blockPunch.Add(0f);
+            blockSlots.Add(-1);
+
             go.GetComponent<SongBlock>()?.UpdateData(allSongData[i]);
         }
-        
+
+        diffBaseScales = new float[difficultyBoxes.Length];
+        diffPunch = new float[difficultyBoxes.Length];
+        diffBaseRotations = new Quaternion[difficultyBoxes.Length];
+        for (int i = 0; i < difficultyBoxes.Length; i++)
+        {
+            diffBaseScales[i] = normalScale;
+            diffBaseRotations[i] = difficultyBoxes[i].localRotation;
+        }
+
+        CreateBackgroundGhost();
+        CreateVideoLayers();
+
         for (int i = 0; i < difficultyBoxes.Length && i < 3; i++)
         {
             Image img = difficultyBoxes[i].GetComponent<Image>();
@@ -262,18 +368,41 @@ public class SongCarouselManager : MonoBehaviour
     {
         isTransitioning = true;
 
-        yield return new WaitForSeconds(splashDuration);
-        
+        // Splash text intro: letters tighten in while fading up, then gently breathe.
+        float elapsed = 0f;
+        float baseSpacing = splashText != null ? splashText.characterSpacing : 0f;
+        float splashAlpha = splashText != null ? GetBaseAlpha(splashText) : 1f;
+        Vector3 splashScale = splashText != null ? GetBaseScale(splashText.rectTransform) : Vector3.one;
+        while (elapsed < splashDuration)
+        {
+            elapsed += Time.deltaTime;
+            if (splashText != null)
+            {
+                float intro = EaseOutCubic(Mathf.Clamp01(elapsed / 0.9f));
+                splashText.characterSpacing = Mathf.Lerp(baseSpacing + 40f, baseSpacing, intro);
+                SetAlpha(splashText, splashAlpha * intro);
+                float breath = 1f + Mathf.Sin(elapsed * BreathSpeed) * BreathAmount * intro;
+                splashText.rectTransform.localScale = splashScale * Mathf.Lerp(0.92f, 1f, intro) * breath;
+            }
+            yield return null;
+        }
+
         Canvas.ForceUpdateCanvases();
-        
+
         foreach (RectTransform slot in slots)
         {
             LayoutRebuilder.ForceRebuildLayoutImmediate(slot);
         }
-        
+
         SnapToPositions();
-        
+        for (int i = 0; i < spawnedGroups.Count; i++) spawnedGroups[i].alpha = 0f;
+
+        if (splashText != null)
+            RunAnimation(splashText, ScaleRoutine(splashText.rectTransform, splashText.rectTransform.localScale, splashScale * 1.15f, TransitionDuration));
+        Coroutine introRoutine = StartCoroutine(CarouselIntroRoutine());
+
         yield return StartCoroutine(FadeGroups(splashCanvasGroup, carouselCanvasGroup));
+        yield return introRoutine;
 
         currentState = MenuState.Carousel;
         isTransitioning = false;
@@ -337,7 +466,7 @@ public class SongCarouselManager : MonoBehaviour
 
         if (currentState == MenuState.Carousel)
             UpdateCarouselMovement();
-        else if (currentState == MenuState.Difficulty)
+        else if (currentState == MenuState.Difficulty || currentState == MenuState.Confirming)
             UpdateDifficultyVisuals();
     }
 
@@ -359,14 +488,25 @@ public class SongCarouselManager : MonoBehaviour
 
         if (timerText != null)
         {
-            timerText.text = Mathf.CeilToInt(currentTimer).ToString();
-            timerText.color = currentTimer < 5f ? Color.red : Color.white;
+            int shownSecond = Mathf.CeilToInt(currentTimer);
+            timerText.text = shownSecond.ToString();
+
+            // Tick "kick" on each second during the last 10 seconds, stronger in the final 5.
+            if (shownSecond != lastTimerSecond)
+            {
+                if (lastTimerSecond != -1 && shownSecond <= 10)
+                    timerPunch = shownSecond <= 5 ? 0.35f : 0.15f;
+                lastTimerSecond = shownSecond;
+            }
+            timerPunch = Mathf.Lerp(timerPunch, 0f, Damp(PunchDecay));
+            timerText.rectTransform.localScale = GetBaseScale(timerText.rectTransform) * (1f + timerPunch);
+            timerText.color = Color.Lerp(timerText.color, currentTimer < 5f ? Color.red : Color.white, Damp(8f));
         }
 
         if (timerSlider != null)
         {
             float targetValue = Mathf.Clamp01(currentTimer / maxTimerValue);
-            timerSlider.value = Mathf.Lerp(timerSlider.value, targetValue, Time.deltaTime * 5f);
+            timerSlider.value = Mathf.Lerp(timerSlider.value, targetValue, Damp(5f));
         }
 
         if (currentTimer <= 0)
@@ -431,8 +571,9 @@ public class SongCarouselManager : MonoBehaviour
     public void ResetTimer()
     {
         currentTimer = maxTimerValue;
-        if (timerSlider != null) timerSlider.value = 1f;
-        
+        lastTimerSecond = -1;
+        // The slider is not snapped to full here; HandleArcadeTimer smoothly refills it.
+
         nextWarningTime = maxTimerValue - 10f; 
         
         if (warningCanvasGroup != null) 
@@ -471,6 +612,9 @@ public class SongCarouselManager : MonoBehaviour
         if (currentState == MenuState.Carousel)
         {
             currentSongIndex = (currentSongIndex + dir + allSongData.Count) % allSongData.Count;
+            lastMoveDir = dir;
+            blockPunch[currentSongIndex] = CarouselPunch;
+            ApplyDepthOrder();
             if (sfxSource && moveSound) sfxSource.PlayOneShot(moveSound);
             UpdateSelectionVisuals();
         }
@@ -488,11 +632,18 @@ public class SongCarouselManager : MonoBehaviour
             if (next != currentDiffIndex && !lockedDifficulties[next])
             {
                 currentDiffIndex = next;
+                diffPunch[currentDiffIndex] = DifficultyPunch;
                 if (sfxSource && moveSound) sfxSource.PlayOneShot(moveSound);
             }
-            else if (lockedDifficulties[next] && sfxSource && lockedSound)
+            else if (lockedDifficulties[next])
             {
-                sfxSource.PlayOneShot(lockedSound);
+                RunAnimation(difficultyBoxes[next], ShakeRoutine(next));
+                if (sfxSource && lockedSound) sfxSource.PlayOneShot(lockedSound);
+            }
+            else
+            {
+                // Hit the end of the row: small nudge on the current box.
+                diffPunch[currentDiffIndex] = DifficultyPunch * 0.5f;
             }
         }
     }
@@ -527,9 +678,40 @@ public class SongCarouselManager : MonoBehaviour
             secretRandomSong = null; 
         }
 
-        if (mainSongTitleText != null) mainSongTitleText.text = currentData.songName;
-        if (mainCharacterDisplay != null) mainCharacterDisplay.sprite = currentData.characterSprite;
-        if (mainBackgroundDisplay != null) mainBackgroundDisplay.sprite = currentData.environmentSprite;
+        // Re-displaying the same song (e.g. the initial layout refresh) should not replay animations or restart music.
+        bool songChanged = currentSongIndex != lastDisplayedSongIndex;
+        lastDisplayedSongIndex = currentSongIndex;
+
+        if (mainSongTitleText != null)
+        {
+            mainSongTitleText.text = currentData.songName;
+            if (songChanged)
+                RunAnimation(mainSongTitleText, PopInRoutine(mainSongTitleText, new Vector2(lastMoveDir * TitleSlideDistance, 0f), 1.08f, MainVisualDuration));
+        }
+
+        if (mainCharacterDisplay != null)
+        {
+            bool spriteChanged = mainCharacterDisplay.sprite != currentData.characterSprite;
+            mainCharacterDisplay.sprite = currentData.characterSprite;
+            if (songChanged && spriteChanged)
+            {
+                Vector2 slideFrom = lastMoveDir != 0 ? new Vector2(lastMoveDir * CharacterSlideDistance, 0f) : new Vector2(0f, -CharacterSlideDistance * 0.5f);
+                RunAnimation(mainCharacterDisplay, PopInRoutine(mainCharacterDisplay, slideFrom, 0.96f, MainVisualDuration * 1.2f));
+            }
+        }
+
+        // Songs with a demo video hide the background image entirely (PreviewVideoRoutine fades it out
+        // once the video is ready), so the gaps between the LED dots are fully transparent.
+        bool songHasVideo = currentData.previewVideo != null && videoPlayers.Length == 2;
+        if (mainBackgroundDisplay != null && !songHasVideo)
+        {
+            Sprite previous = mainBackgroundDisplay.sprite;
+            bool backgroundHidden = mainBackgroundDisplay.color.a < GetBaseAlpha(mainBackgroundDisplay) - 0.01f;
+            if (songChanged && (previous != currentData.environmentSprite || backgroundHidden))
+                RunAnimation(mainBackgroundDisplay, BackgroundCrossfadeRoutine(previous, currentData.environmentSprite));
+            else
+                mainBackgroundDisplay.sprite = currentData.environmentSprite;
+        }
 
         // Update visual pulses when song changes
         if (autoUpdateVisualPulses)
@@ -537,12 +719,22 @@ public class SongCarouselManager : MonoBehaviour
             UpdateVisualPulses();
         }
 
-        if (musicSource && currentData.songPreviewClip && !isPaused && (pauseMenu == null || !pauseMenu.IsPaused()))
+        if (songChanged && !isPaused && (pauseMenu == null || !pauseMenu.IsPaused()))
         {
-            musicSource.Stop();
-            musicSource.clip = currentData.songPreviewClip;
-            musicSource.volume = musicMaxVolume;
-            musicSource.Play();
+            bool hasVideo = currentData.previewVideo != null && videoPlayers.Length == 2;
+
+            // Songs with a demo video start their preview music only once the video is ready (see PreviewVideoRoutine).
+            if (videoPlayers.Length == 2)
+            {
+                if (videoRoutine != null) StopCoroutine(videoRoutine);
+                videoRoutine = StartCoroutine(PreviewVideoRoutine(currentData));
+            }
+
+            if (!hasVideo && musicSource && currentData.songPreviewClip)
+            {
+                if (musicRoutine != null) StopCoroutine(musicRoutine);
+                musicRoutine = StartCoroutine(SwitchPreviewRoutine(currentData.songPreviewClip));
+            }
         }
     }
 
@@ -637,14 +829,16 @@ public class SongCarouselManager : MonoBehaviour
             }
             
             currentState = MenuState.Confirming;
+            diffPunch[currentDiffIndex] = DifficultyPunch * 1.5f;
             if (sfxSource && selectSound) sfxSource.PlayOneShot(selectSound);
-            if (pressAgainText) pressAgainText.SetActive(true);
+            ShowPressAgain();
             
             if (controlsDifficultyNormal) controlsDifficultyNormal.SetActive(false);
             if (controlsDifficultyForced) controlsDifficultyForced.SetActive(false);
         }
         else if (currentState == MenuState.Confirming)
         {
+            diffPunch[currentDiffIndex] = DifficultyPunch * 2.5f;
             if (sfxSource && confirmSound) sfxSource.PlayOneShot(confirmSound);
             
             SongGradeData finalSong = allSongData[currentSongIndex].isRandomOption ? secretRandomSong : allSongData[currentSongIndex];
@@ -688,7 +882,14 @@ public class SongCarouselManager : MonoBehaviour
         // Pause music
         if (musicSource != null && musicSource.isPlaying)
             musicSource.Pause();
-        
+
+        // Pause preview videos
+        for (int i = 0; i < videoPlayers.Length; i++)
+        {
+            videoPausedByMenu[i] = videoPlayers[i].isPlaying;
+            if (videoPausedByMenu[i]) videoPlayers[i].Pause();
+        }
+
         // Pause sfx
         if (sfxSource != null && sfxSource.isPlaying)
             sfxSource.Pause();
@@ -715,7 +916,14 @@ public class SongCarouselManager : MonoBehaviour
         // Resume music
         if (musicSource != null && musicSource.clip != null)
             musicSource.UnPause();
-        
+
+        // Resume preview videos
+        for (int i = 0; i < videoPlayers.Length; i++)
+        {
+            if (videoPausedByMenu[i]) videoPlayers[i].Play();
+            videoPausedByMenu[i] = false;
+        }
+
         // Resume sfx
         if (sfxSource != null)
             sfxSource.UnPause();
@@ -823,7 +1031,15 @@ public class SongCarouselManager : MonoBehaviour
             diffJacketDisplay.sprite = currentData.songJacketSprite;
         }
 
+        // Selected song pops, then the difficulty panel scales in with its boxes staggered.
+        Coroutine popRoutine = StartCoroutine(CarouselConfirmPopRoutine(currentSongIndex));
+        Coroutine boxesRoutine = StartCoroutine(DifficultyIntroRoutine());
+        if (diffSongTitle != null)
+            RunAnimation(diffSongTitle, PopInRoutine(diffSongTitle, new Vector2(0f, -20f), 1.1f, MainVisualDuration));
+
         yield return StartCoroutine(FadeGroups(carouselCanvasGroup, difficultyCanvasGroup));
+        yield return popRoutine;
+        yield return boxesRoutine;
         currentState = MenuState.Difficulty;
         UpdateControlCanvases(); 
         difficultyCanvasGroup.blocksRaycasts = true;
@@ -853,10 +1069,11 @@ public class SongCarouselManager : MonoBehaviour
         isTransitioning = true;
         ResetTimer(); 
         
-        if (pressAgainText) pressAgainText.SetActive(false); 
+        HidePressAgain();
 
         yield return StartCoroutine(FadeGroups(difficultyCanvasGroup, carouselCanvasGroup));
-        
+
+        blockPunch[currentSongIndex] = CarouselPunch;
         currentState = MenuState.Carousel;
         UpdateControlCanvases(); 
         difficultyCanvasGroup.blocksRaycasts = false;
@@ -864,25 +1081,47 @@ public class SongCarouselManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Smoothly moves spawned song blocks toward their carousel slots.
+    /// Smoothly moves spawned song blocks toward their carousel slots, with selection kicks and idle breathing.
     /// </summary>
     void UpdateCarouselMovement()
     {
         if (isPaused || (pauseMenu != null && pauseMenu.IsPaused())) return;
-        
+
+        float move = Damp(lerpSpeed);
+        float punchSettle = Damp(PunchDecay);
+        float fade = Time.deltaTime * 5f;
+        float breath = Mathf.Sin(Time.time * BreathSpeed) * BreathAmount;
+
         for (int i = 0; i < spawnedBlocks.Count; i++)
         {
-            int rawDiff = i - currentSongIndex;
-            if (rawDiff > spawnedBlocks.Count / 2) rawDiff -= spawnedBlocks.Count;
-            if (rawDiff <= -spawnedBlocks.Count / 2) rawDiff += spawnedBlocks.Count;
-
-            int targetSlotIndex = rawDiff + 3; 
-            if (targetSlotIndex >= 0 && targetSlotIndex < slots.Length)
+            int targetSlotIndex = GetTargetSlot(i);
+            if (IsSlotValid(targetSlotIndex))
             {
-                spawnedBlocks[i].position = Vector3.Lerp(spawnedBlocks[i].position, slots[targetSlotIndex].position, Time.deltaTime * lerpSpeed);
-                spawnedBlocks[i].localScale = Vector3.Lerp(spawnedBlocks[i].localScale, originalScales[i] * slots[targetSlotIndex].localScale.x, Time.deltaTime * lerpSpeed);
-                spawnedGroups[i].alpha = Mathf.MoveTowards(spawnedGroups[i].alpha, (targetSlotIndex == 0 || targetSlotIndex == 6) ? 0f : 1f, Time.deltaTime * 5f);
-                if (targetSlotIndex == 3) spawnedBlocks[i].SetAsLastSibling();
+                Vector3 targetScale = originalScales[i] * slots[targetSlotIndex].localScale.x;
+
+                // A block wrapping around the edge would fly across the whole screen; teleport it while it's invisible instead.
+                bool wrapped = blockSlots[i] < 0 || Mathf.Abs(blockSlots[i] - targetSlotIndex) > 1;
+                if (wrapped && spawnedGroups[i].alpha < 0.05f)
+                {
+                    spawnedBlocks[i].position = slots[targetSlotIndex].position;
+                    blockBaseScales[i] = targetScale;
+                }
+                else
+                {
+                    spawnedBlocks[i].position = Vector3.Lerp(spawnedBlocks[i].position, slots[targetSlotIndex].position, move);
+                    blockBaseScales[i] = Vector3.Lerp(blockBaseScales[i], targetScale, move);
+                }
+                blockSlots[i] = targetSlotIndex;
+
+                blockPunch[i] = Mathf.Lerp(blockPunch[i], 0f, punchSettle);
+                float extra = 1f + blockPunch[i] + (targetSlotIndex == 3 ? breath : 0f);
+                spawnedBlocks[i].localScale = blockBaseScales[i] * extra;
+                spawnedGroups[i].alpha = Mathf.MoveTowards(spawnedGroups[i].alpha, IsEdgeSlot(targetSlotIndex) ? 0f : 1f, fade);
+            }
+            else
+            {
+                blockSlots[i] = -1;
+                spawnedGroups[i].alpha = Mathf.MoveTowards(spawnedGroups[i].alpha, 0f, fade);
             }
         }
     }
@@ -894,19 +1133,60 @@ public class SongCarouselManager : MonoBehaviour
     {
         for (int i = 0; i < spawnedBlocks.Count; i++)
         {
-            int rawDiff = i - currentSongIndex;
-            if (rawDiff > spawnedBlocks.Count / 2) rawDiff -= spawnedBlocks.Count;
-            if (rawDiff <= -spawnedBlocks.Count / 2) rawDiff += spawnedBlocks.Count;
-
-            int targetSlotIndex = rawDiff + 3; 
-            if (targetSlotIndex >= 0 && targetSlotIndex < slots.Length)
+            int targetSlotIndex = GetTargetSlot(i);
+            blockPunch[i] = 0f;
+            if (IsSlotValid(targetSlotIndex))
             {
                 spawnedBlocks[i].position = slots[targetSlotIndex].position;
-                spawnedBlocks[i].localScale = originalScales[i] * slots[targetSlotIndex].localScale.x;
-                spawnedGroups[i].alpha = (targetSlotIndex == 0 || targetSlotIndex == 6) ? 0f : 1f;
-                if (targetSlotIndex == 3) spawnedBlocks[i].SetAsLastSibling();
+                blockBaseScales[i] = originalScales[i] * slots[targetSlotIndex].localScale.x;
+                spawnedBlocks[i].localScale = blockBaseScales[i];
+                spawnedGroups[i].alpha = IsEdgeSlot(targetSlotIndex) ? 0f : 1f;
+                blockSlots[i] = targetSlotIndex;
+            }
+            else
+            {
+                spawnedGroups[i].alpha = 0f;
+                blockSlots[i] = -1;
             }
         }
+        ApplyDepthOrder();
+    }
+
+    /// <summary>
+    /// Returns the carousel slot a block should occupy for the current selection.
+    /// </summary>
+    /// <param name="blockIndex">Index of the spawned block.</param>
+    /// <returns>Slot index, which may be outside the slot array for off-screen blocks.</returns>
+    private int GetTargetSlot(int blockIndex)
+    {
+        int rawDiff = blockIndex - currentSongIndex;
+        if (rawDiff > spawnedBlocks.Count / 2) rawDiff -= spawnedBlocks.Count;
+        if (rawDiff <= -spawnedBlocks.Count / 2) rawDiff += spawnedBlocks.Count;
+        return rawDiff + 3;
+    }
+
+    /// <summary>Whether a slot index refers to an existing slot.</summary>
+    private bool IsSlotValid(int slot) => slot >= 0 && slot < slots.Length;
+
+    /// <summary>Whether a slot is one of the hidden edge slots.</summary>
+    private bool IsEdgeSlot(int slot) => slot == 0 || slot == 6;
+
+    /// <summary>
+    /// Orders carousel blocks so the selected song is drawn on top and neighbours layer outward.
+    /// </summary>
+    private void ApplyDepthOrder()
+    {
+        depthOrder.Clear();
+        for (int i = 0; i < spawnedBlocks.Count; i++) depthOrder.Add(i);
+        depthOrder.Sort((a, b) => SlotDistance(b).CompareTo(SlotDistance(a)));
+        foreach (int index in depthOrder) spawnedBlocks[index].SetAsLastSibling();
+    }
+
+    /// <summary>Distance of a block's target slot from the center slot.</summary>
+    private int SlotDistance(int blockIndex)
+    {
+        int slot = GetTargetSlot(blockIndex);
+        return IsSlotValid(slot) ? Mathf.Abs(slot - 3) : int.MaxValue;
     }
 
     /// <summary>
@@ -915,42 +1195,771 @@ public class SongCarouselManager : MonoBehaviour
     void UpdateDifficultyVisuals()
     {
         if (isPaused || (pauseMenu != null && pauseMenu.IsPaused())) return;
-        
+
+        float move = Damp(lerpSpeed);
+        float punchSettle = Damp(PunchDecay);
+        float colorBlend = Damp(10f);
+        float breath = Mathf.Sin(Time.time * BreathSpeed) * BreathAmount;
+
         for (int i = 0; i < difficultyBoxes.Length; i++)
         {
             if (lockedDifficulties[i]) continue;
-            
+
             bool isCurrent = (i == currentDiffIndex);
             float targetScale = isCurrent ? selectedScale : normalScale;
-            difficultyBoxes[i].localScale = Vector3.Lerp(difficultyBoxes[i].localScale, Vector3.one * targetScale, Time.deltaTime * lerpSpeed);
+            diffBaseScales[i] = Mathf.Lerp(diffBaseScales[i], targetScale, move);
+            diffPunch[i] = Mathf.Lerp(diffPunch[i], 0f, punchSettle);
+            float extra = 1f + diffPunch[i] + (isCurrent ? breath : 0f);
+            difficultyBoxes[i].localScale = Vector3.one * diffBaseScales[i] * extra;
 
             Image boxImg = difficultyBoxes[i].GetComponent<Image>();
-            boxImg.color = Color.Lerp(boxImg.color, (currentState == MenuState.Confirming && !isCurrent) ? unselectedDarkColor : Color.white, Time.deltaTime * 10f);
+            if (boxImg != null)
+                boxImg.color = Color.Lerp(boxImg.color, (currentState == MenuState.Confirming && !isCurrent) ? unselectedDarkColor : Color.white, colorBlend);
 
             if (difficultyOutlines.Length > i && difficultyOutlines[i] != null)
-                difficultyOutlines[i].color = isCurrent ? outlineGold : Color.black;
+                difficultyOutlines[i].color = Color.Lerp(difficultyOutlines[i].color, isCurrent ? outlineGold : Color.black, colorBlend * 1.5f);
         }
     }
 
     /// <summary>
-    /// Crossfades one canvas group out while another fades in.
+    /// Crossfades one canvas group out while another fades in, with eased, slightly staggered timing.
+    /// The difficulty panel also scales in and out for depth.
     /// </summary>
     /// <param name="from">Canvas group to fade out and disable for raycasts.</param>
     /// <param name="to">Canvas group to fade in.</param>
     /// <returns>Coroutine enumerator for the crossfade animation.</returns>
     IEnumerator FadeGroups(CanvasGroup from, CanvasGroup to)
     {
-        from.blocksRaycasts = false; 
+        from.blocksRaycasts = false;
+
+        Transform panel = difficultyCanvasGroup != null ? difficultyCanvasGroup.transform : null;
+        Vector3 panelScale = panel != null ? GetBaseScale(panel) : Vector3.one;
+        bool panelOut = from == difficultyCanvasGroup && panel != null;
+        bool panelIn = to == difficultyCanvasGroup && panel != null;
+        float fromStart = from.alpha;
 
         float t = 0;
         while (t < 1f)
         {
-            t += Time.deltaTime * 5f;
-            from.alpha = 1 - t;
-            to.alpha = t;
+            t = Mathf.Min(1f, t + Time.deltaTime / TransitionDuration);
+            from.alpha = fromStart * (1f - EaseOutCubic(Mathf.Clamp01(t / 0.7f)));
+            to.alpha = EaseOutCubic(Mathf.Clamp01((t - 0.2f) / 0.8f));
+
+            if (panelOut) panel.localScale = panelScale * Mathf.Lerp(1f, 1f + PanelScaleOffset, EaseOutCubic(t));
+            if (panelIn) panel.localScale = panelScale * Mathf.Lerp(1f - PanelScaleOffset, 1f, EaseOutCubic(t));
             yield return null;
         }
         from.alpha = 0; to.alpha = 1;
+        if (panel != null) panel.localScale = panelScale;
+    }
+
+    // ========== ANIMATION HELPERS ==========
+
+    /// <summary>
+    /// Scales carousel blocks in from the center outward when the carousel first appears.
+    /// </summary>
+    /// <returns>Coroutine enumerator for the intro animation.</returns>
+    private IEnumerator CarouselIntroRoutine()
+    {
+        const float duration = 0.5f;
+        const float stagger = 0.07f;
+        float total = duration + stagger * 3f;
+        float elapsed = 0f;
+
+        while (elapsed < total)
+        {
+            elapsed += Time.deltaTime;
+            for (int i = 0; i < spawnedBlocks.Count; i++)
+            {
+                int slot = blockSlots[i];
+                if (slot < 0) continue;
+
+                float local = Mathf.Clamp01((elapsed - Mathf.Abs(slot - 3) * stagger) / duration);
+                spawnedBlocks[i].localScale = blockBaseScales[i] * Mathf.LerpUnclamped(0.7f, 1f, EaseOutBack(local));
+                spawnedGroups[i].alpha = (IsEdgeSlot(slot) ? 0f : 1f) * EaseOutCubic(local);
+            }
+            yield return null;
+        }
+
+        for (int i = 0; i < spawnedBlocks.Count; i++)
+        {
+            if (blockSlots[i] < 0) continue;
+            spawnedBlocks[i].localScale = blockBaseScales[i];
+            spawnedGroups[i].alpha = IsEdgeSlot(blockSlots[i]) ? 0f : 1f;
+        }
+    }
+
+    /// <summary>
+    /// Gives the chosen carousel block a quick scale pop when the song is selected.
+    /// </summary>
+    /// <param name="index">Index of the selected block.</param>
+    /// <returns>Coroutine enumerator for the pop animation.</returns>
+    private IEnumerator CarouselConfirmPopRoutine(int index)
+    {
+        if (index < 0 || index >= spawnedBlocks.Count) yield break;
+
+        RectTransform block = spawnedBlocks[index];
+        Vector3 rest = blockBaseScales[index];
+        const float duration = 0.3f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            block.localScale = rest * (1f + 0.12f * Mathf.Sin(t * Mathf.PI) * (1f - t * 0.5f));
+            yield return null;
+        }
+        block.localScale = rest;
+        blockPunch[index] = 0f;
+    }
+
+    /// <summary>
+    /// Pops difficulty boxes and the jacket in with a staggered overshoot when the difficulty screen opens.
+    /// </summary>
+    /// <returns>Coroutine enumerator for the intro animation.</returns>
+    private IEnumerator DifficultyIntroRoutine()
+    {
+        const float duration = 0.45f;
+        const float stagger = 0.08f;
+        const float startDelay = 0.1f;
+        float total = startDelay + duration + stagger * Mathf.Max(0, difficultyBoxes.Length - 1);
+        Vector3 jacketScale = diffJacketDisplay != null ? GetBaseScale(diffJacketDisplay.rectTransform) : Vector3.one;
+
+        for (int i = 0; i < difficultyBoxes.Length; i++)
+        {
+            bool isCurrent = i == currentDiffIndex && !lockedDifficulties[i];
+            diffBaseScales[i] = isCurrent ? selectedScale : normalScale;
+            diffPunch[i] = 0f;
+            difficultyBoxes[i].localRotation = diffBaseRotations[i];
+
+            Image boxImg = difficultyBoxes[i].GetComponent<Image>();
+            if (boxImg != null && !lockedDifficulties[i]) boxImg.color = Color.white;
+            if (difficultyOutlines.Length > i && difficultyOutlines[i] != null)
+                difficultyOutlines[i].color = isCurrent ? outlineGold : Color.black;
+        }
+
+        float elapsed = 0f;
+        while (elapsed < total)
+        {
+            elapsed += Time.deltaTime;
+            for (int i = 0; i < difficultyBoxes.Length; i++)
+            {
+                float local = Mathf.Clamp01((elapsed - startDelay - i * stagger) / duration);
+                difficultyBoxes[i].localScale = Vector3.one * diffBaseScales[i] * Mathf.LerpUnclamped(0.6f, 1f, EaseOutBack(local));
+            }
+            if (diffJacketDisplay != null)
+            {
+                float jacket = Mathf.Clamp01(elapsed / duration);
+                diffJacketDisplay.rectTransform.localScale = jacketScale * Mathf.LerpUnclamped(0.85f, 1f, EaseOutBack(jacket));
+            }
+            yield return null;
+        }
+
+        for (int i = 0; i < difficultyBoxes.Length; i++)
+            difficultyBoxes[i].localScale = Vector3.one * diffBaseScales[i];
+        if (diffJacketDisplay != null) diffJacketDisplay.rectTransform.localScale = jacketScale;
+    }
+
+    /// <summary>
+    /// Wiggles a locked difficulty box to show it cannot be selected.
+    /// </summary>
+    /// <param name="index">Index of the locked difficulty box.</param>
+    /// <returns>Coroutine enumerator for the shake animation.</returns>
+    private IEnumerator ShakeRoutine(int index)
+    {
+        RectTransform box = difficultyBoxes[index];
+        Quaternion rest = diffBaseRotations[index];
+        const float duration = 0.35f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            float angle = Mathf.Sin(t * Mathf.PI * 6f) * 8f * (1f - t);
+            box.localRotation = rest * Quaternion.Euler(0f, 0f, angle);
+            yield return null;
+        }
+        box.localRotation = rest;
+    }
+
+    /// <summary>
+    /// Slides, scales, and fades a graphic into its rest state.
+    /// </summary>
+    /// <param name="graphic">Graphic to animate.</param>
+    /// <param name="fromOffset">Anchored position offset the graphic starts at.</param>
+    /// <param name="fromScale">Scale multiplier the graphic starts at.</param>
+    /// <param name="duration">Animation length in seconds.</param>
+    /// <returns>Coroutine enumerator for the pop-in animation.</returns>
+    private IEnumerator PopInRoutine(Graphic graphic, Vector2 fromOffset, float fromScale, float duration)
+    {
+        RectTransform rt = graphic.rectTransform;
+        Vector3 restScale = GetBaseScale(rt);
+        Vector2 restPos = GetBasePosition(rt);
+        float restAlpha = GetBaseAlpha(graphic);
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            float eased = EaseOutCubic(t);
+            rt.anchoredPosition = restPos + fromOffset * (1f - eased);
+            rt.localScale = restScale * Mathf.Lerp(fromScale, 1f, eased);
+            SetAlpha(graphic, restAlpha * EaseOutCubic(Mathf.Clamp01(t * 1.6f)));
+            yield return null;
+        }
+
+        rt.anchoredPosition = restPos;
+        rt.localScale = restScale;
+        SetAlpha(graphic, restAlpha);
+    }
+
+    /// <summary>
+    /// Scales a transform between two values with an ease-out curve.
+    /// </summary>
+    /// <returns>Coroutine enumerator for the scale animation.</returns>
+    private IEnumerator ScaleRoutine(Transform target, Vector3 from, Vector3 to, float duration)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            target.localScale = Vector3.LerpUnclamped(from, to, EaseOutCubic(Mathf.Clamp01(elapsed / duration)));
+            yield return null;
+        }
+        target.localScale = to;
+    }
+
+    /// <summary>
+    /// Crossfades the background to a new sprite with a gentle zoom settle.
+    /// </summary>
+    /// <param name="previous">Sprite currently shown, kept on the ghost layer while the new one fades in.</param>
+    /// <param name="next">Sprite to show.</param>
+    /// <returns>Coroutine enumerator for the crossfade.</returns>
+    private IEnumerator BackgroundCrossfadeRoutine(Sprite previous, Sprite next)
+    {
+        Image bg = mainBackgroundDisplay;
+        Vector3 restScale = GetBaseScale(bg.rectTransform);
+        float restAlpha = GetBaseAlpha(bg);
+
+        if (backgroundGhost != null && previous != null)
+        {
+            CopyRect(bg.rectTransform, backgroundGhost.rectTransform);
+            backgroundGhost.rectTransform.localScale = restScale;
+            backgroundGhost.sprite = previous;
+            backgroundGhost.preserveAspect = bg.preserveAspect;
+            backgroundGhost.type = bg.type;
+            // Start the ghost at the background's current alpha, so a hidden background (video song) stays hidden.
+            backgroundGhost.color = bg.color;
+            backgroundGhost.enabled = true;
+        }
+
+        bg.sprite = next;
+        float duration = MainVisualDuration * 1.5f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float eased = EaseOutCubic(Mathf.Clamp01(elapsed / duration));
+            SetAlpha(bg, restAlpha * eased);
+            bg.rectTransform.localScale = restScale * Mathf.Lerp(BackgroundZoom, 1f, eased);
+            yield return null;
+        }
+
+        SetAlpha(bg, restAlpha);
+        bg.rectTransform.localScale = restScale;
+        if (backgroundGhost != null) backgroundGhost.enabled = false;
+    }
+
+    /// <summary>
+    /// Fades the current preview track out, swaps the clip, and fades the new one in.
+    /// </summary>
+    /// <param name="clip">Preview clip to play.</param>
+    /// <returns>Coroutine enumerator for the music crossfade.</returns>
+    private IEnumerator SwitchPreviewRoutine(AudioClip clip)
+    {
+        if (musicSource.isPlaying)
+        {
+            float startVolume = musicSource.volume;
+            float elapsed = 0f;
+            while (elapsed < MusicFadeOutTime)
+            {
+                elapsed += Time.deltaTime;
+                musicSource.volume = Mathf.Lerp(startVolume, 0f, elapsed / MusicFadeOutTime);
+                yield return null;
+            }
+        }
+
+        musicSource.Stop();
+        musicSource.clip = clip;
+        musicSource.volume = 0f;
+        musicSource.Play();
+
+        float fadeIn = 0f;
+        while (fadeIn < MusicFadeInTime)
+        {
+            fadeIn += Time.deltaTime;
+            musicSource.volume = musicMaxVolume * EaseOutCubic(Mathf.Clamp01(fadeIn / MusicFadeInTime));
+            yield return null;
+        }
+        musicSource.volume = musicMaxVolume;
+        musicRoutine = null;
+    }
+
+    /// <summary>
+    /// Fades the current preview track out and stops it, leaving silence until the next preview starts.
+    /// </summary>
+    /// <returns>Coroutine enumerator for the music fade-out.</returns>
+    private IEnumerator FadeOutMusicRoutine()
+    {
+        if (musicSource.isPlaying)
+        {
+            float startVolume = musicSource.volume;
+            float elapsed = 0f;
+            while (elapsed < MusicFadeOutTime)
+            {
+                elapsed += Time.deltaTime;
+                musicSource.volume = Mathf.Lerp(startVolume, 0f, elapsed / MusicFadeOutTime);
+                yield return null;
+            }
+        }
+        musicSource.Stop();
+        musicRoutine = null;
+    }
+
+    /// <summary>
+    /// Loads a song's demo video on the hidden video layer, then fades it in over the current one and
+    /// starts the preview music at the same moment. Songs without a video fade back to the background image.
+    /// </summary>
+    /// <param name="data">Song whose demo video should be shown.</param>
+    /// <returns>Coroutine enumerator for the video swap.</returns>
+    private IEnumerator PreviewVideoRoutine(SongGradeData data)
+    {
+        VideoClip clip = data.previewVideo;
+        float duration = MainVisualDuration * 1.5f;
+
+        if (clip == null)
+        {
+            // Cancel anything still loading, then fade the visible video away to reveal the background image.
+            for (int i = 0; i < videoPlayers.Length; i++)
+                if (i != activeVideoLayer) StopVideoLayer(i);
+
+            if (activeVideoLayer < 0) yield break;
+
+            int fading = activeVideoLayer;
+            activeVideoLayer = -1;
+            RawImage fadingLayer = videoLayers[fading];
+            float startAlpha = fadingLayer.color.a;
+            float fadeElapsed = 0f;
+            while (fadeElapsed < duration)
+            {
+                fadeElapsed += Time.deltaTime;
+                SetAlpha(fadingLayer, startAlpha * (1f - EaseOutCubic(Mathf.Clamp01(fadeElapsed / duration))));
+                yield return null;
+            }
+            StopVideoLayer(fading);
+            yield break;
+        }
+
+        // The previous preview goes quiet while the demo loads; the new one starts together with the video.
+        if (musicSource != null)
+        {
+            if (musicRoutine != null) StopCoroutine(musicRoutine);
+            musicRoutine = StartCoroutine(FadeOutMusicRoutine());
+        }
+
+        int next = activeVideoLayer == 0 ? 1 : 0;
+        int other = 1 - next;
+        VideoPlayer player = videoPlayers[next];
+        RawImage layer = videoLayers[next];
+
+        StopVideoLayer(next);
+        PrepareVideoTexture(next, clip);
+        player.clip = clip;
+        player.Prepare();
+
+        while (!player.isPrepared) yield return null;
+        while (isPaused || (pauseMenu != null && pauseMenu.IsPaused())) yield return null;
+
+        // Draw the incoming video above the outgoing one.
+        if (layer.transform.GetSiblingIndex() < videoLayers[other].transform.GetSiblingIndex())
+            layer.transform.SetSiblingIndex(videoLayers[other].transform.GetSiblingIndex());
+
+        player.Play();
+
+        // Wait for the first decoded frame so the fade never reveals an empty texture.
+        float timeout = 1f;
+        while (player.frame < 0 && timeout > 0f)
+        {
+            timeout -= Time.unscaledDeltaTime;
+            yield return null;
+        }
+        yield return null;
+
+        if (musicSource && data.songPreviewClip)
+        {
+            if (musicRoutine != null) StopCoroutine(musicRoutine);
+            musicRoutine = StartCoroutine(SwitchPreviewRoutine(data.songPreviewClip));
+        }
+
+        int previous = activeVideoLayer;
+        activeVideoLayer = next;
+
+        // The background image isn't used with a video: fade it out as the video fades in.
+        RunAnimation(mainBackgroundDisplay, BackgroundHideRoutine(duration));
+
+        Vector3 restScale = GetBaseScale(mainBackgroundDisplay.rectTransform);
+        float restAlpha = GetBaseAlpha(mainBackgroundDisplay);
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float eased = EaseOutCubic(Mathf.Clamp01(elapsed / duration));
+            SetAlpha(layer, restAlpha * eased);
+            layer.rectTransform.localScale = restScale * Mathf.Lerp(BackgroundZoom, 1f, eased);
+            yield return null;
+        }
+
+        SetAlpha(layer, restAlpha);
+        layer.rectTransform.localScale = restScale;
+        if (previous >= 0 && previous != next) StopVideoLayer(previous);
+        videoRoutine = null;
+    }
+
+    /// <summary>
+    /// Fades the background image (and its crossfade layer) fully out, used while a demo video is showing.
+    /// </summary>
+    /// <param name="duration">Fade length in seconds.</param>
+    /// <returns>Coroutine enumerator for the fade-out.</returns>
+    private IEnumerator BackgroundHideRoutine(float duration)
+    {
+        Image bg = mainBackgroundDisplay;
+        Vector3 restScale = GetBaseScale(bg.rectTransform);
+        Vector3 startScale = bg.rectTransform.localScale;
+        float bgStart = bg.color.a;
+        float ghostStart = backgroundGhost != null && backgroundGhost.enabled ? backgroundGhost.color.a : 0f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float remaining = 1f - EaseOutCubic(Mathf.Clamp01(elapsed / duration));
+            SetAlpha(bg, bgStart * remaining);
+            bg.rectTransform.localScale = Vector3.Lerp(restScale, startScale, remaining);
+            if (backgroundGhost != null && backgroundGhost.enabled) SetAlpha(backgroundGhost, ghostStart * remaining);
+            yield return null;
+        }
+
+        SetAlpha(bg, 0f);
+        bg.rectTransform.localScale = restScale;
+        if (backgroundGhost != null) backgroundGhost.enabled = false;
+    }
+
+    /// <summary>
+    /// Stops a video layer's playback and hides it.
+    /// </summary>
+    /// <param name="index">Video layer index.</param>
+    private void StopVideoLayer(int index)
+    {
+        videoPlayers[index].Stop();
+        videoPausedByMenu[index] = false;
+        SetAlpha(videoLayers[index], 0f);
+    }
+
+    /// <summary>
+    /// Makes sure a video layer has a render texture matching the clip, and crops it to cover the background area.
+    /// </summary>
+    /// <param name="index">Video layer index.</param>
+    /// <param name="clip">Clip about to play on that layer.</param>
+    private void PrepareVideoTexture(int index, VideoClip clip)
+    {
+        int width = clip.width > 0 ? (int)clip.width : 1280;
+        int height = clip.height > 0 ? (int)clip.height : 720;
+
+        RenderTexture texture = videoTextures[index];
+        if (texture == null || texture.width != width || texture.height != height)
+        {
+            if (texture != null)
+            {
+                texture.Release();
+                Destroy(texture);
+            }
+            texture = new RenderTexture(width, height, 0);
+            texture.Create();
+            videoTextures[index] = texture;
+        }
+
+        videoPlayers[index].targetTexture = texture;
+        videoLayers[index].texture = texture;
+
+        // Match the background's rect, then crop the video (rather than stretch it) to fill it.
+        RectTransform rt = videoLayers[index].rectTransform;
+        CopyRect(mainBackgroundDisplay.rectTransform, rt);
+        Rect area = rt.rect;
+        if (area.height <= 0f) return;
+
+        float areaAspect = area.width / area.height;
+        float videoAspect = width / (float)height;
+        if (videoAspect > areaAspect)
+        {
+            float u = areaAspect / videoAspect;
+            videoLayers[index].uvRect = new Rect((1f - u) * 0.5f, 0f, u, 1f);
+        }
+        else
+        {
+            float v = videoAspect / areaAspect;
+            videoLayers[index].uvRect = new Rect(0f, (1f - v) * 0.5f, 1f, v);
+        }
+
+        // Keep the LED grid square and aligned to the visible (cropped) part of the video.
+        Material led = videoMaterials.Length > index ? videoMaterials[index] : null;
+        if (led != null)
+        {
+            Rect uv = videoLayers[index].uvRect;
+            led.SetVector("_UVRect", new Vector4(uv.x, uv.y, uv.width, uv.height));
+            led.SetFloat("_Aspect", areaAspect);
+            videoLayers[index].SetMaterialDirty();
+        }
+    }
+
+    /// <summary>
+    /// Creates two video layers just above the background image so demo videos can crossfade between songs.
+    /// </summary>
+    private void CreateVideoLayers()
+    {
+        if (mainBackgroundDisplay == null) return;
+
+        videoPlayers = new VideoPlayer[2];
+        videoLayers = new RawImage[2];
+        videoTextures = new RenderTexture[2];
+        videoPausedByMenu = new bool[2];
+        videoMaterials = new Material[2];
+
+        Shader ledShader = Resources.Load<Shader>("Shaders/LedScreen");
+        if (ledShader == null) Debug.LogWarning("LED screen shader not found at Resources/Shaders/LedScreen; demo videos will play without the LED effect.");
+
+        RectTransform bgRect = mainBackgroundDisplay.rectTransform;
+        Color tint = mainBackgroundDisplay.color;
+        tint.a = 0f;
+
+        for (int i = 0; i < 2; i++)
+        {
+            GameObject layerObject = new GameObject("PreviewVideo" + i, typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage), typeof(LayoutElement), typeof(VideoPlayer));
+            layerObject.layer = mainBackgroundDisplay.gameObject.layer;
+            layerObject.GetComponent<LayoutElement>().ignoreLayout = true;
+
+            RectTransform rt = layerObject.GetComponent<RectTransform>();
+            rt.SetParent(bgRect.parent, false);
+            rt.SetSiblingIndex(bgRect.GetSiblingIndex() + 1);
+            CopyRect(bgRect, rt);
+            rt.localScale = GetBaseScale(bgRect);
+
+            RawImage raw = layerObject.GetComponent<RawImage>();
+            raw.raycastTarget = false;
+            raw.color = tint; // keeps any dimming tint used on the background image
+            if (ledShader != null)
+            {
+                Material led = new Material(ledShader);
+                led.SetFloat("_DotCount", LedDotsAcross);
+                led.SetFloat("_DotSize", LedDotSize);
+                led.SetFloat("_Softness", LedDotSoftness);
+                led.SetFloat("_Brightness", LedBrightness);
+                raw.material = led;
+                videoMaterials[i] = led;
+            }
+            videoLayers[i] = raw;
+
+            VideoPlayer player = layerObject.GetComponent<VideoPlayer>();
+            player.playOnAwake = false;
+            player.isLooping = true;
+            player.source = VideoSource.VideoClip;
+            player.renderMode = VideoRenderMode.RenderTexture;
+            player.audioOutputMode = VideoAudioOutputMode.None;
+            player.skipOnDrop = true;
+            player.waitForFirstFrame = true;
+            videoPlayers[i] = player;
+        }
+    }
+
+    /// <summary>
+    /// Releases the runtime video render textures.
+    /// </summary>
+    void OnDestroy()
+    {
+        foreach (RenderTexture texture in videoTextures)
+        {
+            if (texture == null) continue;
+            texture.Release();
+            Destroy(texture);
+        }
+
+        foreach (Material material in videoMaterials)
+        {
+            if (material != null) Destroy(material);
+        }
+    }
+
+    /// <summary>
+    /// Shows the "press again" prompt with a pop-in followed by a soft pulse.
+    /// </summary>
+    private void ShowPressAgain()
+    {
+        if (!pressAgainText) return;
+        pressAgainText.SetActive(true);
+        RunAnimation(pressAgainText, PressAgainRoutine(pressAgainText.transform));
+    }
+
+    /// <summary>
+    /// Hides the "press again" prompt and restores its rest scale.
+    /// </summary>
+    private void HidePressAgain()
+    {
+        if (!pressAgainText) return;
+        if (runningAnimations.TryGetValue(pressAgainText, out Coroutine running) && running != null)
+            StopCoroutine(running);
+        pressAgainText.transform.localScale = GetBaseScale(pressAgainText.transform);
+        pressAgainText.SetActive(false);
+    }
+
+    /// <summary>
+    /// Pops the "press again" prompt in, then pulses it while it stays visible.
+    /// </summary>
+    /// <param name="target">Transform of the prompt.</param>
+    /// <returns>Coroutine enumerator for the prompt animation.</returns>
+    private IEnumerator PressAgainRoutine(Transform target)
+    {
+        Vector3 rest = GetBaseScale(target);
+        const float popDuration = 0.3f;
+        float elapsed = 0f;
+
+        while (elapsed < popDuration)
+        {
+            elapsed += Time.deltaTime;
+            target.localScale = rest * Mathf.LerpUnclamped(0.6f, 1f, EaseOutBack(Mathf.Clamp01(elapsed / popDuration)));
+            yield return null;
+        }
+
+        float pulse = 0f;
+        while (target.gameObject.activeInHierarchy)
+        {
+            pulse += Time.deltaTime;
+            target.localScale = rest * (1f + Mathf.Sin(pulse * 6f) * 0.04f);
+            yield return null;
+        }
+        target.localScale = rest;
+    }
+
+    /// <summary>
+    /// Creates an image layer behind the background so song backgrounds can crossfade.
+    /// </summary>
+    private void CreateBackgroundGhost()
+    {
+        if (mainBackgroundDisplay == null) return;
+
+        GameObject ghostObject = new GameObject("BackgroundCrossfade", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(LayoutElement));
+        ghostObject.layer = mainBackgroundDisplay.gameObject.layer;
+        ghostObject.GetComponent<LayoutElement>().ignoreLayout = true;
+
+        RectTransform ghostRect = ghostObject.GetComponent<RectTransform>();
+        ghostRect.SetParent(mainBackgroundDisplay.rectTransform.parent, false);
+        ghostRect.SetSiblingIndex(mainBackgroundDisplay.rectTransform.GetSiblingIndex());
+        CopyRect(mainBackgroundDisplay.rectTransform, ghostRect);
+
+        backgroundGhost = ghostObject.GetComponent<Image>();
+        backgroundGhost.raycastTarget = false;
+        backgroundGhost.material = mainBackgroundDisplay.material;
+        backgroundGhost.enabled = false;
+    }
+
+    /// <summary>
+    /// Copies layout values from one rect transform to another.
+    /// </summary>
+    private static void CopyRect(RectTransform source, RectTransform target)
+    {
+        target.anchorMin = source.anchorMin;
+        target.anchorMax = source.anchorMax;
+        target.pivot = source.pivot;
+        target.anchoredPosition = source.anchoredPosition;
+        target.sizeDelta = source.sizeDelta;
+        target.localRotation = source.localRotation;
+    }
+
+    /// <summary>
+    /// Starts an animation on a target, stopping any animation already running on it.
+    /// </summary>
+    /// <param name="key">Object the animation drives.</param>
+    /// <param name="routine">Animation to start.</param>
+    /// <returns>The started coroutine.</returns>
+    private Coroutine RunAnimation(Object key, IEnumerator routine)
+    {
+        if (runningAnimations.TryGetValue(key, out Coroutine running) && running != null)
+            StopCoroutine(running);
+        Coroutine started = StartCoroutine(routine);
+        runningAnimations[key] = started;
+        return started;
+    }
+
+    /// <summary>Returns the rest scale of a transform, capturing it the first time.</summary>
+    private Vector3 GetBaseScale(Transform target)
+    {
+        if (!baseScales.TryGetValue(target, out Vector3 scale))
+        {
+            scale = target.localScale;
+            baseScales[target] = scale;
+        }
+        return scale;
+    }
+
+    /// <summary>Returns the rest anchored position of a rect, capturing it the first time.</summary>
+    private Vector2 GetBasePosition(RectTransform target)
+    {
+        if (!basePositions.TryGetValue(target, out Vector2 position))
+        {
+            position = target.anchoredPosition;
+            basePositions[target] = position;
+        }
+        return position;
+    }
+
+    /// <summary>Returns the rest alpha of a graphic, capturing it the first time.</summary>
+    private float GetBaseAlpha(Graphic target)
+    {
+        if (!baseAlphas.TryGetValue(target, out float alpha))
+        {
+            alpha = target.color.a;
+            baseAlphas[target] = alpha;
+        }
+        return alpha;
+    }
+
+    /// <summary>Sets only the alpha channel of a graphic's color.</summary>
+    private static void SetAlpha(Graphic target, float alpha)
+    {
+        Color color = target.color;
+        color.a = alpha;
+        target.color = color;
+    }
+
+    /// <summary>Frame-rate independent smoothing factor for Lerp-based following.</summary>
+    private static float Damp(float speed) => 1f - Mathf.Exp(-speed * Time.deltaTime);
+
+    /// <summary>Fast start, soft landing.</summary>
+    private static float EaseOutCubic(float t)
+    {
+        float inv = 1f - t;
+        return 1f - inv * inv * inv;
+    }
+
+    /// <summary>Soft landing with a slight overshoot.</summary>
+    private static float EaseOutBack(float t)
+    {
+        const float c1 = 1.70158f;
+        const float c3 = c1 + 1f;
+        float u = t - 1f;
+        return 1f + c3 * u * u * u + c1 * u * u;
     }
 
     /// <summary>

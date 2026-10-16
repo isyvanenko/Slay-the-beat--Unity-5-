@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Video;
 
 /// <summary>
 /// ScriptableObject container for all song-specific data including charts, metadata, and grade thresholds.
@@ -80,7 +81,12 @@ public class SongGradeData : ScriptableObject
     public Sprite p2CharacterSprite;    
     
     /// <summary>Background/environment sprite associated with this song's theme.</summary>
-    public Sprite environmentSprite; 
+    public Sprite environmentSprite;
+
+    /// <summary>Optional looping gameplay demo video shown behind the song select screen.</summary>
+    /// <remarks>When empty, the song select screen falls back to <see cref="environmentSprite"/>.</remarks>
+    [Tooltip("Optional looping gameplay demo shown in song select. Leave empty to use the environment sprite.")]
+    public VideoClip previewVideo;
 
     // --- NEW: Gradient for visual effects ---
     [Header("Visual Effects")]
