@@ -117,6 +117,9 @@ public class SpireMusicVisualPulseParticles : MonoBehaviour
     
     /// <summary>Current alpha value (used for smoothing).</summary>
     private float currentAlpha;
+
+    /// <summary>Runtime-only multiplier on the final alpha (0 = hidden), used by menus to fade this effect in and out.</summary>
+    public float Visibility { get; set; } = 1f;
     
     /// <summary>Velocity reference for alpha SmoothDamp.</summary>
     private float alphaVelocity;
@@ -242,7 +245,7 @@ public class SpireMusicVisualPulseParticles : MonoBehaviour
             colorStrength
         );
 
-        finalColor.a = currentAlpha;
+        finalColor.a = currentAlpha * Visibility;
 
         // Apply to particle system
         if (updateParticleColor)

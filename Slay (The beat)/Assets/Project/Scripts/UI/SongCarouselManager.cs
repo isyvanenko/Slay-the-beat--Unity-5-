@@ -141,6 +141,14 @@ public class SongCarouselManager : MonoBehaviour
     [Tooltip("Auto-update visual pulses when song changes")]
     public bool autoUpdateVisualPulses = true;
 
+    /// <summary>First spire object faded out while the difficulty screen is shown.</summary>
+    [Header("Difficulty Transition")]
+    [Tooltip("First spire object faded out while the difficulty screen is shown (UI, sprite, or spire pulse object)")]
+    public GameObject difficultyFadeSpire1;
+    /// <summary>Second spire object faded out while the difficulty screen is shown.</summary>
+    [Tooltip("Second spire object faded out while the difficulty screen is shown (UI, sprite, or spire pulse object)")]
+    public GameObject difficultyFadeSpire2;
+
     /// <summary>Spawned carousel block transforms, one for each song entry.</summary>
     private List<RectTransform> spawnedBlocks = new List<RectTransform>();
     /// <summary>Canvas groups used to fade spawned carousel blocks based on slot position.</summary>
@@ -250,6 +258,21 @@ public class SongCarouselManager : MonoBehaviour
     private Coroutine videoRoutine;
     /// <summary>LED screen materials created for the video layers.</summary>
     private Material[] videoMaterials = new Material[0];
+
+    /// <summary>Current visibility (0-1) of the difficulty fade spires.</summary>
+    private float spireVisibility = 1f;
+    /// <summary>Canvas groups used to fade UI spires.</summary>
+    private List<CanvasGroup> spireGroups = new List<CanvasGroup>();
+    /// <summary>Material pulse effects on the spires, faded through their visibility multiplier.</summary>
+    private List<SpireMusicVisualPulse> spirePulses = new List<SpireMusicVisualPulse>();
+    /// <summary>Particle pulse effects on the spires, faded through their visibility multiplier.</summary>
+    private List<SpireMusicVisualPulseParticles> spireParticlePulses = new List<SpireMusicVisualPulseParticles>();
+    /// <summary>Sprite renderers on the spires, with their original alpha.</summary>
+    private List<SpriteRenderer> spireSprites = new List<SpriteRenderer>();
+    /// <summary>Original alpha of each entry in <see cref="spireSprites"/>.</summary>
+    private List<float> spireSpriteAlphas = new List<float>();
+    /// <summary>Spires with nothing fadeable; these are toggled on and off instead.</summary>
+    private List<GameObject> spireToggleOnly = new List<GameObject>();
     /// <summary>Running animation coroutines keyed by the object they animate.</summary>
     private Dictionary<Object, Coroutine> runningAnimations = new Dictionary<Object, Coroutine>();
     /// <summary>Rest scales captured the first time a transform is animated.</summary>
@@ -338,6 +361,8 @@ public class SongCarouselManager : MonoBehaviour
 
         CreateBackgroundGhost();
         CreateVideoLayers();
+        CollectSpireFadeTargets(difficultyFadeSpire1);
+        CollectSpireFadeTargets(difficultyFadeSpire2);
 
         for (int i = 0; i < difficultyBoxes.Length && i < 3; i++)
         {
@@ -828,18 +853,13 @@ public class SongCarouselManager : MonoBehaviour
                 return;
             }
             
+            // A single confirm starts the song. Confirming state locks further input and dims the other boxes.
             currentState = MenuState.Confirming;
-            diffPunch[currentDiffIndex] = DifficultyPunch * 1.5f;
-            if (sfxSource && selectSound) sfxSource.PlayOneShot(selectSound);
-            ShowPressAgain();
-            
-            if (controlsDifficultyNormal) controlsDifficultyNormal.SetActive(false);
-            if (controlsDifficultyForced) controlsDifficultyForced.SetActive(false);
-        }
-        else if (currentState == MenuState.Confirming)
-        {
             diffPunch[currentDiffIndex] = DifficultyPunch * 2.5f;
             if (sfxSource && confirmSound) sfxSource.PlayOneShot(confirmSound);
+
+            if (controlsDifficultyNormal) controlsDifficultyNormal.SetActive(false);
+            if (controlsDifficultyForced) controlsDifficultyForced.SetActive(false);
             
             SongGradeData finalSong = allSongData[currentSongIndex].isRandomOption ? secretRandomSong : allSongData[currentSongIndex];
             
@@ -968,7 +988,7 @@ public class SongCarouselManager : MonoBehaviour
         SongGradeData currentData = allSongData[currentSongIndex];
         SongGradeData statsData = currentData.isRandomOption ? secretRandomSong : currentData;
 
-        diffSongTitle.text = currentData.songName; 
+        //diffSongTitle.text = currentData.songName; 
         
         if (statsData != null)
         {
@@ -1031,14 +1051,17 @@ public class SongCarouselManager : MonoBehaviour
             diffJacketDisplay.sprite = currentData.songJacketSprite;
         }
 
-        // Selected song pops, then the difficulty panel scales in with its boxes staggered.
+        // The song select screen stays up: only the selected song card remains while the other cards,
+        // the character, and the spires fade away. The difficulty panel scales in on top with its boxes staggered.
         Coroutine popRoutine = StartCoroutine(CarouselConfirmPopRoutine(currentSongIndex));
+        Coroutine focusRoutine = StartCoroutine(SongFocusRoutine(true));
         Coroutine boxesRoutine = StartCoroutine(DifficultyIntroRoutine());
         if (diffSongTitle != null)
             RunAnimation(diffSongTitle, PopInRoutine(diffSongTitle, new Vector2(0f, -20f), 1.1f, MainVisualDuration));
 
-        yield return StartCoroutine(FadeGroups(carouselCanvasGroup, difficultyCanvasGroup));
+        yield return StartCoroutine(FadeGroups(null, difficultyCanvasGroup));
         yield return popRoutine;
+        yield return focusRoutine;
         yield return boxesRoutine;
         currentState = MenuState.Difficulty;
         UpdateControlCanvases(); 
@@ -1071,7 +1094,10 @@ public class SongCarouselManager : MonoBehaviour
         
         HidePressAgain();
 
-        yield return StartCoroutine(FadeGroups(difficultyCanvasGroup, carouselCanvasGroup));
+        // Bring the other song cards, the character, and the spires back while the difficulty panel leaves.
+        Coroutine focusRoutine = StartCoroutine(SongFocusRoutine(false));
+        yield return StartCoroutine(FadeGroups(difficultyCanvasGroup, null));
+        yield return focusRoutine;
 
         blockPunch[currentSongIndex] = CarouselPunch;
         currentState = MenuState.Carousel;
@@ -1225,32 +1251,187 @@ public class SongCarouselManager : MonoBehaviour
     /// Crossfades one canvas group out while another fades in, with eased, slightly staggered timing.
     /// The difficulty panel also scales in and out for depth.
     /// </summary>
-    /// <param name="from">Canvas group to fade out and disable for raycasts.</param>
-    /// <param name="to">Canvas group to fade in.</param>
+    /// <param name="from">Canvas group to fade out and disable for raycasts, or null to only fade in.</param>
+    /// <param name="to">Canvas group to fade in, or null to only fade out.</param>
     /// <returns>Coroutine enumerator for the crossfade animation.</returns>
     IEnumerator FadeGroups(CanvasGroup from, CanvasGroup to)
     {
-        from.blocksRaycasts = false;
+        if (from != null) from.blocksRaycasts = false;
 
         Transform panel = difficultyCanvasGroup != null ? difficultyCanvasGroup.transform : null;
         Vector3 panelScale = panel != null ? GetBaseScale(panel) : Vector3.one;
-        bool panelOut = from == difficultyCanvasGroup && panel != null;
-        bool panelIn = to == difficultyCanvasGroup && panel != null;
-        float fromStart = from.alpha;
+        bool panelOut = from != null && from == difficultyCanvasGroup && panel != null;
+        bool panelIn = to != null && to == difficultyCanvasGroup && panel != null;
+        float fromStart = from != null ? from.alpha : 0f;
 
         float t = 0;
         while (t < 1f)
         {
             t = Mathf.Min(1f, t + Time.deltaTime / TransitionDuration);
-            from.alpha = fromStart * (1f - EaseOutCubic(Mathf.Clamp01(t / 0.7f)));
-            to.alpha = EaseOutCubic(Mathf.Clamp01((t - 0.2f) / 0.8f));
+            if (from != null) from.alpha = fromStart * (1f - EaseOutCubic(Mathf.Clamp01(t / 0.7f)));
+            if (to != null) to.alpha = EaseOutCubic(Mathf.Clamp01((t - 0.2f) / 0.8f));
 
             if (panelOut) panel.localScale = panelScale * Mathf.Lerp(1f, 1f + PanelScaleOffset, EaseOutCubic(t));
             if (panelIn) panel.localScale = panelScale * Mathf.Lerp(1f - PanelScaleOffset, 1f, EaseOutCubic(t));
             yield return null;
         }
-        from.alpha = 0; to.alpha = 1;
+        if (from != null) from.alpha = 0;
+        if (to != null) to.alpha = 1;
         if (panel != null) panel.localScale = panelScale;
+    }
+
+    /// <summary>
+    /// Focuses the song select screen on the chosen song (or releases that focus): the other song cards,
+    /// the character, and the difficulty fade spires fade out while the carousel canvas itself stays visible.
+    /// </summary>
+    /// <param name="focus">True to fade everything but the selected song out, false to bring it all back.</param>
+    /// <returns>Coroutine enumerator for the focus animation.</returns>
+    private IEnumerator SongFocusRoutine(bool focus)
+    {
+        float duration = TransitionDuration;
+
+        if (mainCharacterDisplay != null)
+        {
+            float characterTarget = focus ? 0f : GetBaseAlpha(mainCharacterDisplay);
+            RunAnimation(mainCharacterDisplay, CharacterFocusRoutine(characterTarget, focus, duration));
+        }
+
+        if (!focus) SetSpireToggles(true);
+
+        float[] startAlphas = new float[spawnedGroups.Count];
+        for (int i = 0; i < spawnedGroups.Count; i++) startAlphas[i] = spawnedGroups[i].alpha;
+        float spireStart = spireVisibility;
+        float spireTarget = focus ? 0f : 1f;
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float eased = EaseOutCubic(Mathf.Clamp01(elapsed / duration));
+
+            for (int i = 0; i < spawnedGroups.Count; i++)
+            {
+                if (i == currentSongIndex) continue;
+                spawnedGroups[i].alpha = Mathf.Lerp(startAlphas[i], GetFocusAlpha(i, focus), eased);
+            }
+            SetSpireVisibility(Mathf.Lerp(spireStart, spireTarget, eased));
+            yield return null;
+        }
+
+        for (int i = 0; i < spawnedGroups.Count; i++)
+        {
+            if (i == currentSongIndex) continue;
+            spawnedGroups[i].alpha = GetFocusAlpha(i, focus);
+        }
+        SetSpireVisibility(spireTarget);
+        if (focus) SetSpireToggles(false);
+    }
+
+    /// <summary>Alpha a song card should have when the selected song is focused or released.</summary>
+    private float GetFocusAlpha(int blockIndex, bool focus)
+    {
+        if (focus) return 0f;
+        int slot = blockSlots[blockIndex];
+        return slot >= 0 && !IsEdgeSlot(slot) ? 1f : 0f;
+    }
+
+    /// <summary>
+    /// Fades the character out (with a slight drop and shrink) or back in to its rest state.
+    /// </summary>
+    /// <param name="targetAlpha">Alpha to fade to.</param>
+    /// <param name="hide">True when hiding the character.</param>
+    /// <param name="duration">Fade length in seconds.</param>
+    /// <returns>Coroutine enumerator for the character fade.</returns>
+    private IEnumerator CharacterFocusRoutine(float targetAlpha, bool hide, float duration)
+    {
+        RectTransform rt = mainCharacterDisplay.rectTransform;
+        Vector3 restScale = GetBaseScale(rt);
+        Vector2 restPos = GetBasePosition(rt);
+        Vector3 hiddenScale = restScale * 0.95f;
+        Vector2 hiddenPos = restPos + new Vector2(0f, -CharacterSlideDistance * 0.4f);
+
+        float startAlpha = mainCharacterDisplay.color.a;
+        Vector3 startScale = rt.localScale;
+        Vector2 startPos = rt.anchoredPosition;
+        Vector3 endScale = hide ? hiddenScale : restScale;
+        Vector2 endPos = hide ? hiddenPos : restPos;
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float eased = EaseOutCubic(Mathf.Clamp01(elapsed / duration));
+            SetAlpha(mainCharacterDisplay, Mathf.Lerp(startAlpha, targetAlpha, eased));
+            rt.localScale = Vector3.Lerp(startScale, endScale, eased);
+            rt.anchoredPosition = Vector2.Lerp(startPos, endPos, eased);
+            yield return null;
+        }
+
+        SetAlpha(mainCharacterDisplay, targetAlpha);
+        rt.localScale = endScale;
+        rt.anchoredPosition = endPos;
+    }
+
+    /// <summary>
+    /// Finds everything fadeable on a spire object: UI (via a canvas group), spire pulse effects, and sprites.
+    /// Objects with none of these are toggled on and off instead of faded.
+    /// </summary>
+    /// <param name="spire">Spire object to inspect; ignored when null.</param>
+    private void CollectSpireFadeTargets(GameObject spire)
+    {
+        if (spire == null) return;
+        bool found = false;
+
+        if (spire.GetComponentInChildren<Graphic>(true) != null)
+        {
+            CanvasGroup group = spire.GetComponent<CanvasGroup>();
+            if (group == null) group = spire.AddComponent<CanvasGroup>();
+            spireGroups.Add(group);
+            found = true;
+        }
+
+        foreach (SpireMusicVisualPulse pulse in spire.GetComponentsInChildren<SpireMusicVisualPulse>(true))
+        {
+            spirePulses.Add(pulse);
+            found = true;
+        }
+
+        foreach (SpireMusicVisualPulseParticles pulse in spire.GetComponentsInChildren<SpireMusicVisualPulseParticles>(true))
+        {
+            spireParticlePulses.Add(pulse);
+            found = true;
+        }
+
+        foreach (SpriteRenderer sprite in spire.GetComponentsInChildren<SpriteRenderer>(true))
+        {
+            spireSprites.Add(sprite);
+            spireSpriteAlphas.Add(sprite.color.a);
+            found = true;
+        }
+
+        if (!found) spireToggleOnly.Add(spire);
+    }
+
+    /// <summary>Applies a visibility value (0-1) to every fadeable part of the difficulty fade spires.</summary>
+    private void SetSpireVisibility(float visibility)
+    {
+        spireVisibility = visibility;
+        foreach (CanvasGroup group in spireGroups) if (group != null) group.alpha = visibility;
+        foreach (SpireMusicVisualPulse pulse in spirePulses) if (pulse != null) pulse.Visibility = visibility;
+        foreach (SpireMusicVisualPulseParticles pulse in spireParticlePulses) if (pulse != null) pulse.Visibility = visibility;
+        for (int i = 0; i < spireSprites.Count; i++)
+        {
+            if (spireSprites[i] == null) continue;
+            Color color = spireSprites[i].color;
+            color.a = spireSpriteAlphas[i] * visibility;
+            spireSprites[i].color = color;
+        }
+    }
+
+    /// <summary>Shows or hides spires that cannot be faded.</summary>
+    private void SetSpireToggles(bool visible)
+    {
+        foreach (GameObject spire in spireToggleOnly) if (spire != null) spire.SetActive(visible);
     }
 
     // ========== ANIMATION HELPERS ==========
@@ -1803,16 +1984,6 @@ public class SongCarouselManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Shows the "press again" prompt with a pop-in followed by a soft pulse.
-    /// </summary>
-    private void ShowPressAgain()
-    {
-        if (!pressAgainText) return;
-        pressAgainText.SetActive(true);
-        RunAnimation(pressAgainText, PressAgainRoutine(pressAgainText.transform));
-    }
-
-    /// <summary>
     /// Hides the "press again" prompt and restores its rest scale.
     /// </summary>
     private void HidePressAgain()
@@ -1822,34 +1993,6 @@ public class SongCarouselManager : MonoBehaviour
             StopCoroutine(running);
         pressAgainText.transform.localScale = GetBaseScale(pressAgainText.transform);
         pressAgainText.SetActive(false);
-    }
-
-    /// <summary>
-    /// Pops the "press again" prompt in, then pulses it while it stays visible.
-    /// </summary>
-    /// <param name="target">Transform of the prompt.</param>
-    /// <returns>Coroutine enumerator for the prompt animation.</returns>
-    private IEnumerator PressAgainRoutine(Transform target)
-    {
-        Vector3 rest = GetBaseScale(target);
-        const float popDuration = 0.3f;
-        float elapsed = 0f;
-
-        while (elapsed < popDuration)
-        {
-            elapsed += Time.deltaTime;
-            target.localScale = rest * Mathf.LerpUnclamped(0.6f, 1f, EaseOutBack(Mathf.Clamp01(elapsed / popDuration)));
-            yield return null;
-        }
-
-        float pulse = 0f;
-        while (target.gameObject.activeInHierarchy)
-        {
-            pulse += Time.deltaTime;
-            target.localScale = rest * (1f + Mathf.Sin(pulse * 6f) * 0.04f);
-            yield return null;
-        }
-        target.localScale = rest;
     }
 
     /// <summary>
