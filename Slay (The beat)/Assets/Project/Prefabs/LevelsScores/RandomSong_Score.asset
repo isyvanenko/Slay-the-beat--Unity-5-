@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: RandomSong_Score
   m_EditorClassIdentifier: 
   isRandomOption: 1
-  songName: RANDOM SONG
+  songName: RANDOM STAGE
   songJacketSprite: {fileID: 21300000, guid: afcae191cbb924dc9ac568ed49b90169, type: 3}
   gameplaySceneName: ST_GlamBot
   easySteps: 52
@@ -27,6 +27,37 @@ MonoBehaviour:
   p1CharacterSprite: {fileID: 21300000, guid: 585e261395ef34994812ab63cdf2c602, type: 3}
   p2CharacterSprite: {fileID: 21300000, guid: be2865f9c718849aaa78e2c37881f0b0, type: 3}
   environmentSprite: {fileID: 21300000, guid: 1b96207a6017543d2beb489e587f5fe9, type: 3}
+  previewVideo: {fileID: 32900000, guid: 9f40bbe4151e14140908a34348ffacf7, type: 3}
+  visualGradient:
+    serializedVersion: 2
+    key0: {r: 1, g: 1, b: 1, a: 1}
+    key1: {r: 1, g: 1, b: 1, a: 1}
+    key2: {r: 0, g: 0, b: 0, a: 0}
+    key3: {r: 0, g: 0, b: 0, a: 0}
+    key4: {r: 0, g: 0, b: 0, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 0
+    ctime1: 65535
+    ctime2: 0
+    ctime3: 0
+    ctime4: 0
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 65535
+    atime2: 0
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_ColorSpace: -1
+    m_NumColorKeys: 2
+    m_NumAlphaKeys: 2
   fiveStars: 900000
   fourStars: 700000
   threeStars: 500000

@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.SceneManagement;
 using UnityEngine.Video;
+using UnityEngine.Rendering;
 
 /// <summary>
 /// Manages the song selection carousel, splash intro, difficulty selection,
@@ -149,6 +150,17 @@ public class SongCarouselManager : MonoBehaviour
     [Tooltip("Second spire object faded out while the difficulty screen is shown (UI, sprite, or spire pulse object)")]
     public GameObject difficultyFadeSpire2;
 
+    /// <summary>UI image showing the arrows video, drawn with the same LED dot effect as the demo videos.</summary>
+    [Header("Selection Arrows")]
+    [Tooltip("UI image showing the arrows video (drawn with the LED dot effect, dark pixels are transparent)")]
+    public Image arrowDisplay;
+    /// <summary>Looping video containing both arrows that point at the selected song.</summary>
+    [Tooltip("Looping video containing both arrows that point at the selected song")]
+    public VideoClip arrowVideo;
+    /// <summary>Optional render texture the arrow video draws into. One is created at runtime when empty.</summary>
+    [Tooltip("Optional render texture the arrow video draws into (created at runtime when empty)")]
+    public RenderTexture arrowVideoTexture;
+
     /// <summary>Spawned carousel block transforms, one for each song entry.</summary>
     private List<RectTransform> spawnedBlocks = new List<RectTransform>();
     /// <summary>Canvas groups used to fade spawned carousel blocks based on slot position.</summary>
@@ -213,6 +225,10 @@ public class SongCarouselManager : MonoBehaviour
     private const float LedDotSoftness = 0.2f;
     /// <summary>Brightness boost so the dotted video doesn't look dimmer than the original.</summary>
     private const float LedBrightness = 1.25f;
+    /// <summary>Seconds between samples of the background video's average colour for the arrow tint.</summary>
+    private const float ArrowColorSampleInterval = 0.1f;
+    /// <summary>How quickly the arrow tint follows the background video's average colour.</summary>
+    private const float ArrowColorFollowSpeed = 6f;
 
     /// <summary>Smoothed carousel block scales before punch and breathing are applied.</summary>
     private List<Vector3> blockBaseScales = new List<Vector3>();
@@ -258,6 +274,23 @@ public class SongCarouselManager : MonoBehaviour
     private Coroutine videoRoutine;
     /// <summary>LED screen materials created for the video layers.</summary>
     private Material[] videoMaterials = new Material[0];
+
+    /// <summary>Runtime video player that plays <see cref="arrowVideo"/> on the arrows.</summary>
+    private VideoPlayer arrowVideoPlayer;
+    /// <summary>Render texture created at runtime for the arrow video, if none was assigned.</summary>
+    private RenderTexture arrowRuntimeTexture;
+    /// <summary>Whether the arrow video was playing when the menu was paused.</summary>
+    private bool arrowVideoPausedByMenu = false;
+    /// <summary>LED screen material created for the arrows.</summary>
+    private Material arrowMaterial;
+    /// <summary>Average colour of the visible background video that the arrows are easing towards.</summary>
+    private Color arrowTargetColor = Color.white;
+    /// <summary>Current arrow tint applied to the material's _Color.</summary>
+    private Color arrowCurrentColor = Color.white;
+    /// <summary>Unscaled time of the next background colour sample.</summary>
+    private float nextArrowColorSample = 0f;
+    /// <summary>Whether a GPU readback of the background colour is still in flight.</summary>
+    private bool arrowColorReadbackPending = false;
 
     /// <summary>Current visibility (0-1) of the difficulty fade spires.</summary>
     private float spireVisibility = 1f;
@@ -361,6 +394,7 @@ public class SongCarouselManager : MonoBehaviour
 
         CreateBackgroundGhost();
         CreateVideoLayers();
+        SetupArrows();
         CollectSpireFadeTargets(difficultyFadeSpire1);
         CollectSpireFadeTargets(difficultyFadeSpire2);
 
@@ -465,6 +499,8 @@ public class SongCarouselManager : MonoBehaviour
     /// </summary>
     void Update()
     {
+        UpdateArrowColor();
+
         // Check for pause input (Escape or Start button) - ONLY when not paused and not transitioning
         if (!isPaused && !isTransitioning && (pauseMenu == null || !pauseMenu.IsPaused()))
         {
@@ -909,6 +945,8 @@ public class SongCarouselManager : MonoBehaviour
             videoPausedByMenu[i] = videoPlayers[i].isPlaying;
             if (videoPausedByMenu[i]) videoPlayers[i].Pause();
         }
+        arrowVideoPausedByMenu = arrowVideoPlayer != null && arrowVideoPlayer.isPlaying;
+        if (arrowVideoPausedByMenu) arrowVideoPlayer.Pause();
 
         // Pause sfx
         if (sfxSource != null && sfxSource.isPlaying)
@@ -943,6 +981,8 @@ public class SongCarouselManager : MonoBehaviour
             if (videoPausedByMenu[i]) videoPlayers[i].Play();
             videoPausedByMenu[i] = false;
         }
+        if (arrowVideoPausedByMenu) arrowVideoPlayer.Play();
+        arrowVideoPausedByMenu = false;
 
         // Resume sfx
         if (sfxSource != null)
@@ -1869,6 +1909,9 @@ public class SongCarouselManager : MonoBehaviour
                 Destroy(texture);
             }
             texture = new RenderTexture(width, height, 0);
+            // Mipmaps let the arrows read the video's average colour from the 1x1 level.
+            texture.useMipMap = true;
+            texture.autoGenerateMips = true;
             texture.Create();
             videoTextures[index] = texture;
         }
@@ -1966,10 +2009,129 @@ public class SongCarouselManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Plays the arrows video on the arrow display with the LED dot effect. The dots match the
+    /// background video's dot size, and dark pixels become transparent so only the arrows light up.
+    /// </summary>
+    private void SetupArrows()
+    {
+        if (arrowDisplay == null || arrowVideo == null) return;
+
+        RenderTexture texture = arrowVideoTexture;
+        if (texture == null)
+        {
+            int width = arrowVideo.width > 0 ? (int)arrowVideo.width : 1280;
+            int height = arrowVideo.height > 0 ? (int)arrowVideo.height : 720;
+            arrowRuntimeTexture = new RenderTexture(width, height, 0);
+            arrowRuntimeTexture.Create();
+            texture = arrowRuntimeTexture;
+        }
+
+        // Clear to black so nothing shows (black is transparent) before the first frame arrives.
+        RenderTexture previousActive = RenderTexture.active;
+        RenderTexture.active = texture;
+        GL.Clear(true, true, Color.black);
+        RenderTexture.active = previousActive;
+
+        Shader ledShader = Resources.Load<Shader>("Shaders/LedScreen");
+        if (ledShader == null)
+        {
+            Debug.LogWarning("LED screen shader not found at Resources/Shaders/LedScreen; the arrows video can't be shown on a UI Image.");
+            return;
+        }
+
+        // A UI Image can only hold a sprite, so the video is fed to the shader through its own
+        // texture slot instead. With no sprite, the Image's UVs simply span its rect (0-1).
+        arrowDisplay.sprite = null;
+        arrowDisplay.type = Image.Type.Simple;
+        arrowDisplay.raycastTarget = false;
+
+        Rect area = arrowDisplay.rectTransform.rect;
+        float backgroundWidth = mainBackgroundDisplay != null ? mainBackgroundDisplay.rectTransform.rect.width : 0f;
+        float dotsAcross = backgroundWidth > 0f ? LedDotsAcross * area.width / backgroundWidth : LedDotsAcross;
+
+        arrowMaterial = new Material(ledShader);
+        arrowMaterial.SetFloat("_DotCount", Mathf.Max(1f, dotsAcross));
+        arrowMaterial.SetFloat("_DotSize", LedDotSize);
+        arrowMaterial.SetFloat("_Softness", LedDotSoftness);
+        arrowMaterial.SetFloat("_Brightness", LedBrightness);
+        arrowMaterial.SetFloat("_Aspect", area.height > 0f ? area.width / area.height : 1f);
+        arrowMaterial.SetVector("_UVRect", new Vector4(0f, 0f, 1f, 1f));
+        arrowMaterial.SetFloat("_BlackToAlpha", 1f);
+        arrowMaterial.SetTexture("_OverrideTex", texture);
+        arrowMaterial.SetFloat("_UseOverrideTex", 1f);
+        arrowDisplay.material = arrowMaterial;
+
+        GameObject playerObject = new GameObject("ArrowVideo", typeof(VideoPlayer));
+        playerObject.transform.SetParent(transform, false);
+        arrowVideoPlayer = playerObject.GetComponent<VideoPlayer>();
+        arrowVideoPlayer.playOnAwake = false;
+        arrowVideoPlayer.isLooping = true;
+        arrowVideoPlayer.source = VideoSource.VideoClip;
+        arrowVideoPlayer.clip = arrowVideo;
+        arrowVideoPlayer.renderMode = VideoRenderMode.RenderTexture;
+        arrowVideoPlayer.targetTexture = texture;
+        arrowVideoPlayer.audioOutputMode = VideoAudioOutputMode.None;
+        arrowVideoPlayer.skipOnDrop = true;
+        arrowVideoPlayer.Play();
+    }
+
+    /// <summary>
+    /// Tints the arrows with the average colour of the visible background video (white when none is showing).
+    /// The colour is read back from the video's 1x1 mip level without stalling the GPU.
+    /// </summary>
+    private void UpdateArrowColor()
+    {
+        if (arrowMaterial == null) return;
+
+        RenderTexture source = activeVideoLayer >= 0 && activeVideoLayer < videoTextures.Length ? videoTextures[activeVideoLayer] : null;
+        if (source == null)
+        {
+            arrowTargetColor = Color.white;
+        }
+        else if (!arrowColorReadbackPending && Time.unscaledTime >= nextArrowColorSample && SystemInfo.supportsAsyncGPUReadback)
+        {
+            nextArrowColorSample = Time.unscaledTime + ArrowColorSampleInterval;
+            // Read in the texture's own format (format conversion isn't supported for every
+            // render texture format, e.g. B8G8R8A8_SRGB on Metal) and decode the bytes here.
+            UnityEngine.Experimental.Rendering.GraphicsFormat format = source.graphicsFormat;
+            bool isBgra = format == UnityEngine.Experimental.Rendering.GraphicsFormat.B8G8R8A8_SRGB
+                       || format == UnityEngine.Experimental.Rendering.GraphicsFormat.B8G8R8A8_UNorm;
+            bool isRgba = format == UnityEngine.Experimental.Rendering.GraphicsFormat.R8G8B8A8_SRGB
+                       || format == UnityEngine.Experimental.Rendering.GraphicsFormat.R8G8B8A8_UNorm;
+            if (isBgra || isRgba)
+            {
+                arrowColorReadbackPending = true;
+                AsyncGPUReadback.Request(source, source.mipmapCount - 1, request =>
+                {
+                    arrowColorReadbackPending = false;
+                    if (request.hasError || arrowMaterial == null || activeVideoLayer < 0) return;
+                    var data = request.GetData<byte>();
+                    if (data.Length < 4) return;
+                    byte r = isBgra ? data[2] : data[0];
+                    byte b = isBgra ? data[0] : data[2];
+                    arrowTargetColor = new Color(r / 255f, data[1] / 255f, b / 255f, 1f);
+                });
+            }
+        }
+
+        float t = 1f - Mathf.Exp(-ArrowColorFollowSpeed * Time.unscaledDeltaTime);
+        arrowCurrentColor = Color.Lerp(arrowCurrentColor, arrowTargetColor, t);
+        arrowMaterial.SetColor("_Color", arrowCurrentColor);
+    }
+
+    /// <summary>
     /// Releases the runtime video render textures.
     /// </summary>
     void OnDestroy()
     {
+        if (arrowRuntimeTexture != null)
+        {
+            arrowRuntimeTexture.Release();
+            Destroy(arrowRuntimeTexture);
+        }
+
+        if (arrowMaterial != null) Destroy(arrowMaterial);
+
         foreach (RenderTexture texture in videoTextures)
         {
             if (texture == null) continue;

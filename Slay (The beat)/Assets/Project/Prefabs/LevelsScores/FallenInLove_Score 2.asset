@@ -22,11 +22,12 @@ MonoBehaviour:
   easyChart: {fileID: 0}
   mediumChart: {fileID: 4900000, guid: 5c82554c546f04d08aefc804abf572b8, type: 3}
   hardChart: {fileID: 4900000, guid: 061ce2e717cc846929596cd6eccf1b9a, type: 3}
-  songPreviewClip: {fileID: 8300000, guid: 12d4d5a32cfb1449fa5371ad8d0088e4, type: 3}
+  songPreviewClip: {fileID: 8300000, guid: 0e848abd6ae2f426cb89c5e094c9e90a, type: 3}
   characterSprite: {fileID: 21300000, guid: d8de891b85862414b84e910f787b333c, type: 3}
   p1CharacterSprite: {fileID: 21300000, guid: 585e261395ef34994812ab63cdf2c602, type: 3}
   p2CharacterSprite: {fileID: 21300000, guid: be2865f9c718849aaa78e2c37881f0b0, type: 3}
   environmentSprite: {fileID: 21300000, guid: 2576e29d7dddb4a2f8f0d933daecc906, type: 3}
+  previewVideo: {fileID: 32900000, guid: 2814b14e77c374bf999e7e799f1b82dc, type: 3}
   visualGradient:
     serializedVersion: 2
     key0: {r: 0.23201919, g: 1, b: 0, a: 1}

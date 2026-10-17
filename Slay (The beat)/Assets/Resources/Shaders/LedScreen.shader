@@ -14,6 +14,12 @@ Shader "UI/LED Screen"
         _Brightness ("Brightness", Float) = 1.25
         _Aspect ("Display Aspect (width / height)", Float) = 1.7778
         _UVRect ("Displayed UV Rect", Vector) = (0, 0, 1, 1)
+        // 1 = dark pixels become transparent (for videos on a black background), 0 = keep them.
+        _BlackToAlpha ("Black To Alpha", Range(0, 1)) = 0
+        _BlackThreshold ("Black Threshold", Range(0.001, 1)) = 0.25
+        // Lets a UI Image (which only holds sprites) show a video render texture instead.
+        _OverrideTex ("Override Texture", 2D) = "black" {}
+        [Toggle] _UseOverrideTex ("Use Override Texture", Float) = 0
 
         // Standard UI masking support
         _StencilComp ("Stencil Comparison", Float) = 8
@@ -94,6 +100,10 @@ Shader "UI/LED Screen"
             float _Brightness;
             float _Aspect;
             float4 _UVRect;
+            float _BlackToAlpha;
+            float _BlackThreshold;
+            sampler2D _OverrideTex;
+            float _UseOverrideTex;
 
             v2f vert (appdata_t v)
             {
@@ -117,7 +127,15 @@ Shader "UI/LED Screen"
                 // Every LED shows one solid colour: the pixel at its cell centre.
                 float2 centre = (floor(cell) + 0.5) / grid;
                 float2 sampleUV = _UVRect.xy + centre * _UVRect.zw;
-                half4 color = (tex2Dlod(_MainTex, float4(sampleUV, 0, 0)) + _TextureSampleAdd) * IN.color;
+                half4 texel = _UseOverrideTex > 0.5
+                    ? tex2Dlod(_OverrideTex, float4(sampleUV, 0, 0))
+                    : tex2Dlod(_MainTex, float4(sampleUV, 0, 0)) + _TextureSampleAdd;
+                half4 color = texel * IN.color;
+
+                // Optionally turn dark LEDs transparent, so a black video background disappears.
+                half luminance = max(color.r, max(color.g, color.b));
+                color.a *= lerp(1.0, saturate(luminance / _BlackThreshold), _BlackToAlpha);
+
                 color.rgb *= _Brightness;
 
                 // Round LED with a soft edge; outside it is fully transparent.
