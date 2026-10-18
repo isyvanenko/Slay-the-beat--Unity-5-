@@ -19,9 +19,49 @@ public class SongCarouselManager : MonoBehaviour
     /// <summary>Current state of the song selection menu.</summary>
     [SerializeField] private MenuState currentState = MenuState.Splash;
 
-    /// <summary>All song entries available to the carousel, including any random song option.</summary>
+    /// <summary>
+    /// A named list of songs the player can switch to with Up/Down (e.g. ALL STAGES, REMIX).
+    /// </summary>
+    [System.Serializable]
+    public class SongPlaylist
+    {
+        /// <summary>Name shown in the playlist selector.</summary>
+        public string displayName = "ALL STAGES";
+        /// <summary>Shown in the selector but can't be entered yet (e.g. a mode that isn't built).</summary>
+        [Tooltip("Shown in the selector but can't be entered yet (e.g. a mode that isn't built)")]
+        public bool comingSoon = false;
+        /// <summary>Songs shown in the carousel while this playlist is active, including any random song option.</summary>
+        public List<SongGradeData> songs = new List<SongGradeData>();
+
+        /// <summary>Whether the player can switch to this playlist.</summary>
+        public bool IsSelectable => !comingSoon && songs != null && songs.Count > 0;
+    }
+
+    /// <summary>Songs shown in the carousel. Replaced by the active playlist's songs when playlists are set up.</summary>
     [Header("Data Source")]
+    [Tooltip("Songs shown in the carousel. Replaced by the active playlist's songs when playlists are set up")]
     public List<SongGradeData> allSongData;
+
+    /// <summary>Playlists switched between with Up/Down, top to bottom. Leave empty to only use <see cref="allSongData"/>.</summary>
+    [Header("Playlists")]
+    [Tooltip("Playlists switched between with Up/Down, top to bottom. Leave empty to only use All Song Data")]
+    public List<SongPlaylist> playlists = new List<SongPlaylist>();
+    /// <summary>Playlist shown when the scene opens.</summary>
+    [Tooltip("Playlist shown when the scene opens")]
+    public int startPlaylistIndex = 1;
+    /// <summary>Text showing the playlist above the active one.</summary>
+    [Tooltip("Text showing the playlist above the active one")]
+    public TextMeshProUGUI previousPlaylistText;
+    /// <summary>Text showing the active playlist.</summary>
+    [Tooltip("Text showing the active playlist")]
+    public TextMeshProUGUI currentPlaylistText;
+    /// <summary>Text showing the playlist below the active one.</summary>
+    [Tooltip("Text showing the playlist below the active one")]
+    public TextMeshProUGUI nextPlaylistText;
+    /// <summary>Colour of the active playlist name.</summary>
+    public Color activePlaylistColor = Color.white;
+    /// <summary>Colour of the neighbouring (inactive) playlist names.</summary>
+    public Color inactivePlaylistColor = new Color(1f, 1f, 1f, 0.35f);
 
     /// <summary>Canvas group faded out after the splash screen delay.</summary>
     [Header("Splash Screen")]
@@ -64,6 +104,9 @@ public class SongCarouselManager : MonoBehaviour
     public RectTransform[] slots; 
     /// <summary>Canvas group for fading the carousel UI in and out.</summary>
     public CanvasGroup carouselCanvasGroup;
+    /// <summary>Colour multiplier for song covers that aren't selected. Darkens them without making them see-through.</summary>
+    [Tooltip("Brightness of the side song covers (1 = full colour, 0 = black). Alpha stays untouched.")]
+    [Range(0f, 1f)] public float sideCoverBrightness = 0.35f;
 
     /// <summary>Large title text for the currently highlighted song.</summary>
     [Header("Main Menu Visuals")]
@@ -170,8 +213,10 @@ public class SongCarouselManager : MonoBehaviour
 
     /// <summary>Index of the currently selected song in <see cref="allSongData"/>.</summary>
     private int currentSongIndex = 0; 
+    /// <summary>Index of the active playlist in <see cref="playlists"/>.</summary>
+    private int currentPlaylistIndex = 0;
     /// <summary>Index of the currently selected difficulty box.</summary>
-    private int currentDiffIndex = 1; 
+    private int currentDiffIndex = 1;
     /// <summary>Generated input actions wrapper used by the menu UI.</summary>
     private InputActions input;
     /// <summary>Whether a UI transition is currently running.</summary>
@@ -229,6 +274,10 @@ public class SongCarouselManager : MonoBehaviour
     private const float ArrowColorSampleInterval = 0.1f;
     /// <summary>How quickly the arrow tint follows the background video's average colour.</summary>
     private const float ArrowColorFollowSpeed = 6f;
+    /// <summary>Seconds the old songs take to fade out when switching playlists.</summary>
+    private const float PlaylistSwapFadeTime = 0.15f;
+    /// <summary>Vertical distance the playlist names slide in from when switching playlists.</summary>
+    private const float PlaylistSlideDistance = 30f;
 
     /// <summary>Smoothed carousel block scales before punch and breathing are applied.</summary>
     private List<Vector3> blockBaseScales = new List<Vector3>();
@@ -236,6 +285,12 @@ public class SongCarouselManager : MonoBehaviour
     private List<float> blockPunch = new List<float>();
     /// <summary>Slot each carousel block occupied last frame, or -1 when off-screen.</summary>
     private List<int> blockSlots = new List<int>();
+    /// <summary>Graphics inside each carousel block that get darkened when the block isn't selected.</summary>
+    private List<Graphic[]> blockGraphics = new List<Graphic[]>();
+    /// <summary>Original colours of each entry in <see cref="blockGraphics"/>.</summary>
+    private List<Color[]> blockGraphicColors = new List<Color[]>();
+    /// <summary>Current brightness per carousel block (1 = full colour).</summary>
+    private List<float> blockBrightness = new List<float>();
     /// <summary>Reusable index list used to sort carousel blocks by depth.</summary>
     private List<int> depthOrder = new List<int>();
 
@@ -310,6 +365,8 @@ public class SongCarouselManager : MonoBehaviour
     private Dictionary<Object, Coroutine> runningAnimations = new Dictionary<Object, Coroutine>();
     /// <summary>Rest scales captured the first time a transform is animated.</summary>
     private Dictionary<Transform, Vector3> baseScales = new Dictionary<Transform, Vector3>();
+    /// <summary>Rest rotations captured the first time a transform is shaken.</summary>
+    private Dictionary<Transform, Quaternion> baseRotations = new Dictionary<Transform, Quaternion>();
     /// <summary>Rest anchored positions captured the first time a rect is animated.</summary>
     private Dictionary<RectTransform, Vector2> basePositions = new Dictionary<RectTransform, Vector2>();
     /// <summary>Rest alpha values captured the first time a graphic is animated.</summary>
@@ -324,7 +381,9 @@ public class SongCarouselManager : MonoBehaviour
         input.UI.NavigateLeft.performed += _ => OnMove(-1);
         input.UI.NavigateRight.performed += _ => OnMove(1);
         input.UI.Select.performed += _ => OnConfirm(false); 
-        input.UI.Cancel.performed += _ => OnCancel(); 
+        input.UI.Cancel.performed += _ => OnCancel();
+        input.Gameplay.Up.performed += _ => OnPlaylistMove(-1);
+        input.Gameplay.Down.performed += _ => OnPlaylistMove(1);
     }
 
     /// <summary>
@@ -332,7 +391,14 @@ public class SongCarouselManager : MonoBehaviour
     /// </summary>
     void Start()
     {
-        if (allSongData.Count == 0) return;
+        if (playlists.Count > 0)
+        {
+            currentPlaylistIndex = FindSelectablePlaylist(Mathf.Clamp(startPlaylistIndex, 0, playlists.Count - 1));
+            if (currentPlaylistIndex >= 0) allSongData = playlists[currentPlaylistIndex].songs;
+            UpdatePlaylistTexts(0);
+        }
+
+        if (allSongData == null || allSongData.Count == 0) return;
 
         currentState = MenuState.Splash;
         carouselCanvasGroup.alpha = 0f;
@@ -368,20 +434,7 @@ public class SongCarouselManager : MonoBehaviour
 
         if (musicSource != null) musicSource.Stop();
 
-        for (int i = 0; i < allSongData.Count; i++)
-        {
-            GameObject go = Instantiate(songPrefab, container);
-            RectTransform rt = go.GetComponent<RectTransform>();
-            
-            originalScales.Add(rt.localScale);
-            spawnedBlocks.Add(rt);
-            spawnedGroups.Add(go.GetComponent<CanvasGroup>() ?? go.AddComponent<CanvasGroup>());
-            blockBaseScales.Add(rt.localScale);
-            blockPunch.Add(0f);
-            blockSlots.Add(-1);
-
-            go.GetComponent<SongBlock>()?.UpdateData(allSongData[i]);
-        }
+        SpawnSongBlocks();
 
         diffBaseScales = new float[difficultyBoxes.Length];
         diffPunch = new float[difficultyBoxes.Length];
@@ -698,7 +751,7 @@ public class SongCarouselManager : MonoBehaviour
             }
             else if (lockedDifficulties[next])
             {
-                RunAnimation(difficultyBoxes[next], ShakeRoutine(next));
+                RunAnimation(difficultyBoxes[next], ShakeRoutine(difficultyBoxes[next], diffBaseRotations[next]));
                 if (sfxSource && lockedSound) sfxSource.PlayOneShot(lockedSound);
             }
             else
@@ -707,6 +760,207 @@ public class SongCarouselManager : MonoBehaviour
                 diffPunch[currentDiffIndex] = DifficultyPunch * 0.5f;
             }
         }
+    }
+
+    /// <summary>
+    /// Switches to the playlist above (-1) or below (1), skipping playlists that can't be entered yet.
+    /// </summary>
+    /// <param name="dir">-1 for Up, 1 for Down.</param>
+    void OnPlaylistMove(int dir)
+    {
+        if (playlists.Count == 0 || currentPlaylistIndex < 0) return;
+        if (isTransitioning || currentState != MenuState.Carousel || isPaused || (pauseMenu != null && pauseMenu.IsPaused())) return;
+
+        int next = currentPlaylistIndex + dir;
+        while (next >= 0 && next < playlists.Count && !playlists[next].IsSelectable)
+            next += dir;
+
+        if (next < 0 || next >= playlists.Count)
+        {
+            // Nothing to switch to. Shake the neighbour if it's a "coming soon" playlist.
+            int neighbour = currentPlaylistIndex + dir;
+            TextMeshProUGUI neighbourText = dir < 0 ? previousPlaylistText : nextPlaylistText;
+            if (neighbour >= 0 && neighbour < playlists.Count && neighbourText != null)
+            {
+                RectTransform rt = neighbourText.rectTransform;
+                RunAnimation(rt, ShakeRoutine(rt, GetBaseRotation(rt)));
+                if (sfxSource && lockedSound) sfxSource.PlayOneShot(lockedSound);
+            }
+            return;
+        }
+
+        StartCoroutine(SwitchPlaylistRoutine(next, dir));
+    }
+
+    /// <summary>
+    /// Fades out the current songs, swaps the carousel to another playlist's songs, and pops the new songs in.
+    /// </summary>
+    /// <param name="index">Playlist to switch to.</param>
+    /// <param name="dir">Direction of the switch, used for the name slide.</param>
+    /// <returns>Coroutine enumerator for the playlist swap.</returns>
+    private IEnumerator SwitchPlaylistRoutine(int index, int dir)
+    {
+        isTransitioning = true;
+        currentPlaylistIndex = index;
+        allSongData = playlists[index].songs;
+        if (sfxSource && moveSound) sfxSource.PlayOneShot(moveSound);
+        UpdatePlaylistTexts(dir);
+
+        float[] startAlphas = new float[spawnedGroups.Count];
+        for (int i = 0; i < spawnedGroups.Count; i++) startAlphas[i] = spawnedGroups[i].alpha;
+
+        float elapsed = 0f;
+        while (elapsed < PlaylistSwapFadeTime)
+        {
+            elapsed += Time.deltaTime;
+            float remaining = 1f - Mathf.Clamp01(elapsed / PlaylistSwapFadeTime);
+            for (int i = 0; i < spawnedGroups.Count; i++) spawnedGroups[i].alpha = startAlphas[i] * remaining;
+            yield return null;
+        }
+
+        ClearSongBlocks();
+        SpawnSongBlocks();
+
+        currentSongIndex = 0;
+        secretRandomSong = null;
+        lastDisplayedSongIndex = -1;
+        lastMoveDir = 0;
+
+        SnapToPositions();
+        for (int i = 0; i < spawnedGroups.Count; i++) spawnedGroups[i].alpha = 0f;
+        UpdateSelectionVisuals();
+
+        yield return StartCoroutine(CarouselIntroRoutine());
+        isTransitioning = false;
+    }
+
+    /// <summary>
+    /// Spawns one carousel block per entry in <see cref="allSongData"/>.
+    /// </summary>
+    private void SpawnSongBlocks()
+    {
+        for (int i = 0; i < allSongData.Count; i++)
+        {
+            GameObject go = Instantiate(songPrefab, container);
+            RectTransform rt = go.GetComponent<RectTransform>();
+
+            originalScales.Add(rt.localScale);
+            spawnedBlocks.Add(rt);
+            spawnedGroups.Add(go.GetComponent<CanvasGroup>() ?? go.AddComponent<CanvasGroup>());
+            blockBaseScales.Add(rt.localScale);
+            blockPunch.Add(0f);
+            blockSlots.Add(-1);
+
+            Graphic[] graphics = go.GetComponentsInChildren<Graphic>(true);
+            Color[] colors = new Color[graphics.Length];
+            for (int g = 0; g < graphics.Length; g++) colors[g] = graphics[g].color;
+            blockGraphics.Add(graphics);
+            blockGraphicColors.Add(colors);
+            blockBrightness.Add(-1f);
+
+            go.GetComponent<SongBlock>()?.UpdateData(allSongData[i]);
+        }
+    }
+
+    /// <summary>
+    /// Destroys the spawned carousel blocks and clears their per-block state.
+    /// </summary>
+    private void ClearSongBlocks()
+    {
+        foreach (RectTransform block in spawnedBlocks)
+        {
+            if (block == null) continue;
+            baseScales.Remove(block);
+            Destroy(block.gameObject);
+        }
+
+        spawnedBlocks.Clear();
+        spawnedGroups.Clear();
+        originalScales.Clear();
+        blockBaseScales.Clear();
+        blockPunch.Clear();
+        blockSlots.Clear();
+        blockGraphics.Clear();
+        blockGraphicColors.Clear();
+        blockBrightness.Clear();
+    }
+
+    /// <summary>
+    /// Returns the playlist at or nearest to <paramref name="preferred"/> that can be entered, or -1 if none can.
+    /// </summary>
+    private int FindSelectablePlaylist(int preferred)
+    {
+        for (int offset = 0; offset < playlists.Count; offset++)
+        {
+            int below = preferred + offset;
+            if (below < playlists.Count && playlists[below].IsSelectable) return below;
+            int above = preferred - offset;
+            if (above >= 0 && playlists[above].IsSelectable) return above;
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// Shows the active playlist name and its neighbours above and below.
+    /// </summary>
+    /// <param name="dir">Direction of the switch that caused the update; 0 updates without animating.</param>
+    private void UpdatePlaylistTexts(int dir)
+    {
+        SetPlaylistText(previousPlaylistText, currentPlaylistIndex - 1, false, dir);
+        SetPlaylistText(currentPlaylistText, currentPlaylistIndex, true, dir);
+        SetPlaylistText(nextPlaylistText, currentPlaylistIndex + 1, false, dir);
+    }
+
+    /// <summary>
+    /// Fills one playlist name text, hiding it when there's no playlist at that position.
+    /// </summary>
+    private void SetPlaylistText(TextMeshProUGUI text, int index, bool active, int dir)
+    {
+        if (text == null) return;
+
+        bool exists = currentPlaylistIndex >= 0 && index >= 0 && index < playlists.Count;
+        text.gameObject.SetActive(exists);
+        if (!exists) return;
+
+        text.text = playlists[index].displayName;
+        Color target = active ? activePlaylistColor : inactivePlaylistColor;
+        if (dir == 0)
+        {
+            text.color = target;
+            return;
+        }
+
+        // Down scrolls the list up, so the names come in from below (and the other way for Up).
+        Vector2 fromOffset = new Vector2(0f, -dir * PlaylistSlideDistance);
+        RunAnimation(text, PlaylistTextRoutine(text, target, fromOffset, active ? 1.12f : 1f));
+    }
+
+    /// <summary>
+    /// Slides and fades a playlist name into place with its active or inactive colour.
+    /// </summary>
+    private IEnumerator PlaylistTextRoutine(TextMeshProUGUI text, Color target, Vector2 fromOffset, float fromScale)
+    {
+        RectTransform rt = text.rectTransform;
+        Vector2 restPos = GetBasePosition(rt);
+        Vector3 restScale = GetBaseScale(rt);
+        const float duration = 0.3f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float eased = EaseOutCubic(Mathf.Clamp01(elapsed / duration));
+            rt.anchoredPosition = restPos + fromOffset * (1f - eased);
+            rt.localScale = restScale * Mathf.Lerp(fromScale, 1f, eased);
+            Color color = target;
+            color.a *= eased;
+            text.color = color;
+            yield return null;
+        }
+
+        rt.anchoredPosition = restPos;
+        rt.localScale = restScale;
+        text.color = target;
     }
 
     /// <summary>
@@ -1183,6 +1437,7 @@ public class SongCarouselManager : MonoBehaviour
                 float extra = 1f + blockPunch[i] + (targetSlotIndex == 3 ? breath : 0f);
                 spawnedBlocks[i].localScale = blockBaseScales[i] * extra;
                 spawnedGroups[i].alpha = Mathf.MoveTowards(spawnedGroups[i].alpha, IsEdgeSlot(targetSlotIndex) ? 0f : 1f, fade);
+                SetBlockBrightness(i, Mathf.MoveTowards(blockBrightness[i], GetTargetBrightness(targetSlotIndex), fade));
             }
             else
             {
@@ -1207,6 +1462,7 @@ public class SongCarouselManager : MonoBehaviour
                 blockBaseScales[i] = originalScales[i] * slots[targetSlotIndex].localScale.x;
                 spawnedBlocks[i].localScale = blockBaseScales[i];
                 spawnedGroups[i].alpha = IsEdgeSlot(targetSlotIndex) ? 0f : 1f;
+                SetBlockBrightness(i, GetTargetBrightness(targetSlotIndex));
                 blockSlots[i] = targetSlotIndex;
             }
             else
@@ -1236,6 +1492,29 @@ public class SongCarouselManager : MonoBehaviour
 
     /// <summary>Whether a slot is one of the hidden edge slots.</summary>
     private bool IsEdgeSlot(int slot) => slot == 0 || slot == 6;
+
+    /// <summary>Brightness a block should have in a slot: full colour in the centre, dimmed on the sides.</summary>
+    private float GetTargetBrightness(int slot) => slot == 3 ? 1f : sideCoverBrightness;
+
+    /// <summary>
+    /// Darkens a carousel block by scaling the RGB of its graphics. Alpha is kept as-is so the cover stays opaque.
+    /// </summary>
+    private void SetBlockBrightness(int blockIndex, float brightness)
+    {
+        if (blockIndex >= blockBrightness.Count) return;
+        if (blockBrightness[blockIndex] < 0f) brightness = GetTargetBrightness(GetTargetSlot(blockIndex));
+        if (Mathf.Approximately(blockBrightness[blockIndex], brightness)) return;
+        blockBrightness[blockIndex] = brightness;
+
+        Graphic[] graphics = blockGraphics[blockIndex];
+        Color[] colors = blockGraphicColors[blockIndex];
+        for (int g = 0; g < graphics.Length; g++)
+        {
+            if (graphics[g] == null) continue;
+            Color c = colors[g];
+            graphics[g].color = new Color(c.r * brightness, c.g * brightness, c.b * brightness, c.a);
+        }
+    }
 
     /// <summary>
     /// Orders carousel blocks so the selected song is drawn on top and neighbours layer outward.
@@ -1583,14 +1862,13 @@ public class SongCarouselManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Wiggles a locked difficulty box to show it cannot be selected.
+    /// Wiggles a locked difficulty box or playlist name to show it cannot be selected.
     /// </summary>
-    /// <param name="index">Index of the locked difficulty box.</param>
+    /// <param name="box">Transform to wiggle.</param>
+    /// <param name="rest">Rotation to return to.</param>
     /// <returns>Coroutine enumerator for the shake animation.</returns>
-    private IEnumerator ShakeRoutine(int index)
+    private IEnumerator ShakeRoutine(RectTransform box, Quaternion rest)
     {
-        RectTransform box = difficultyBoxes[index];
-        Quaternion rest = diffBaseRotations[index];
         const float duration = 0.35f;
         float elapsed = 0f;
 
@@ -2216,6 +2494,17 @@ public class SongCarouselManager : MonoBehaviour
             baseScales[target] = scale;
         }
         return scale;
+    }
+
+    /// <summary>Returns the rest rotation of a transform, capturing it the first time.</summary>
+    private Quaternion GetBaseRotation(Transform target)
+    {
+        if (!baseRotations.TryGetValue(target, out Quaternion rotation))
+        {
+            rotation = target.localRotation;
+            baseRotations[target] = rotation;
+        }
+        return rotation;
     }
 
     /// <summary>Returns the rest anchored position of a rect, capturing it the first time.</summary>
