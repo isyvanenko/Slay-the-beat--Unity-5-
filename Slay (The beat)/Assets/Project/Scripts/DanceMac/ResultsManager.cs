@@ -148,6 +148,12 @@ public class ResultsManager : MonoBehaviour
 
     /// <summary>Flag controlling winner silhouette rainbow effect.</summary>
     private bool showWinnerRainbow = false;
+
+    /// <summary>Tug of Slay winner for this results screen (1 or 2), or 0 to decide by score.</summary>
+    private int tugWinner = 0;
+
+    /// <summary>Tug of Slay match result to announce, or empty if there was no match.</summary>
+    private string tugResultText = "";
     
     /// <summary>Reference to the winning player's silhouette image.</summary>
     private Image winnerSilhouette;
@@ -216,6 +222,11 @@ public class ResultsManager : MonoBehaviour
         p1ScoreText.text = "00000000";
         p1ComboText.text = "";
         if (p2Panel != null) p2Panel.SetActive(GameSessionData.IsTwoPlayer);
+
+        tugWinner = GameSessionData.TugWinner;
+        GameSessionData.TugWinner = 0;
+        tugResultText = GameSessionData.TugResultText;
+        GameSessionData.TugResultText = "";
 
         int diffBonus = (GameDataBridge.SelectedDifficulty == 0) ? easyModeBonus : 0;
 
@@ -356,10 +367,20 @@ public class ResultsManager : MonoBehaviour
             if (p2StarsEarned == 5) PlayOneShot(applause);
 
             yield return new WaitForSeconds(0.5f);
-            if (p1FinalTotalScore > p2FinalTotalScore) {
+            // A Tug of Slay result beats score; otherwise the higher score wins.
+            bool p1Wins = tugWinner == 1 || (tugWinner == 0 && p1FinalTotalScore > p2FinalTotalScore);
+            bool p2Wins = tugWinner == 2 || (tugWinner == 0 && p2FinalTotalScore > p1FinalTotalScore);
+
+            if (winnerText != null && !string.IsNullOrEmpty(tugResultText))
+            {
+                winnerText.text = tugResultText;
+                winnerText.gameObject.SetActive(true);
+            }
+
+            if (p1Wins) {
                 p1ScoreRainbow = true;
                 winnerSilhouette = p1Silhouette;
-            } else if (p2FinalTotalScore > p1FinalTotalScore) {
+            } else if (p2Wins) {
                 p2ScoreRainbow = true;
                 winnerSilhouette = p2Silhouette;
             } else {

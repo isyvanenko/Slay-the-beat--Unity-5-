@@ -32,7 +32,20 @@ public class SongGradeData : ScriptableObject
     /// It should not be playable directly; instead, selecting it triggers random
     /// selection from available non-random songs.
     /// </remarks>
-    public bool isRandomOption = false; 
+    public bool isRandomOption = false;
+
+    /// <summary>
+    /// Flag marking this level as a Tug of Slay (tug-of-war) level.
+    /// </summary>
+    /// <remarks>
+    /// Confirming this level in song select with two players starts a match, instead of playing this song.
+    /// </remarks>
+    [Tooltip("Tick if confirming this level with two players should start a Tug of Slay match.")]
+    public bool isTugOfSlay = false;
+
+    /// <summary>Keeps this song out of the songs a Tug of Slay match can pick.</summary>
+    [Tooltip("Tick to keep this song out of Tug of Slay rounds, e.g. a level that doesn't use the normal gameplay.")]
+    public bool excludeFromTugOfSlayRounds = false;
 
     [Header("Song Info")]
     /// <summary>Display name of the song shown in UI.</summary>
@@ -69,6 +82,11 @@ public class SongGradeData : ScriptableObject
     /// <summary>Short audio clip played in song selection menu as a preview.</summary>
     /// <remarks>Should be a loopable section (typically 30-60 seconds) representing the song.</remarks>
     public AudioClip songPreviewClip; 
+
+    [Header("Dancer")]
+    /// <summary>The dancer this song's level was built with.</summary>
+    [Tooltip("The dancer this song's level was built with. It's highlighted first on the character select screen, and picking it keeps the dancer placed in the level")]
+    public DancerData dancer;
 
     [Header("Visuals")]
     /// <summary>Primary character sprite used for this song (legacy).</summary>

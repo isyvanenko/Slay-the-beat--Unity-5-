@@ -119,9 +119,22 @@ public class PlayerScoreManager : MonoBehaviour
     /// <summary>Popup star image that appears briefly when earning a star.</summary>
     public Image starPopupImage;
     
-    /// <summary>Particle system for star effects.</summary>
-    public ParticleSystem starParticleEffect;
-    
+    /// <summary>How far the golden glow reaches in from the screen edges when a star is earned, as a share of the screen height.</summary>
+    [Range(0.05f, 0.6f)]
+    public float goldenEdgeWidth = 0.25f;
+
+    /// <summary>How solid the golden edge glow is at full brightness.</summary>
+    [Range(0f, 1f)]
+    public float goldenEdgeStrength = 0.85f;
+
+    /// <summary>Gold sparkles released when a star is earned, with more following while the glow lasts.</summary>
+    [Range(0, 100)]
+    public int goldenSparkleCount = 45;
+
+    /// <summary>Size of the gold sparkles, as a share of the screen height.</summary>
+    [Range(0.01f, 0.15f)]
+    public float goldenSparkleSize = 0.09f;
+
     /// <summary>Duration for stars to fade in.</summary>
     public float starFadeInTime = 0.2f;
     
@@ -407,12 +420,14 @@ public class PlayerScoreManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Awards a star rank with animation, particle effect, and sound.
+    /// Awards a star rank with animation, golden screen edges, and sound.
     /// The star fades in, stays for 1 second, then fades out.
     /// </summary>
     /// <param name="starCount">Number of stars achieved.</param>
     private void AwardStar(int starCount)
     {
+        GoldenEdgeGlow.Play(goldFlashColor, goldenEdgeWidth, goldenEdgeStrength, starFadeInTime, starStayTime, starFadeOutTime, goldenSparkleCount, goldenSparkleSize);
+
         // Get the permanent star image
         Image starImage = GetStarImage(starCount);
         if (starImage == null) return;
@@ -430,12 +445,6 @@ public class PlayerScoreManager : MonoBehaviour
         if (starPopupImage != null)
         {
             StartCoroutine(AnimateStarPopup());
-        }
-        
-        // Play particle effect
-        if (starParticleEffect != null)
-        {
-            starParticleEffect.Play();
         }
         
         // Play audio

@@ -89,6 +89,15 @@ public class NoteObject : MonoBehaviour
     /// <summary>Position stored during pause for restoration.</summary>
     private Vector2 frozenPosition;
 
+    /// <summary>Arrow type of this note.</summary>
+    private NoteKind kind = NoteKind.Normal;
+
+    /// <summary>Chart index of this note. The same note has the same id for both players.</summary>
+    private int noteId = -1;
+
+    /// <summary>Colour of a Clash arrow.</summary>
+    private static readonly Color ClashColor = new Color(1f, 0.8f, 0.2f);
+
     /// <summary>
     /// Initializes note components and caches necessary references.
     /// </summary>
@@ -141,6 +150,42 @@ public class NoteObject : MonoBehaviour
                 img.color = temp;
             }
         }
+    }
+
+    /// <summary>
+    /// Sets the arrow type of this note and applies its look.
+    /// </summary>
+    /// <param name="noteKind">Arrow type.</param>
+    /// <param name="id">Chart index of the note.</param>
+    public void SetKind(NoteKind noteKind, int id)
+    {
+        kind = noteKind;
+        noteId = id;
+
+        if (kind == NoteKind.Clash)
+        {
+            SetColor(ClashColor);
+            if (arrowGraphic != null) arrowGraphic.localScale *= 1.3f;
+        }
+    }
+
+    /// <summary>
+    /// Tells the Tug of Slay bar, if the level has one, how close to the receptor this note was hit.
+    /// </summary>
+    /// <param name="distance">Distance from the receptor, or positive infinity for a miss.</param>
+    public void ReportResult(float distance)
+    {
+        if (manager != null && manager.TugBar != null)
+            manager.TugBar.RegisterNoteResult(myScoreManager, kind, noteId, distance);
+    }
+
+    /// <summary>
+    /// Tells the Tug of Slay bar, if the level has one, that this hold note was held to the end.
+    /// </summary>
+    public void ReportHoldFinish()
+    {
+        if (manager != null && manager.TugBar != null)
+            manager.TugBar.RegisterHoldFinish(myScoreManager);
     }
 
     /// <summary>
@@ -255,8 +300,11 @@ public class NoteObject : MonoBehaviour
         float newY = startY + (float)(timeAlive * speed);
         rectTransform.anchoredPosition = new Vector2(rectTransform.anchoredPosition.x, newY);
 
+        if (kind == NoteKind.Rainbow && !hasMissed && !hasBeenDropped)
+            SetColor(Color.HSVToRGB(Mathf.Repeat(Time.time * 2f, 1f), 0.8f, 1f));
+
         // MISS DETECTION - only if not being held and not paused
-        if (!hasMissed && !isBeingHeld)
+        if (!hasMissed && !isBeingHeld && !manager.IsEnding)
         {
             if (newY > missTriggerY)
             {
@@ -301,8 +349,11 @@ public class NoteObject : MonoBehaviour
         if (hasMissed) return;
         hasMissed = true;
         
-        if (myScoreManager != null && !hasBeenDropped) 
+        if (myScoreManager != null && !hasBeenDropped)
+        {
             myScoreManager.RegisterHit("MISS");
+            ReportResult(float.PositiveInfinity);
+        }
 
         TriggerMissVisuals();
     }

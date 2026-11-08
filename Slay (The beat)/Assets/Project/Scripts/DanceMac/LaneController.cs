@@ -176,6 +176,8 @@ public class LaneController : MonoBehaviour
     /// <param name="duration">Hold duration (0 for tap notes).</param>
     /// <param name="noteTime">Absolute song time when note should be hit.</param>
     /// <param name="manager">Reference to the GameplayManager for timing data.</param>
+    /// <param name="kind">Arrow type of the note.</param>
+    /// <param name="noteId">Chart index of the note.</param>
     /// <remarks>
     /// Notes are instantiated at the spawn point and configured with:
     /// - Spawn time based on note time minus spawn offset
@@ -186,7 +188,7 @@ public class LaneController : MonoBehaviour
     /// 
     /// Hold notes are visually distinct and handled differently during gameplay.
     /// </remarks>
-    public void SpawnNote(float duration, float noteTime, GameplayManager manager)
+    public void SpawnNote(float duration, float noteTime, GameplayManager manager, NoteKind kind = NoteKind.Normal, int noteId = -1)
     {
         if (notePrefab == null) return;
         
@@ -206,6 +208,7 @@ public class LaneController : MonoBehaviour
             newNote.SetupHold(duration, noteSpeed);
             
             newNote.SetColor(targetColor);
+            newNote.SetKind(kind, noteId);
         }
     }
 
@@ -292,6 +295,7 @@ public class LaneController : MonoBehaviour
             if (distance < perfectThreshold) judgment = "PERFECT";
 
             if (scoreManager != null) scoreManager.RegisterHit(judgment);
+            targetNote.ReportResult(distance);
             PlayHitEffect();
 
             if (charAnimator != null && !string.IsNullOrEmpty(laneDirectionName))
@@ -390,8 +394,10 @@ public class LaneController : MonoBehaviour
                 if (scoreManager != null)
                 {
                     scoreManager.AddScore(scoreManager.scorePerHoldFinish);
-                    scoreManager.RegisterHit("PERFECT"); 
+                    scoreManager.RegisterHit("PERFECT");
                 }
+
+                currentHoldNote.ReportHoldFinish();
                 
                 Destroy(currentHoldNote.gameObject);
                 currentHoldNote = null;
