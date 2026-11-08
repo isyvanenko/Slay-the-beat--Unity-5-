@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a89f933460454a77b49a946af2ea4d24, type: 3}
+  m_Name: Get It Right
+  m_EditorClassIdentifier: 
+  displayName: GET IT RIGHT
+  portrait: {fileID: 21300000, guid: a30e31cb5636f46a5b4b8665f5eed20d, type: 3}
+  cardImage: {fileID: 0}
+  prefab: {fileID: 649516979992843870, guid: 884d846dc025456ca9e45ca86f5d90cb, type: 3}
+  animatorController: {fileID: 0}
+  sizeMultiplier: 1
