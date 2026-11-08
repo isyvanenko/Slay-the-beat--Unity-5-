@@ -33,4 +33,9 @@ public static class GameDataBridge
     /// Default value is 0 (Easy) if not explicitly set.
     /// </remarks>
     public static int SelectedDifficulty;    // 0 = Easy, 1 = Med, 2 = Hard
+
+    /// <summary>
+    /// The dancer picked on the character select screen, or null to keep the dancer placed in the level.
+    /// </summary>
+    public static DancerData SelectedDancer;
 }
