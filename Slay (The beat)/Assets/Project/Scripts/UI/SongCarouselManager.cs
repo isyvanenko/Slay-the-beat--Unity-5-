@@ -15,7 +15,7 @@ using UnityEngine.Rendering;
 public class SongCarouselManager : MonoBehaviour
 {
     /// <summary>High-level UI states used by the song selection flow.</summary>
-    private enum MenuState { Splash, Carousel, Difficulty, Confirming }
+    private enum MenuState { Splash, Carousel, Character, Difficulty, Confirming }
     /// <summary>Current state of the song selection menu.</summary>
     [SerializeField] private MenuState currentState = MenuState.Splash;
 
@@ -64,6 +64,18 @@ public class SongCarouselManager : MonoBehaviour
     public Color inactivePlaylistColor = new Color(1f, 1f, 1f, 0.35f);
 
     /// <summary>Canvas group faded out after the splash screen delay.</summary>
+    [Header("Tag of Slay View")]
+    [Tooltip("Extra objects to hide while the Tag of Slay category is selected, on top of the song cards, title, character, arrows and title bar")]
+    public List<GameObject> tugOfSlayHiddenObjects = new List<GameObject>();
+    [Tooltip("The panel shown while the Tag of Slay category is selected")]
+    public TugOfSlayPanel tugOfSlayPanel;
+
+    [Header("Character Select")]
+    [Tooltip("The dancer picker shown between choosing a song and choosing a difficulty. Leave empty to skip that step")]
+    public CharacterSelectPanel characterSelectPanel;
+    [Tooltip("The dancers players can pick, in card order. A dancer with no prefab is the 'no dancer' choice")]
+    public List<DancerData> dancers = new List<DancerData>();
+
     [Header("Splash Screen")]
     public CanvasGroup splashCanvasGroup;
     /// <summary>Text shown on the splash screen before the carousel appears.</summary>
@@ -276,6 +288,8 @@ public class SongCarouselManager : MonoBehaviour
     private const float ArrowColorFollowSpeed = 6f;
     /// <summary>Seconds the old songs take to fade out when switching playlists.</summary>
     private const float PlaylistSwapFadeTime = 0.15f;
+    /// <summary>Seconds the song screen takes to change to or from the Tag of Slay view.</summary>
+    private const float TugOfSlayViewFadeTime = 0.25f;
     /// <summary>Vertical distance the playlist names slide in from when switching playlists.</summary>
     private const float PlaylistSlideDistance = 30f;
 
@@ -347,6 +361,13 @@ public class SongCarouselManager : MonoBehaviour
     /// <summary>Whether a GPU readback of the background colour is still in flight.</summary>
     private bool arrowColorReadbackPending = false;
 
+    /// <summary>How far the song screen has changed into the Tag of Slay view, from 0 to 1.</summary>
+    private float tugOfSlayViewAmount = 0f;
+    /// <summary>UI objects faded out in the Tag of Slay view.</summary>
+    private List<CanvasGroup> tugOfSlayHiddenGroups = new List<CanvasGroup>();
+    /// <summary>Non-UI objects switched off in the Tag of Slay view, because they can't be faded.</summary>
+    private List<GameObject> tugOfSlayHiddenToggles = new List<GameObject>();
+
     /// <summary>Current visibility (0-1) of the difficulty fade spires.</summary>
     private float spireVisibility = 1f;
     /// <summary>Canvas groups used to fade UI spires.</summary>
@@ -391,6 +412,9 @@ public class SongCarouselManager : MonoBehaviour
     /// </summary>
     void Start()
     {
+        // Reaching song select means any match in progress is over.
+        TugOfSlayMatch.End();
+
         if (playlists.Count > 0)
         {
             currentPlaylistIndex = FindSelectablePlaylist(Mathf.Clamp(startPlaylistIndex, 0, playlists.Count - 1));
@@ -403,6 +427,11 @@ public class SongCarouselManager : MonoBehaviour
         currentState = MenuState.Splash;
         carouselCanvasGroup.alpha = 0f;
         difficultyCanvasGroup.alpha = 0f;
+        if (CharacterGroup != null)
+        {
+            CharacterGroup.alpha = 0f;
+            CharacterGroup.blocksRaycasts = false;
+        }
         
         if (warningCanvasGroup != null) warningCanvasGroup.alpha = 0f;
         if (splashCanvasGroup != null) 
@@ -450,6 +479,7 @@ public class SongCarouselManager : MonoBehaviour
         SetupArrows();
         CollectSpireFadeTargets(difficultyFadeSpire1);
         CollectSpireFadeTargets(difficultyFadeSpire2);
+        SetupTugOfSlayView();
 
         for (int i = 0; i < difficultyBoxes.Length && i < 3; i++)
         {
@@ -585,6 +615,14 @@ public class SongCarouselManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Runs after the carousel's animations, so the Tag of Slay view can hide what they just showed.
+    /// </summary>
+    void LateUpdate()
+    {
+        UpdateTugOfSlayView();
+    }
+
+    /// <summary>
     /// Decrements the arcade timer, updates timer UI, flashes warnings, and auto-selects on timeout.
     /// </summary>
     private void HandleArcadeTimer()
@@ -661,12 +699,26 @@ public class SongCarouselManager : MonoBehaviour
     /// </summary>
     private void AutoSelect()
     {
+        // A match has already chosen its song and is loading it.
+        if (TugOfSlayMatch.IsActive) return;
+
+        // Nobody chose to play this mode, so don't start it for them.
+        if (currentState == MenuState.Carousel && IsTugOfSlayViewSelected)
+        {
+            ResetTimer();
+            int home = FindSelectablePlaylist(Mathf.Clamp(startPlaylistIndex, 0, playlists.Count - 1));
+            if (home >= 0 && home != currentPlaylistIndex)
+                StartCoroutine(SwitchPlaylistRoutine(home, home < currentPlaylistIndex ? -1 : 1));
+            return;
+        }
+
         if (currentState == MenuState.Carousel)
         {
             OnConfirm(true); 
         }
-        else if (currentState == MenuState.Difficulty || currentState == MenuState.Confirming)
+        else if (currentState == MenuState.Character || currentState == MenuState.Difficulty || currentState == MenuState.Confirming)
         {
+            if (currentState == MenuState.Character) GameDataBridge.SelectedDancer = characterSelectPanel.Selected;
             currentDiffIndex = GetFirstUnlockedDifficulty();
             
             SongGradeData finalSong = allSongData[currentSongIndex].isRandomOption ? secretRandomSong : allSongData[currentSongIndex];
@@ -725,12 +777,20 @@ public class SongCarouselManager : MonoBehaviour
 
         if (currentState == MenuState.Carousel)
         {
+            if (IsTugOfSlayViewSelected) return;
+
             currentSongIndex = (currentSongIndex + dir + allSongData.Count) % allSongData.Count;
             lastMoveDir = dir;
             blockPunch[currentSongIndex] = CarouselPunch;
             ApplyDepthOrder();
             if (sfxSource && moveSound) sfxSource.PlayOneShot(moveSound);
             UpdateSelectionVisuals();
+        }
+        else if (currentState == MenuState.Character)
+        {
+            if (characterSelectPanel.Count <= 1) return;
+            characterSelectPanel.Move(dir);
+            if (sfxSource && moveSound) sfxSource.PlayOneShot(moveSound);
         }
         else if (currentState == MenuState.Difficulty)
         {
@@ -979,7 +1039,7 @@ public class SongCarouselManager : MonoBehaviour
                 List<SongGradeData> validSongs = new List<SongGradeData>();
                 foreach (var s in allSongData) 
                 {
-                    if (!s.isRandomOption) validSongs.Add(s);
+                    if (!s.isRandomOption && !s.isTugOfSlay) validSongs.Add(s);
                 }
 
                 if (validSongs.Count > 0)
@@ -1132,8 +1192,19 @@ public class SongCarouselManager : MonoBehaviour
 
         if (currentState == MenuState.Carousel)
         {
+            if (TryStartTugOfSlayMatch()) return;
+
             wasAutoSelected = isAuto; 
-            StartCoroutine(TransitionToDifficulty());
+            // Without a dancer screen, every level keeps its own dancer.
+            GameDataBridge.SelectedDancer = null;
+            if (HasCharacterSelect) StartCoroutine(TransitionToCharacterSelect());
+            else StartCoroutine(TransitionToDifficulty(false));
+        }
+        else if (currentState == MenuState.Character)
+        {
+            GameDataBridge.SelectedDancer = characterSelectPanel.Selected;
+            characterSelectPanel.Confirm();
+            StartCoroutine(TransitionToDifficulty(true));
         }
         else if (currentState == MenuState.Difficulty)
         {
@@ -1163,13 +1234,63 @@ public class SongCarouselManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Starts a Tug of Slay match if the selected song is marked for one and two players are in.
+    /// </summary>
+    /// <returns>True if a match started. Matches pick their own difficulty, so this skips that menu.</returns>
+    private bool TryStartTugOfSlayMatch()
+    {
+        if (!allSongData[currentSongIndex].isTugOfSlay) return false;
+
+        if (SessionConfig.PlayerCount != 2)
+        {
+            if (sfxSource && lockedSound) sfxSource.PlayOneShot(lockedSound);
+            if (tugOfSlayPanel != null) tugOfSlayPanel.ShakePrompt();
+            return true;
+        }
+
+        GameDataBridge.SelectedDancer = null;
+        string firstScene = TugOfSlayMatch.Start(GetTugOfSlaySongPool());
+        if (string.IsNullOrEmpty(firstScene))
+        {
+            TugOfSlayMatch.End();
+            return false;
+        }
+
+        currentState = MenuState.Confirming;
+        if (sfxSource && confirmSound) sfxSource.PlayOneShot(confirmSound);
+        TransitionManager.Instance.LoadScene(firstScene);
+        return true;
+    }
+
+    /// <summary>
+    /// Gathers every song from the current list and all playlists that are open to play.
+    /// </summary>
+    /// <returns>Songs a Tug of Slay match can pick from.</returns>
+    private List<SongGradeData> GetTugOfSlaySongPool()
+    {
+        List<SongGradeData> pool = new List<SongGradeData>(allSongData);
+
+        foreach (SongPlaylist playlist in playlists)
+        {
+            if (!playlist.comingSoon) pool.AddRange(playlist.songs);
+        }
+
+        return pool;
+    }
+
+    /// <summary>
     /// Handles cancel input, returning from difficulty selection to song selection when allowed.
     /// </summary>
     void OnCancel()
     {
         if (isTransitioning || currentState == MenuState.Confirming || currentState == MenuState.Splash || isPaused || (pauseMenu != null && pauseMenu.IsPaused())) return;
 
-        if (currentState == MenuState.Difficulty)
+        if (currentState == MenuState.Difficulty && HasCharacterSelect)
+        {
+            if (sfxSource && cancelSound) sfxSource.PlayOneShot(cancelSound);
+            StartCoroutine(TransitionDifficultyToCharacter());
+        }
+        else if (currentState == MenuState.Character || currentState == MenuState.Difficulty)
         {
             if (wasAutoSelected) return; 
 
@@ -1270,15 +1391,134 @@ public class SongCarouselManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Fades from the carousel into difficulty selection and configures difficulty locks and step counts.
+    /// Fades into difficulty selection, from the carousel or from character select.
     /// </summary>
-    /// <returns>Coroutine enumerator for the carousel-to-difficulty transition.</returns>
-    IEnumerator TransitionToDifficulty()
+    /// <param name="fromCharacter">True when coming from character select, which has already focused the song.</param>
+    /// <returns>Coroutine enumerator for the transition.</returns>
+    IEnumerator TransitionToDifficulty(bool fromCharacter)
     {
         isTransitioning = true;
         ResetTimer(); 
         if (sfxSource && selectSound) sfxSource.PlayOneShot(selectSound);
-        
+
+        PrepareDifficulties();
+
+        // The song select screen stays up: only the selected song card remains while the other cards,
+        // the character, and the spires fade away. The difficulty panel scales in on top with its boxes staggered.
+        // Character select has already done the focusing, so coming from there only swaps the panels.
+        if (fromCharacter) StartCoroutine(SongHeaderFadeRoutine(true));
+        Coroutine popRoutine = StartCoroutine(CarouselConfirmPopRoutine(currentSongIndex));
+        Coroutine focusRoutine = fromCharacter ? null : StartCoroutine(SongFocusRoutine(true));
+        Coroutine boxesRoutine = StartCoroutine(DifficultyIntroRoutine());
+        if (diffSongTitle != null)
+            RunAnimation(diffSongTitle, PopInRoutine(diffSongTitle, new Vector2(0f, -20f), 1.1f, MainVisualDuration));
+
+        yield return StartCoroutine(FadeGroups(fromCharacter ? CharacterGroup : null, difficultyCanvasGroup));
+        if (popRoutine != null) yield return popRoutine;
+        if (focusRoutine != null) yield return focusRoutine;
+        yield return boxesRoutine;
+        currentState = MenuState.Difficulty;
+        UpdateControlCanvases(); 
+        difficultyCanvasGroup.blocksRaycasts = true;
+        isTransitioning = false;
+    }
+
+    /// <summary>
+    /// Fades from the carousel into character select, focusing the screen on the chosen song.
+    /// </summary>
+    /// <returns>Coroutine enumerator for the transition.</returns>
+    IEnumerator TransitionToCharacterSelect()
+    {
+        isTransitioning = true;
+        ResetTimer();
+        if (sfxSource && selectSound) sfxSource.PlayOneShot(selectSound);
+
+        // Ready the difficulties now too, so running out of time here can still start the song.
+        PrepareDifficulties();
+        FillCharacterSelect();
+
+        Coroutine headerRoutine = StartCoroutine(SongHeaderFadeRoutine(false));
+        Coroutine focusRoutine = StartCoroutine(SongFocusRoutine(true));
+        yield return StartCoroutine(FadeGroups(null, CharacterGroup));
+        yield return headerRoutine;
+        yield return focusRoutine;
+
+        currentState = MenuState.Character;
+        UpdateControlCanvases();
+        CharacterGroup.blocksRaycasts = true;
+        isTransitioning = false;
+    }
+
+    /// <summary>
+    /// Goes back from difficulty selection to character select.
+    /// </summary>
+    /// <returns>Coroutine enumerator for the transition.</returns>
+    IEnumerator TransitionDifficultyToCharacter()
+    {
+        isTransitioning = true;
+        ResetTimer();
+        HidePressAgain();
+        characterSelectPanel.ClearConfirm();
+
+        StartCoroutine(SongHeaderFadeRoutine(false));
+        yield return StartCoroutine(FadeGroups(difficultyCanvasGroup, CharacterGroup));
+
+        difficultyCanvasGroup.blocksRaycasts = false;
+        currentState = MenuState.Character;
+        UpdateControlCanvases();
+        CharacterGroup.blocksRaycasts = true;
+        isTransitioning = false;
+    }
+
+    /// <summary>The character select panel's canvas group, or null when there's no panel.</summary>
+    private CanvasGroup CharacterGroup => characterSelectPanel != null ? characterSelectPanel.canvasGroup : null;
+
+    /// <summary>True when there's a character select panel and dancers to pick from.</summary>
+    private bool HasCharacterSelect => CharacterGroup != null && dancers.Exists(d => d != null);
+
+    /// <summary>
+    /// Fills the dancer screen and highlights the song's own dancer, or the last pick if the song has none.
+    /// </summary>
+    private void FillCharacterSelect()
+    {
+        List<DancerData> choices = dancers.FindAll(d => d != null);
+        DancerData songDancer = allSongData[currentSongIndex].dancer;
+
+        int selected = choices.IndexOf(songDancer);
+        if (selected < 0) selected = choices.IndexOf(GameDataBridge.SelectedDancer);
+        characterSelectPanel.Show(choices, Mathf.Max(0, selected));
+    }
+
+    /// <summary>
+    /// Fades the selected song's cover and title out for the dancer screen, or back in after it.
+    /// </summary>
+    /// <param name="show">True to fade them in.</param>
+    /// <returns>Coroutine enumerator for the fade.</returns>
+    private IEnumerator SongHeaderFadeRoutine(bool show)
+    {
+        CanvasGroup cover = currentSongIndex < spawnedGroups.Count ? spawnedGroups[currentSongIndex] : null;
+        float coverStart = cover != null ? cover.alpha : 0f;
+        float titleRest = mainSongTitleText != null ? GetBaseAlpha(mainSongTitleText) : 1f;
+        float titleStart = mainSongTitleText != null ? mainSongTitleText.color.a : 0f;
+        float target = show ? 1f : 0f;
+
+        for (float elapsed = 0f; elapsed < TransitionDuration; elapsed += Time.deltaTime)
+        {
+            float eased = EaseOutCubic(Mathf.Clamp01(elapsed / TransitionDuration));
+            if (cover != null) cover.alpha = Mathf.Lerp(coverStart, target, eased);
+            if (mainSongTitleText != null) SetAlpha(mainSongTitleText, Mathf.Lerp(titleStart, titleRest * target, eased));
+            yield return null;
+        }
+
+        if (cover != null) cover.alpha = target;
+        if (mainSongTitleText != null) SetAlpha(mainSongTitleText, titleRest * target);
+    }
+
+    /// <summary>
+    /// Sets the difficulty boxes up for the selected song: step counts, locks, and the first open difficulty.
+    /// </summary>
+    private void PrepareDifficulties()
+    {
         SongGradeData currentData = allSongData[currentSongIndex];
         SongGradeData statsData = currentData.isRandomOption ? secretRandomSong : currentData;
 
@@ -1344,23 +1584,6 @@ public class SongCarouselManager : MonoBehaviour
         {
             diffJacketDisplay.sprite = currentData.songJacketSprite;
         }
-
-        // The song select screen stays up: only the selected song card remains while the other cards,
-        // the character, and the spires fade away. The difficulty panel scales in on top with its boxes staggered.
-        Coroutine popRoutine = StartCoroutine(CarouselConfirmPopRoutine(currentSongIndex));
-        Coroutine focusRoutine = StartCoroutine(SongFocusRoutine(true));
-        Coroutine boxesRoutine = StartCoroutine(DifficultyIntroRoutine());
-        if (diffSongTitle != null)
-            RunAnimation(diffSongTitle, PopInRoutine(diffSongTitle, new Vector2(0f, -20f), 1.1f, MainVisualDuration));
-
-        yield return StartCoroutine(FadeGroups(null, difficultyCanvasGroup));
-        yield return popRoutine;
-        yield return focusRoutine;
-        yield return boxesRoutine;
-        currentState = MenuState.Difficulty;
-        UpdateControlCanvases(); 
-        difficultyCanvasGroup.blocksRaycasts = true;
-        isTransitioning = false;
     }
     
     /// <summary>
@@ -1378,7 +1601,7 @@ public class SongCarouselManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Fades from difficulty selection back to the song carousel.
+    /// Fades from difficulty or character selection back to the song carousel.
     /// </summary>
     /// <returns>Coroutine enumerator for the difficulty-to-carousel transition.</returns>
     IEnumerator TransitionToCarousel()
@@ -1388,15 +1611,18 @@ public class SongCarouselManager : MonoBehaviour
         
         HidePressAgain();
 
-        // Bring the other song cards, the character, and the spires back while the difficulty panel leaves.
+        // Bring the other song cards, the character, and the spires back while the open panel leaves.
+        CanvasGroup leaving = currentState == MenuState.Character ? CharacterGroup : difficultyCanvasGroup;
+        if (currentState == MenuState.Character) StartCoroutine(SongHeaderFadeRoutine(true));
         Coroutine focusRoutine = StartCoroutine(SongFocusRoutine(false));
-        yield return StartCoroutine(FadeGroups(difficultyCanvasGroup, null));
+        yield return StartCoroutine(FadeGroups(leaving, null));
         yield return focusRoutine;
 
         blockPunch[currentSongIndex] = CarouselPunch;
         currentState = MenuState.Carousel;
         UpdateControlCanvases(); 
         difficultyCanvasGroup.blocksRaycasts = false;
+        if (CharacterGroup != null) CharacterGroup.blocksRaycasts = false;
         isTransitioning = false;
     }
 
@@ -1745,6 +1971,88 @@ public class SongCarouselManager : MonoBehaviour
             color.a = spireSpriteAlphas[i] * visibility;
             spireSprites[i].color = color;
         }
+    }
+
+    /// <summary>True when the selected category only holds Tag of Slay entries.</summary>
+    private bool IsTugOfSlayViewSelected
+    {
+        get
+        {
+            if (allSongData == null || allSongData.Count == 0) return false;
+            return allSongData.TrueForAll(song => song != null && song.isTugOfSlay);
+        }
+    }
+
+    /// <summary>
+    /// Hides the Tag of Slay panel and gathers everything that gets hidden while it's showing.
+    /// </summary>
+    private void SetupTugOfSlayView()
+    {
+        if (tugOfSlayPanel != null)
+        {
+            tugOfSlayPanel.SetHasTwoPlayers(SessionConfig.PlayerCount == 2);
+            tugOfSlayPanel.SetVisibility(0f);
+        }
+        else
+        {
+            Debug.LogWarning("SongCarouselManager: Tug Of Slay Panel isn't assigned, so the Tag of Slay category will look empty.");
+        }
+
+        foreach (GameObject target in tugOfSlayHiddenObjects) AddTugOfSlayHiddenObject(target);
+        if (mainSongTitleText != null) AddTugOfSlayHiddenObject(mainSongTitleText.gameObject);
+        if (mainCharacterDisplay != null) AddTugOfSlayHiddenObject(mainCharacterDisplay.gameObject);
+        if (arrowDisplay != null) AddTugOfSlayHiddenObject(arrowDisplay.gameObject);
+    }
+
+    private void AddTugOfSlayHiddenObject(GameObject target)
+    {
+        if (target == null) return;
+
+        if (target.TryGetComponent(out RectTransform _))
+        {
+            CanvasGroup group = target.GetComponent<CanvasGroup>();
+            tugOfSlayHiddenGroups.Add(group != null ? group : target.AddComponent<CanvasGroup>());
+        }
+        else
+        {
+            tugOfSlayHiddenToggles.Add(target);
+        }
+    }
+
+    /// <summary>
+    /// Fades the song screen to or from the Tag of Slay view to match the selected category.
+    /// </summary>
+    private void UpdateTugOfSlayView()
+    {
+        float target = IsTugOfSlayViewSelected ? 1f : 0f;
+        bool changing = !Mathf.Approximately(tugOfSlayViewAmount, target);
+        if (!changing && target == 0f) return;
+
+        tugOfSlayViewAmount = Mathf.MoveTowards(tugOfSlayViewAmount, target, Time.unscaledDeltaTime / TugOfSlayViewFadeTime);
+        float songScreen = 1f - tugOfSlayViewAmount;
+
+        // The carousel sets its cards' alpha every frame, so hide them after it has run.
+        foreach (CanvasGroup card in spawnedGroups)
+        {
+            if (card != null) card.alpha = Mathf.Min(card.alpha, songScreen);
+        }
+
+        if (!changing) return;
+
+        foreach (CanvasGroup group in tugOfSlayHiddenGroups)
+        {
+            if (group != null) group.alpha = songScreen;
+        }
+
+        foreach (GameObject toggle in tugOfSlayHiddenToggles)
+        {
+            if (toggle != null) toggle.SetActive(songScreen > 0.5f);
+        }
+
+        SetSpireVisibility(songScreen);
+        SetSpireToggles(songScreen > 0.5f);
+
+        if (tugOfSlayPanel != null) tugOfSlayPanel.SetVisibility(tugOfSlayViewAmount);
     }
 
     /// <summary>Shows or hides spires that cannot be faded.</summary>

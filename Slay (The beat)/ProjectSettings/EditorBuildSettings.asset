@@ -78,8 +78,14 @@ EditorBuildSettings:
     path: Assets/Project/Scenes/BattleMode.unity
     guid: 0ff8b85314aaf461e929e6c2b9c71bac
   - enabled: 1
-    path: Assets/Project/Scenes/ST_BasicStage.unity
+    path: Assets/Project/Scenes/ST_Baby.unity
     guid: 4357edadb4032450db0a26f844e35eea
+  - enabled: 1
+    path: Assets/Project/Scenes/STag_BadBEnergy.unity
+    guid: 1f508fa6f837e41dd8fea72d01b88f1c
+  - enabled: 1
+    path: Assets/Project/Scenes/TugOfSlayRoundIntro.unity
+    guid: 7614962cc90b4f2b97b6a839f6ed3b22
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 5580f54f7e37f4a7095a2a8a5f9cc948, type: 2}
   m_UseUCBPForAssetBundles: 0

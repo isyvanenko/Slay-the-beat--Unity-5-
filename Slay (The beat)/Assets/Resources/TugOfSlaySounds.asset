@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e92346564b141b0855b1f92e8ec9507, type: 3}
+  m_Name: TugOfSlaySounds
+  m_EditorClassIdentifier: 
+  rainbowSound: {fileID: 8300000, guid: 933321ec5ae17466bb283d5f2fa07040, type: 3}
+  clashWinSound: {fileID: 8300000, guid: 73fb3dd72a0f64ebca1ddb66064989a9, type: 3}
+  clashTieSound: {fileID: 8300000, guid: d4e47faa020d249a2b0f259f56c94133, type: 3}
+  slayTickSound: {fileID: 8300000, guid: d4e47faa020d249a2b0f259f56c94133, type: 3}
+  savedSound: {fileID: 8300000, guid: fcad89e2fe4514d95b97c7b00ed959fd, type: 3}
+  slayWinSound: {fileID: 8300000, guid: 5a439f21ff5604925a940deb29e32d5a, type: 3}
+  volume: 0.8
