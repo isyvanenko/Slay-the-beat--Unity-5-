@@ -13,16 +13,19 @@ MonoBehaviour:
   m_Name: CashOnMe_Score 1
   m_EditorClassIdentifier: 
   isRandomOption: 0
+  isTugOfSlay: 0
+  excludeFromTugOfSlayRounds: 0
   songName: Cash on me
   songJacketSprite: {fileID: 21300000, guid: e4577312401694af5a3490e50e614ab6, type: 3}
   gameplaySceneName: ST_CashOnMe
   easySteps: 68
   mediumSteps: 102
   hardSteps: 150
-  easyChart: {fileID: 4900000, guid: d4d7b41e1210d49e79e986268f38cbfc, type: 3}
-  mediumChart: {fileID: 4900000, guid: a9bd3e9252fd0494bb2bba6fc0db35e7, type: 3}
-  hardChart: {fileID: 4900000, guid: cbeac781477da4e68ba85756fd6bf556, type: 3}
+  easyChart: {fileID: 4900000, guid: cb0419d82a1be4e8a9b048b9a39f6224, type: 3}
+  mediumChart: {fileID: 4900000, guid: 29d84623f4211421fbcfa109f56c32d6, type: 3}
+  hardChart: {fileID: 4900000, guid: d31fb05fb09774966ad20156bd07ed8a, type: 3}
   songPreviewClip: {fileID: 8300000, guid: 67b0435c112a746889421cbf48db75cf, type: 3}
+  dancer: {fileID: 11400000, guid: 2715f0a3798448df8e6d7a00761be6ba, type: 2}
   characterSprite: {fileID: 21300000, guid: d24fa1fa69f174a70ab893e9a2c7bd82, type: 3}
   p1CharacterSprite: {fileID: 21300000, guid: 585e261395ef34994812ab63cdf2c602, type: 3}
   p2CharacterSprite: {fileID: 21300000, guid: be2865f9c718849aaa78e2c37881f0b0, type: 3}

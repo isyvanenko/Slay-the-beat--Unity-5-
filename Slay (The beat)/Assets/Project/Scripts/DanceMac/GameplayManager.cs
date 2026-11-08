@@ -24,6 +24,24 @@ public class NoteEvent
 
     /// <summary>Duration of hold notes. Interpretation depends on holdsAreInBeats setting.</summary>
     public float holdLength;
+
+    /// <summary>Special arrow type. Only assigned in Tug of Slay levels.</summary>
+    public NoteKind kind;
+}
+
+/// <summary>
+/// Types of arrow a note can be.
+/// </summary>
+public enum NoteKind
+{
+    /// <summary>A regular arrow.</summary>
+    Normal,
+
+    /// <summary>Tug of Slay arrow whose duel is worth double pull.</summary>
+    Rainbow,
+
+    /// <summary>Tug of Slay arrow whose duel is worth a big swing of pull.</summary>
+    Clash
 }
 
 /// <summary>
@@ -124,6 +142,10 @@ public class GameplayManager : MonoBehaviour
     /// <summary>Grade data for the currently playing song.</summary>
     public SongGradeData thisSongGrades;
 
+    [Header("Dancer")]
+    [Tooltip("The level's dancer. The dancer picked in song select takes its place. Found automatically when empty")]
+    public CharacterAnimationController dancer;
+
     [Header("Pause System")]
     /// <summary>Pause menu UI controller.</summary>
     public PauseMenu pauseMenu;
@@ -162,6 +184,18 @@ public class GameplayManager : MonoBehaviour
     /// <summary>Accumulated time offset from all pause sessions.</summary>
     private double totalPauseOffset = 0;
 
+    /// <summary>Set once EndLevel has run, so a timeline signal and a Slay finish can't both end the level.</summary>
+    private bool levelEnded = false;
+
+    /// <summary>Frozen-input song clock used once the ending starts, advancing with game time so slow motion affects arrows.</summary>
+    private double endingSongTime;
+
+    /// <summary>True while a finish sequence plays before the results screen.</summary>
+    public bool IsEnding { get; private set; }
+
+    /// <summary>The scene's Tug of Slay bar, or null in a normal level.</summary>
+    public TugOfSlayBar TugBar { get; private set; }
+
     /// <summary>
     /// Initializes gameplay systems, loads chart, and schedules music playback.
     /// </summary>
@@ -176,18 +210,50 @@ public class GameplayManager : MonoBehaviour
     /// 7. Set up pause menu event listeners
     /// 8. Schedule music playback with start delay
     /// </remarks>
+    /// <summary>
+    /// Puts the dancer picked in song select in the level. Picking the song's own dancer keeps the one placed here.
+    /// </summary>
+    private void ApplySelectedDancer()
+    {
+        DancerData picked = GameDataBridge.SelectedDancer;
+        if (picked == null) return;
+        if (thisSongGrades != null && thisSongGrades.dancer == picked) return;
+
+        if (dancer == null) dancer = FindFirstObjectByType<CharacterAnimationController>();
+        if (dancer != null) dancer.ReplaceDancer(picked);
+    }
+
     void Start()
     {
+        // Some scenes leave these unassigned, but the lanes always know who they score for.
+        if (p1ScoreManager == null && p1Left != null) p1ScoreManager = p1Left.scoreManager;
+        if (p2ScoreManager == null && p2Left != null) p2ScoreManager = p2Left.scoreManager;
+
         if (p2Panel != null)
             p2Panel.SetActive(SessionConfig.PlayerCount == 2);
 
         if (GameDataBridge.SelectedSong != null)
             thisSongGrades = GameDataBridge.SelectedSong;
 
+        ApplySelectedDancer();
+
         SetupPlayerInputs();
 
         if (textLoader != null) songChart = textLoader.LoadChart();
         secondsPerBeat = 60f / bpm;
+
+        TugBar = FindFirstObjectByType<TugOfSlayBar>();
+
+        // A match can play any level, so turn the level's song progress slider into the bar.
+        if (TugBar == null && TugOfSlayMatch.IsActive && SessionConfig.PlayerCount == 2 && progressSlider != null)
+            TugBar = progressSlider.gameObject.AddComponent<TugOfSlayBar>();
+
+        if (TugBar != null)
+        {
+            TugBar.Setup(p1ScoreManager, p2ScoreManager);
+            TugBar.AssignSpecialNotes(songChart);
+            progressSlider = null;
+        }
 
         RectTransform receptorRect = p1Left.GetComponent<RectTransform>();
         RectTransform spawnRect = p1Left.spawnPoint.GetComponent<RectTransform>();
@@ -326,6 +392,12 @@ public class GameplayManager : MonoBehaviour
     /// </remarks>
     void Update()
     {
+        if (IsEnding)
+        {
+            endingSongTime += Time.deltaTime;
+            return;
+        }
+
         if (!isPaused && !pauseMenu.IsPaused())
         {
             bool pausePressed = false;
@@ -366,6 +438,8 @@ public class GameplayManager : MonoBehaviour
     /// <returns>Current song time in seconds relative to DSP start time.</returns>
     public double GetAdjustedSongTime()
     {
+        if (IsEnding) return endingSongTime;
+
         return (AudioSettings.dspTime - dspSongStartTime) - totalPauseOffset;
     }
 
@@ -387,7 +461,7 @@ public class GameplayManager : MonoBehaviour
             if (lookAheadTime >= nextNote.time)
             {
                 float holdDur = holdsAreInBeats ? nextNote.holdLength * secondsPerBeat : nextNote.holdLength;
-                SpawnNote(nextNote.laneIndex, holdDur, nextNote.time);
+                SpawnNote(nextNote.laneIndex, holdDur, nextNote.time, nextNote.kind, currentNoteIndex);
                 currentNoteIndex++;
             }
             else break;
@@ -400,33 +474,35 @@ public class GameplayManager : MonoBehaviour
     /// <param name="laneIndex">Lane index (0=Left, 1=Down, 2=Up, 3=Right).</param>
     /// <param name="duration">Hold duration for long notes.</param>
     /// <param name="noteTime">Absolute song time when note should be hit.</param>
+    /// <param name="kind">Arrow type of the note.</param>
+    /// <param name="noteId">Chart index of the note.</param>
     /// <remarks>
     /// In two-player mode, notes spawn on both players' lanes simultaneously.
     /// This ensures both players see identical note charts.
     /// </remarks>
-    void SpawnNote(int laneIndex, float duration, float noteTime)
+    void SpawnNote(int laneIndex, float duration, float noteTime, NoteKind kind, int noteId)
     {
         switch (laneIndex)
         {
             case 0:
-                p1Left.SpawnNote(duration, noteTime, this);
+                p1Left.SpawnNote(duration, noteTime, this, kind, noteId);
                 if (p2Left && SessionConfig.PlayerCount == 2)
-                    p2Left.SpawnNote(duration, noteTime, this);
+                    p2Left.SpawnNote(duration, noteTime, this, kind, noteId);
                 break;
             case 1:
-                p1Down.SpawnNote(duration, noteTime, this);
+                p1Down.SpawnNote(duration, noteTime, this, kind, noteId);
                 if (p2Down && SessionConfig.PlayerCount == 2)
-                    p2Down.SpawnNote(duration, noteTime, this);
+                    p2Down.SpawnNote(duration, noteTime, this, kind, noteId);
                 break;
             case 2:
-                p1Up.SpawnNote(duration, noteTime, this);
+                p1Up.SpawnNote(duration, noteTime, this, kind, noteId);
                 if (p2Up && SessionConfig.PlayerCount == 2)
-                    p2Up.SpawnNote(duration, noteTime, this);
+                    p2Up.SpawnNote(duration, noteTime, this, kind, noteId);
                 break;
             case 3:
-                p1Right.SpawnNote(duration, noteTime, this);
+                p1Right.SpawnNote(duration, noteTime, this, kind, noteId);
                 if (p2Right && SessionConfig.PlayerCount == 2)
-                    p2Right.SpawnNote(duration, noteTime, this);
+                    p2Right.SpawnNote(duration, noteTime, this, kind, noteId);
                 break;
         }
     }
@@ -555,6 +631,20 @@ public class GameplayManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Starts a finish sequence: stops input, spawning and pausing, and lets arrows follow game time.
+    /// </summary>
+    public void BeginEnding()
+    {
+        if (IsEnding) return;
+
+        endingSongTime = GetAdjustedSongTime();
+        IsEnding = true;
+
+        if (p1Input != null) p1Input.DeactivateInput();
+        if (p2Input != null && SessionConfig.PlayerCount == 2) p2Input.DeactivateInput();
+    }
+
+    /// <summary>
     /// Ends the current level and transitions to the results scene.
     /// </summary>
     /// <remarks>
@@ -567,6 +657,19 @@ public class GameplayManager : MonoBehaviour
     /// </remarks>
     public void EndLevel()
     {
+        // A Tug of Slay level plays its finish first, which calls this again once it's done.
+        if (TugBar != null && !TugBar.IsFinished)
+        {
+            TugBar.FinishAtSongEnd();
+            return;
+        }
+
+        if (levelEnded) return;
+        levelEnded = true;
+        Time.timeScale = 1f;
+
+        string nextScene = GetSceneAfterLevel();
+
         if (p1ScoreManager != null)
         {
             GameSessionData.P1Score = p1ScoreManager.currentScore;
@@ -586,8 +689,34 @@ public class GameplayManager : MonoBehaviour
         GameSessionData.CurrentSongGrades = thisSongGrades;
 
         if (TransitionManager.Instance != null)
-            TransitionManager.Instance.LoadScene(resultsSceneName);
+            TransitionManager.Instance.LoadScene(nextScene);
         else
-            UnityEngine.SceneManagement.SceneManager.LoadScene(resultsSceneName);
+            UnityEngine.SceneManagement.SceneManager.LoadScene(nextScene);
+    }
+
+    /// <summary>
+    /// Works out where to go after this level: the next round of a match, or the results screen.
+    /// </summary>
+    /// <returns>Name of the scene to load.</returns>
+    private string GetSceneAfterLevel()
+    {
+        GameSessionData.TugWinner = TugBar != null ? TugBar.GetWinner() : 0;
+        GameSessionData.TugResultText = "";
+
+        if (!TugOfSlayMatch.IsActive) return resultsSceneName;
+
+        if (!TugOfSlayMatch.IsOver)
+        {
+            string nextRoundScene = TugOfSlayMatch.StartNextRound();
+            if (nextRoundScene != null) return nextRoundScene;
+        }
+
+        int winner = TugOfSlayMatch.Leader;
+        GameSessionData.TugWinner = winner;
+        if (winner != 0)
+            GameSessionData.TugResultText = $"P{winner} WINS {TugOfSlayMatch.P1Wins} - {TugOfSlayMatch.P2Wins}";
+
+        TugOfSlayMatch.End();
+        return resultsSceneName;
     }
 }

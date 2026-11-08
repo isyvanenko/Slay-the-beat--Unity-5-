@@ -13,16 +13,19 @@ MonoBehaviour:
   m_Name: GetItRight_Score 2
   m_EditorClassIdentifier: 
   isRandomOption: 0
-  songName: Get it right
+  isTugOfSlay: 0
+  excludeFromTugOfSlayRounds: 0
+  songName: Get it right (new)
   songJacketSprite: {fileID: 21300000, guid: 804ace60fae414352a2c2efdce98b4e3, type: 3}
   gameplaySceneName: ST_GetItRight
-  easySteps: 70
-  mediumSteps: 111
-  hardSteps: 0
-  easyChart: {fileID: 4900000, guid: b73c4fcdb57dc44e9a389bdfe5588942, type: 3}
-  mediumChart: {fileID: 4900000, guid: 1bf2f5ea69cf44372a9df8bb8faa0613, type: 3}
-  hardChart: {fileID: 4900000, guid: 1bf2f5ea69cf44372a9df8bb8faa0613, type: 3}
+  easySteps: 102
+  mediumSteps: 155
+  hardSteps: 233
+  easyChart: {fileID: 4900000, guid: 4e6f51959d1844181819c263febdd0e9, type: 3}
+  mediumChart: {fileID: 4900000, guid: e4e7c8807afef4347b8626093940e522, type: 3}
+  hardChart: {fileID: 4900000, guid: 2a79d1eb612ed4764b8a45f20b3be5e0, type: 3}
   songPreviewClip: {fileID: 8300000, guid: 223fc892955c4451da187404497228ce, type: 3}
+  dancer: {fileID: 11400000, guid: 7d3f156d87f34468af849c4b2f6dc24a, type: 2}
   characterSprite: {fileID: 21300000, guid: a30e31cb5636f46a5b4b8665f5eed20d, type: 3}
   p1CharacterSprite: {fileID: 21300000, guid: 872afe8c6210d4e189e1c603c3eb1513, type: 3}
   p2CharacterSprite: {fileID: 21300000, guid: a6d7260d37c424c7db14e54925b2f915, type: 3}

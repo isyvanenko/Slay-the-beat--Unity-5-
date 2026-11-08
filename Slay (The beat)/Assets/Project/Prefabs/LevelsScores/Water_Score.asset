@@ -13,8 +13,10 @@ MonoBehaviour:
   m_Name: Water_Score
   m_EditorClassIdentifier: 
   isRandomOption: 0
+  isTugOfSlay: 0
+  excludeFromTugOfSlayRounds: 0
   songName: Water
-  songJacketSprite: {fileID: 21300000, guid: e4577312401694af5a3490e50e614ab6, type: 3}
+  songJacketSprite: {fileID: 21300000, guid: ddc7d6c1c799945549a669eceae825cb, type: 3}
   gameplaySceneName: ST_Water
   easySteps: 128
   mediumSteps: 158
@@ -22,11 +24,13 @@ MonoBehaviour:
   easyChart: {fileID: 4900000, guid: af1a1a19bd0d84ab39242c2220edd7bf, type: 3}
   mediumChart: {fileID: 4900000, guid: 24ef39567eaaf4f8f9e9a66a9d525652, type: 3}
   hardChart: {fileID: 4900000, guid: 8055719a11cc9463981f74e6c7c5c4e8, type: 3}
-  songPreviewClip: {fileID: 8300000, guid: bf90c9e0452d547d58f3ba8f5d61b88b, type: 3}
+  songPreviewClip: {fileID: 8300000, guid: 06079fa89e6aa4325ad251c384eee6b9, type: 3}
+  dancer: {fileID: 11400000, guid: 968477d2d4044fafb7808c222e2ae9e4, type: 2}
   characterSprite: {fileID: 21300000, guid: d24fa1fa69f174a70ab893e9a2c7bd82, type: 3}
   p1CharacterSprite: {fileID: 21300000, guid: 585e261395ef34994812ab63cdf2c602, type: 3}
   p2CharacterSprite: {fileID: 21300000, guid: be2865f9c718849aaa78e2c37881f0b0, type: 3}
   environmentSprite: {fileID: 21300000, guid: d732c2d6faa8040429567dd02c4ce1e1, type: 3}
+  previewVideo: {fileID: 32900000, guid: f582b856fc66c47c1867ba491e62be03, type: 3}
   visualGradient:
     serializedVersion: 2
     key0: {r: 1, g: 0.9083079, b: 0, a: 1}

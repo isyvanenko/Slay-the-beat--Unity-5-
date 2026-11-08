@@ -76,6 +76,17 @@ public static class GameSessionData
     /// Default value: false
     /// </remarks>
     public static bool IsTwoPlayer = false;
+
+    /// <summary>
+    /// Winner of a Tug of Slay level or match: 1 or 2, or 0 if there was no tug or it was a draw.
+    /// </summary>
+    /// <remarks>
+    /// Takes priority over score on the results screen, which clears it after reading.
+    /// </remarks>
+    public static int TugWinner = 0;
+
+    /// <summary>Match result shown on the results screen, e.g. "P1 WINS 3 - 1". Empty when there was no match.</summary>
+    public static string TugResultText = "";
     
     /// <summary>
     /// Name of the song that was played during the session.

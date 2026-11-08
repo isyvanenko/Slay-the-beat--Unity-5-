@@ -10409,6 +10409,7 @@ MonoBehaviour:
   - time: 2
     laneIndex: 0
     holdLength: 2
+    kind: 0
   thisSongGrades: {fileID: 11400000, guid: ea944ebd1a1414746935112efba1033c, type: 2}
   pauseMenu: {fileID: 486170853}
   songSelectionSceneName: SongSelection
@@ -10453,7 +10454,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 423a6ffca244742b8a8c41f895bc0b92, type: 3}
+  m_Resource: {fileID: 8300000, guid: 41aa86bf8421c4a9d89f420cf335eded, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1

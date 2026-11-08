@@ -23,6 +23,7 @@ MonoBehaviour:
   mediumChart: {fileID: 4900000, guid: ddd8d0d7bb0ca421081f825a9621a16a, type: 3}
   hardChart: {fileID: 4900000, guid: e63c36b8d09e54f919d36513478cdcdb, type: 3}
   songPreviewClip: {fileID: 8300000, guid: 549783dbb55f74e55b94f5f6640a5a5c, type: 3}
+  dancer: {fileID: 11400000, guid: 2715f0a3798448df8e6d7a00761be6ba, type: 2}
   characterSprite: {fileID: 21300000, guid: d24fa1fa69f174a70ab893e9a2c7bd82, type: 3}
   p1CharacterSprite: {fileID: 21300000, guid: 585e261395ef34994812ab63cdf2c602, type: 3}
   p2CharacterSprite: {fileID: 21300000, guid: be2865f9c718849aaa78e2c37881f0b0, type: 3}

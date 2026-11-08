@@ -156,5 +156,12 @@ public class DevCheats : MonoBehaviour
             Time.timeScale = (Time.timeScale == 1.0f) ? 0.5f : 1.0f;
             Debug.Log("DEV: TimeScale toggled to " + Time.timeScale);
         }
+
+        // CHEAT [ and ]: Pushes the Tug of Slay bar toward Player 2 or Player 1.
+        if (manager != null && manager.TugBar != null)
+        {
+            if (Keyboard.current.leftBracketKey.wasPressedThisFrame) manager.TugBar.DevPull(false);
+            if (Keyboard.current.rightBracketKey.wasPressedThisFrame) manager.TugBar.DevPull(true);
+        }
     }
 }

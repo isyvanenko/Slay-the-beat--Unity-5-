@@ -75,6 +75,9 @@ public class CharacterAnimationController : MonoBehaviour
     /// </remarks>
     public void TriggerAnimation(string direction)
     {
+        // No dancer was picked for this level.
+        if (animator == null) return;
+
         // 1. Name the state (Make sure these match your Animator exactly!)
         int randomVariant = Random.Range(1, 4);
         string stateName = direction + randomVariant; // e.g., "Left1"
@@ -108,6 +111,92 @@ public class CharacterAnimationController : MonoBehaviour
     /// ensures animations with zero or invalid length still play for a reasonable
     /// default duration (0.5 seconds).
     /// </remarks>
+    /// <summary>
+    /// Replaces the level's dancer with another one, standing in the same spot at the same height.
+    /// A dancer with no prefab hides the level's dancer, so the level plays without one.
+    /// </summary>
+    /// <param name="dancer">The dancer to show.</param>
+    public void ReplaceDancer(DancerData dancer)
+    {
+        if (dancer == null) return;
+
+        GameObject original = animator != null ? animator.gameObject : null;
+
+        if (dancer.IsNoDancer)
+        {
+            HideDancer(original);
+            animator = null;
+            return;
+        }
+
+        if (original == null)
+        {
+            Debug.LogWarning($"CharacterAnimationController: this level has no dancer set to replace, so {dancer.displayName} can't be placed.");
+            return;
+        }
+
+        Transform spot = original.transform;
+        GameObject spawned = Instantiate(dancer.prefab, spot.position, spot.rotation, spot.parent);
+        spawned.name = dancer.prefab.name;
+        FitToDancer(spawned, original, dancer.sizeMultiplier);
+
+        Animator spawnedAnimator = spawned.GetComponentInChildren<Animator>();
+        if (spawnedAnimator == null) spawnedAnimator = spawned.AddComponent<Animator>();
+        if (dancer.animatorController != null) spawnedAnimator.runtimeAnimatorController = dancer.animatorController;
+        spawnedAnimator.applyRootMotion = animator.applyRootMotion;
+
+        HideDancer(original);
+        animator = spawnedAnimator;
+    }
+
+    /// <summary>Scales a new dancer to the original's height and stands it where the original stands.</summary>
+    private static void FitToDancer(GameObject spawned, GameObject original, float sizeMultiplier)
+    {
+        if (!TryGetBounds(original, out Bounds target) || !TryGetBounds(spawned, out Bounds current)) return;
+        if (current.size.y <= 0.0001f) return;
+
+        spawned.transform.localScale *= target.size.y / current.size.y * Mathf.Max(0.01f, sizeMultiplier);
+
+        // Line the feet up with the original's, centred on the same spot.
+        TryGetBounds(spawned, out current);
+        Vector3 targetFeet = new Vector3(target.center.x, target.min.y, target.center.z);
+        Vector3 currentFeet = new Vector3(current.center.x, current.min.y, current.center.z);
+        spawned.transform.position += targetFeet - currentFeet;
+    }
+
+    /// <summary>The space covered by a dancer's visible meshes.</summary>
+    private static bool TryGetBounds(GameObject dancer, out Bounds bounds)
+    {
+        bounds = default;
+        bool found = false;
+
+        foreach (Renderer renderer in dancer.GetComponentsInChildren<Renderer>())
+        {
+            if (!renderer.enabled || !(renderer is SkinnedMeshRenderer || renderer is MeshRenderer)) continue;
+
+            if (found) bounds.Encapsulate(renderer.bounds);
+            else bounds = renderer.bounds;
+            found = true;
+        }
+
+        return found;
+    }
+
+    /// <summary>Hides a dancer. If this controller sits inside it, only its meshes are hidden so the controller keeps running.</summary>
+    private void HideDancer(GameObject dancer)
+    {
+        if (dancer == null) return;
+
+        if (transform.IsChildOf(dancer.transform))
+        {
+            foreach (Renderer renderer in dancer.GetComponentsInChildren<Renderer>()) renderer.enabled = false;
+        }
+        else
+        {
+            dancer.SetActive(false);
+        }
+    }
+
     IEnumerator ProcessAnimationQueue()
     {
         isRunningQueue = true;
